@@ -7,11 +7,8 @@ are no target dates.
 
 ## Now
 
-- **[M0 Foundation](https://github.com/MrStnr21/stockpot/milestone/1):** a complete, empty
-  repository: workspace, checks, CI, license, principles and architecture, so everything after it
-  lands where the checks already run.
-
-As soon as M0 is done, three lanes run side by side:
+[M0 Foundation](https://github.com/MrStnr21/stockpot/milestone/1) is done, so three lanes run side
+by side:
 
 - **[M1 Design](https://github.com/MrStnr21/stockpot/milestone/2):** the design canvas, the
   source of truth for the interface: the kit and every screen at phone, tablet and desktop sizes,
