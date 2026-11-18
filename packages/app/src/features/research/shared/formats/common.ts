@@ -1,0 +1,176 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 The stockpot authors
+
+/*
+ * Building blocks every card format shares (docs/engines.md, "Formats"). Each schema is written once in
+ * Valibot: it validates engine output, and the JSON Schema derived from it tells the provider what to
+ * return. Field descriptions travel in that JSON Schema, so they are the field-level prompt.
+ *
+ * Every object is strict and every field required (`null` or an empty list stands for "nothing"),
+ * because strict structured-output modes accept only that shape. Transformations such as `trim` have
+ * no JSON Schema form, so cleaning text up is the caller's job, after validation.
+ */
+import * as v from 'valibot'
+
+import type { Depth } from '#/server/engines/contract'
+
+type BoundedString = v.SchemaWithPipe<
+	readonly [
+		v.StringSchema<undefined>,
+		v.NonEmptyAction<string, undefined>,
+		v.MaxLengthAction<string, number, undefined>,
+	]
+>
+
+type Described<TSchema extends v.GenericSchema> = v.SchemaWithPipe<
+	readonly [TSchema, v.DescriptionAction<v.InferOutput<TSchema>, string>]
+>
+
+type List<TItem extends v.GenericSchema> = v.SchemaWithPipe<
+	readonly [
+		v.ArraySchema<TItem, undefined>,
+		v.MinLengthAction<v.InferOutput<TItem>[], number, undefined>,
+		v.MaxLengthAction<v.InferOutput<TItem>[], number, undefined>,
+		v.DescriptionAction<v.InferOutput<TItem>[], string>,
+	]
+>
+
+function boundedString(maxLength: number): BoundedString {
+	return v.pipe(v.string(), v.nonEmpty(), v.maxLength(maxLength))
+}
+
+/** A string the engine must fill, capped so that a card stays short enough for a phone. */
+export function text(maxLength: number, description: string): Described<BoundedString> {
+	return v.pipe(boundedString(maxLength), v.description(description))
+}
+
+/** Like `text`, but `null` when there is nothing worth saying. */
+export function textOrNull(
+	maxLength: number,
+	description: string,
+): Described<v.NullableSchema<BoundedString, undefined>> {
+	const nullable = v.nullable(boundedString(maxLength))
+
+	return v.pipe(nullable, v.description(description))
+}
+
+/** A list of `item`, from `min` to `max` long. */
+export function list<TItem extends v.GenericSchema>(
+	item: TItem,
+	{ min, max }: { min: number; max: number },
+	description: string,
+): List<TItem> {
+	return v.pipe(v.array(item), v.minLength(min), v.maxLength(max), v.description(description))
+}
+
+/*
+ * HTTP(S) only, also in the JSON Schema, so a provider never offers another scheme. JSON Schema
+ * patterns carry no flags, which is why this regex has none.
+ */
+// oxlint-disable-next-line eslint/require-unicode-regexp -- JSON Schema patterns cannot carry flags.
+const httpUrl = /^https?:\/\//
+
+const url = v.pipe(
+	v.string(),
+	v.url(),
+	v.regex(httpUrl),
+	v.maxLength(2000),
+	v.description(
+		'The address of a page you opened or saw in search results while writing this card. Never an address from memory or one you built yourself.',
+	),
+)
+
+/** A page the engine opened while it wrote the card (the link policy in docs/engines.md). */
+export const sourceSchema = v.strictObject({
+	title: text(200, 'The title of the page, as the page itself shows it.'),
+	url,
+})
+
+export type Source = v.InferOutput<typeof sourceSchema>
+
+export function sources(
+	max: number,
+	description = 'Pages that back the card up, best first. Leave the list empty rather than add a page you did not see.',
+): List<typeof sourceSchema> {
+	return list(sourceSchema, { min: 0, max }, description)
+}
+
+export const uncertain = v.pipe(
+	v.boolean(),
+	v.description(
+		'True when you could not confirm the main facts: the term is too new, too narrow or ambiguous, or the sources disagree.',
+	),
+)
+
+/** The fields that open every first-level card: they record which meaning was explained, for repeats. */
+export const senseFields = {
+	sense: text(
+		120,
+		'The meaning of the term this card explains, in a few words, such as "YouTube streaming protocol". Name it even when the term has only one meaning.',
+	),
+	aliases: list(
+		text(80, 'Another name or spelling.'),
+		{ min: 0, max: 5 },
+		'Other names, spellings and abbreviations of the term in this meaning.',
+	),
+}
+
+/** One depth level of a format: what it asks the engine for and the shape of the answer. */
+export interface Level {
+	readonly instructions: string
+	readonly schema: v.GenericSchema
+}
+
+/**
+ * A card format. A category points to one; several categories may share it. `research` formats are
+ * long reports written by the `research` task, all others are cards written by `explain`.
+ */
+export interface Format {
+	readonly task: 'explain' | 'research'
+	readonly instructions: string
+	readonly levels: Readonly<Record<Depth, Level>>
+}
+
+export const firstLevelInstructions =
+	'This is the first card about the term: something to read in a minute on a phone, plain and concrete.'
+
+/** Level 2, shared by every format that has no level of its own: how it works and its trade-offs. */
+export const deeperLevel = {
+	instructions:
+		'This is the second card about the term. The reader has read the earlier card, given below: build on it and do not repeat it. Explain how it works and what it trades off.',
+	schema: v.strictObject({
+		howItWorks: text(
+			2000,
+			'How it works underneath, in a few short paragraphs, starting where the earlier card stopped.',
+		),
+		tradeoffs: list(
+			text(300, 'One trade-off or limit.'),
+			{ min: 1, max: 6 },
+			'What it costs, where it breaks down and when to choose something else.',
+		),
+		sources: sources(5),
+		uncertain,
+	}),
+} as const satisfies Level
+
+/** Level 3, shared by every format that has no level of its own: hands-on, with sources. */
+export const handsOnLevel = {
+	instructions:
+		'This is the third card about the term. The reader has read the earlier cards, given below: do not repeat them. Make it hands-on: something to try, and where to go deeper.',
+	schema: v.strictObject({
+		steps: list(
+			text(300, 'One step.'),
+			{ min: 1, max: 8 },
+			'A walkthrough the reader can follow in under an hour, in order.',
+		),
+		example: textOrNull(
+			4000,
+			'A code sample or a worked example that the steps use, or null when none fits.',
+		),
+		sources: sources(
+			8,
+			'Primary sources and in-depth material: documentation, specifications, papers, talks. Best first.',
+		),
+		uncertain,
+	}),
+} as const satisfies Level
