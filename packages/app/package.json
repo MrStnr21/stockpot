@@ -1,0 +1,30 @@
+{
+	"name": "@stockpot/app",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"imports": {
+		"#/*": "./src/*"
+	},
+	"scripts": {
+		"dev": "bunx --bun astro dev",
+		"dev:stop": "bunx --bun astro dev stop",
+		"build": "bunx --bun astro build",
+		"preview": "bunx --bun astro preview",
+		"start": "bun ./dist/server/entry.mjs",
+		"astro": "bunx --bun astro"
+	},
+	"dependencies": {
+		"@astrojs/node": "^11.1.13",
+		"@astrojs/svelte": "^9.1.6",
+		"@stockpot/ui": "workspace:*",
+		"astro": "^7.4.12",
+		"svelte": "^5.57.3",
+		"tailwindcss": "^4.3.5"
+	},
+	"devDependencies": {
+		"@tailwindcss/vite": "^4.3.5",
+		"@types/bun": "^1.4.4",
+		"typescript": "^6.0.3"
+	}
+}

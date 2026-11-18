@@ -1,0 +1,40 @@
+# dependencies (bun install)
+node_modules
+
+# output
+dist
+out
+*.tgz
+
+# generated Astro types
+.astro
+
+# code coverage
+coverage
+*.lcov
+
+# logs
+logs
+*.log
+
+# environment files
+.env
+.env.*
+!.env.example
+
+# caches
+.cache
+*.tsbuildinfo
+
+# Playwright output
+playwright-report
+test-results
+
+# editors and OS
+.idea
+.DS_Store
+
+# local SQLite databases and their WAL files
+*.db
+*.db-shm
+*.db-wal

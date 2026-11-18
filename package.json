@@ -1,0 +1,15 @@
+{
+	"name": "stockpot",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"packageManager": "bun@1.4.3",
+	"workspaces": [
+		"packages/*"
+	],
+	"scripts": {
+		"dev": "bun run -F @stockpot/app dev",
+		"build": "bun run -F @stockpot/app build",
+		"start": "bun run -F @stockpot/app start"
+	}
+}

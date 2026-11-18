@@ -1,0 +1,12 @@
+/*
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ * SPDX-FileCopyrightText: 2026 The stockpot authors
+ */
+
+/* Placeholder tokens until the design kit lands; the app imports this file after Tailwind. */
+@theme {
+	--color-broth-50: oklch(0.98 0.02 85);
+	--color-broth-500: oklch(0.72 0.14 70);
+	--color-broth-900: oklch(0.3 0.06 60);
+	--font-sans: ui-sans-serif, system-ui, sans-serif;
+}

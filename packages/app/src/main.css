@@ -1,0 +1,10 @@
+/*
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ * SPDX-FileCopyrightText: 2026 The stockpot authors
+ */
+
+@import 'tailwindcss';
+@import '@stockpot/ui/theme.css';
+
+/* Tailwind scans the app by default; the UI package's components live outside it. */
+@source '../../ui/src';
