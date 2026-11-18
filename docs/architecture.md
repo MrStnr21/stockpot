@@ -36,7 +36,7 @@ stockpot/
 │   └── website/        the documentation site (M9)
 ├── tools/              @stockpot/tools: lint plugins, the license header check, third-party
 │                       notices, the docs link check and the migration check; later evals
-├── docs/               principles, architecture, guidelines, ADRs; later engines, design canvas,
+├── docs/               principles, architecture, engines, guidelines, ADRs; later design canvas,
 │                       install and privacy
 ├── deploy/             launchd service for a Mac, Docker image and compose file (M8, M9)
 ├── skills/             operator skills for installing and running an instance (M9)
@@ -161,7 +161,7 @@ Everything outside `src/server/engines/` calls the router with contract types an
 concrete engine or a provider SDK. The research feature owns the card formats and passes the format's
 schema with each call, so engines stay free of feature imports. Lint does not tell one `server/`
 module from another, so review checks this boundary. The formats, prompts, privacy rule and
-routing table are recorded with the contract in `docs/engines.md` (ENG-1).
+routing table are recorded with the contract on the [engines page](engines.md).
 
 ## One process and the job runner
 
