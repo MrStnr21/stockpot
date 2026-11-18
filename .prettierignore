@@ -1,0 +1,4 @@
+# Each workspace runs its own Prettier.
+packages/
+tools/
+bun.lock

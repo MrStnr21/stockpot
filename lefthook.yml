@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 The stockpot authors
+
+pre-commit:
+  # Piped: every job stages the files it fixed, and concurrent `git add` races on index.lock.
+  piped: true
+  jobs:
+    # The root .prettierignore skips the workspaces; each one formats its files with its own config.
+    - name: fmt
+      glob: &formatted '*.{astro,svelte,js,ts,json,css,html,md,yaml,yml}'
+      run: &prettier bunx --bun --no-install prettier --ignore-unknown --write {staged_files}
+      stage_fixed: true
+    - name: fmt (app)
+      root: packages/app/
+      glob: *formatted
+      run: *prettier
+      stage_fixed: true
+    - name: fmt (ui)
+      root: packages/ui/
+      glob: *formatted
+      run: *prettier
+      stage_fixed: true
+    - name: fmt (tools)
+      root: tools/
+      glob: *formatted
+      run: *prettier
+      stage_fixed: true
+
+pre-push:
+  parallel: true
+  jobs:
+    - name: check
+      run: bun run check
+    - name: lint
+      run: bun run lint
