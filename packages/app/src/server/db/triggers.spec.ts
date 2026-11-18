@@ -18,8 +18,8 @@ describe('migration triggers', () => {
 		let db: TestDb
 		let sqlite: Database
 
-		beforeEach(() => {
-			;({ db, sqlite } = createTestDb())
+		beforeEach(async () => {
+			;({ db, sqlite } = await createTestDb())
 		})
 
 		function noteIdsMatching(query: string) {
@@ -122,8 +122,8 @@ describe('migration triggers', () => {
 	describe('deleting a term', () => {
 		let db: TestDb
 
-		beforeEach(() => {
-			;({ db } = createTestDb())
+		beforeEach(async () => {
+			;({ db } = await createTestDb())
 		})
 
 		it('deletes the cards written for the term alone and keeps the note cards', async () => {

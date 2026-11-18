@@ -12,7 +12,7 @@ export const migrationsFolder = join(import.meta.dir, '../../src/server/db/migra
  * server opens its file. Each call is isolated, so specs never share rows.
  */
 // oxlint-disable-next-line typescript/explicit-module-boundary-types -- The Drizzle client type is long; callers use TestDb.
-export function createTestDb() {
+export async function createTestDb() {
 	return openDatabase({ path: ':memory:', migrationsFolder })
 }
 

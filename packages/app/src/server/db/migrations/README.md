@@ -5,6 +5,11 @@ SQL migrations, one folder per migration: `<timestamp>_<name>/migration.sql`, wi
 [`../client.ts`](../client.ts) applies the ones a database has not seen yet, in name order, whenever
 it opens one: the server on start and `createTestDb()` in specs.
 
+Before it applies anything to a file, it copies the file to `<file>.pre-migration` with
+`VACUUM INTO`. Migrations run with foreign keys off, so it checks for orphan rows afterwards; when it
+finds some, it puts the copy back and fails with the violations listed, so a bad migration leaves an
+instance as it was. The copy is removed either way.
+
 ## Adding a migration
 
 1. Change the schema in [`../schema/`](../schema/).

@@ -36,8 +36,8 @@ describe('migrations', () => {
 	describe('on an empty database', () => {
 		let sqlite: Database
 
-		beforeAll(() => {
-			;({ sqlite } = createTestDb())
+		beforeAll(async () => {
+			;({ sqlite } = await createTestDb())
 		})
 
 		it('create every table of schema v1', () => {
@@ -65,8 +65,8 @@ describe('migrations', () => {
 	describe('query plans', () => {
 		let db: TestDb
 
-		beforeAll(() => {
-			;({ db } = createTestDb())
+		beforeAll(async () => {
+			;({ db } = await createTestDb())
 		})
 
 		/* Each read on a hot path, as its feature will write it, with the plan SQLite picks for it. A plan
