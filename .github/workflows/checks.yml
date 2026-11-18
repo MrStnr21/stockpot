@@ -50,6 +50,9 @@ jobs:
       - name: Licence headers
         run: bun run check:license
 
+      - name: Links in the docs
+        run: bun run check:links
+
   secrets:
     name: Secret scan
     uses: ./.github/workflows/secrets.yml

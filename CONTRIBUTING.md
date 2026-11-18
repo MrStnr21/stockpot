@@ -51,9 +51,10 @@ bun run e2e
 - After changing dependencies, also run `bun run notices -- --check`.
 
 CI runs the same commands. `checks.yml` runs the fast part on every pull request: `check`, `test`,
-`fmt:check` and `lint`, plus secret scanning. `ci.yml` runs the whole list on `main`, plus
-`bun run notices -- --check`. `notices.yml` regenerates the third-party notices on pull requests
-that change dependencies. Run the full list locally before you ask for review.
+`fmt:check`, `lint`, `check:license` and `check:links`, plus a gitleaks scan of the history.
+`ci.yml` runs the whole list on every push to `main`, plus `bun run notices -- --check`;
+Dependabot pull requests get it before merge. `notices.yml` regenerates the third-party notices on
+pull requests that change dependencies. Run the full list locally before you ask for review.
 
 For a user-facing change, also try the flow in a browser at phone and desktop widths, and say in
 the pull request what you checked.
@@ -65,7 +66,8 @@ the pull request what you checked.
 
 - **pre-commit** formats the staged files with each workspace's Prettier config and stages the
   result, runs `bun run check:license` when source files are staged, regenerates and stages
-  `THIRD_PARTY_NOTICES.md` when dependencies change, and scans for secrets;
+  `THIRD_PARTY_NOTICES.md` when dependencies change, and scans the staged changes for secrets
+  (with gitleaks when it is installed, otherwise with secretlint);
 - **pre-push** runs `bun run check` and `bun run lint`.
 
 The hooks are a fast subset of the check list above, not a replacement for it. To run one by

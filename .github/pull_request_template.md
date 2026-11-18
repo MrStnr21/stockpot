@@ -17,4 +17,5 @@ Closes #
 - [ ] `bun run fmt:check`
 - [ ] `bun run lint`
 - [ ] `bun run check:license`
+- [ ] `bun run check:links`
 - [ ] `bun run build` and `bun run e2e`, for changes the app or its build can see
