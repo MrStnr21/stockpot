@@ -3,8 +3,9 @@
 
 /*
  * Checks every relative link and #anchor in the tracked Markdown files, so a moved file or a renamed
- * heading fails CI instead of reaching readers. Web and mail links are left alone: checking them would
- * make the run slow and dependent on the network.
+ * heading fails CI instead of reaching readers. Targets are matched against the tracked files rather
+ * than the disk, so an untracked file or a path in the wrong case fails here as it would on GitHub.
+ * Web and mail links are left alone: checking them would make the run slow and dependent on the network.
  */
 import { $, file } from 'bun'
 import { posix } from 'node:path'
@@ -29,9 +30,9 @@ const inlineLink = /\[(?:[^[\]]|\[[^\]]*\])*\]\(\s*(?<target><[^>]*>|[^\s)]+)(?:
 
 const referenceDefinition = /^ {0,3}\[(?!\^)[^\]]+\]:\s*(?<target><[^>]*>|\S+)/gmu
 
-const htmlLink = /<(?:a|img)\s[^>]*?(?:href|src)="(?<target>[^"]*)"/gu
+const htmlLink = /<(?:a|img)\s[^>]*?(?:href|src)=(?<quote>["'])(?<target>.*?)\k<quote>/gu
 
-const htmlAnchor = /<a\s[^>]*?(?:id|name)="(?<id>[^"]+)"/gu
+const htmlAnchor = /<a\s[^>]*?(?:id|name)=(?<quote>["'])(?<id>.+?)\k<quote>/gu
 
 const heading = /^ {0,3}#{1,6}\s+(?<title>.*?)(?:\s+#+)?\s*$/u
 
@@ -137,7 +138,7 @@ function decoded(text: string) {
 	}
 }
 
-/** The repository path a link points at, or '' for a link to a heading on the same page. */
+/** The repository path a link points at ('.' for the root), or '' for a heading on the same page. */
 function resolvedPath(source: string, target: string) {
 	const [path = ''] = target.split(/[#?]/u, 1)
 
@@ -146,36 +147,35 @@ function resolvedPath(source: string, target: string) {
 	}
 
 	const fromRoot = path.startsWith('/')
-	const joined = fromRoot ? path.slice(1) : posix.join(posix.dirname(source), path)
+	const joined = fromRoot ? `./${path.slice(1)}` : posix.join(posix.dirname(source), path)
 
-	return posix.normalize(decoded(joined)).replace(/\/$/u, '')
+	return posix.normalize(decoded(joined)).replace(/(?<=.)\/$/u, '')
+}
+
+/** Every folder that holds a tracked file, with '.' for the repository root. */
+function foldersOf(files: ReadonlySet<string>) {
+	const folders = new Set(['.'])
+
+	for (const path of files) {
+		for (let folder = posix.dirname(path); folder !== '.'; folder = posix.dirname(folder)) {
+			folders.add(folder)
+		}
+	}
+
+	return folders
 }
 
 /**
  * Finds the links in `documents` (repository path to Markdown text) whose file or heading does not
- * exist. `exists` answers for any repository path, files and directories alike; headings are
- * checked only in the given documents.
+ * exist. `files` holds every tracked path: a target must be one of them, or a folder that holds one,
+ * with the same case. Headings are checked only in the given documents, and an anchor on a link to a
+ * folder is looked up in that folder's README.md, which is what GitHub shows there.
  */
-export async function findBrokenLinks(
+export function findBrokenLinks(
 	documents: ReadonlyMap<string, string>,
-	exists: (path: string) => Promise<boolean>,
-): Promise<BrokenLink[]> {
-	const links = [...documents].flatMap(([source, markdown]) =>
-		linksOf(markdown).map(({ line, target }) => ({
-			source,
-			line,
-			target,
-			path: resolvedPath(source, target),
-		})),
-	)
-
-	const paths = [...new Set(links.map(({ path }) => path))].filter(
-		(path) => path !== '' && !path.startsWith('../'),
-	)
-
-	const found = await Promise.all(paths.map(async (path) => ((await exists(path)) ? path : '')))
-	const existing = new Set(found.filter((path) => path !== ''))
-
+	files: ReadonlySet<string>,
+): BrokenLink[] {
+	const folders = foldersOf(files)
 	const anchors = new Map([...documents].map(([path, markdown]) => [path, anchorsOf(markdown)]))
 
 	function reasonFor(source: string, target: string, path: string) {
@@ -183,12 +183,21 @@ export async function findBrokenLinks(
 			return 'points outside the repository'
 		}
 
-		if (path !== '' && !existing.has(path)) {
-			return 'no such file or directory'
+		const isFolder = folders.has(path)
+
+		if (path !== '' && !isFolder && !files.has(path)) {
+			return 'not a tracked file or folder'
 		}
 
 		const [, anchor = ''] = target.split('#', 2)
-		const page = path === '' ? source : path
+		const readme = posix.join(path, 'README.md')
+
+		if (anchor !== '' && isFolder && !documents.has(readme)) {
+			return `no README.md in ${path} for #${anchor}`
+		}
+
+		const linked = isFolder ? readme : path
+		const page = path === '' ? source : linked
 
 		if (anchor !== '' && anchors.get(page)?.has(decoded(anchor)) === false) {
 			return `no heading or anchor #${anchor} in ${page}`
@@ -197,37 +206,30 @@ export async function findBrokenLinks(
 		return ''
 	}
 
-	return links.flatMap(({ source, line, target, path }) => {
-		const reason = reasonFor(source, target, path)
+	return [...documents].flatMap(([source, markdown]) =>
+		linksOf(markdown).flatMap(({ line, target }) => {
+			const reason = reasonFor(source, target, resolvedPath(source, target))
 
-		return reason === '' ? [] : [{ source, line, target, reason }]
-	})
-}
-
-async function isInRepository(root: string, path: string) {
-	try {
-		await file(posix.join(root, path)).stat()
-
-		return true
-	} catch {
-		return false
-	}
-}
-
-// A file deleted from the working tree stays listed until the deletion is staged, so it is skipped.
-async function readDocument(root: string, path: string): Promise<[string, string][]> {
-	const markdown = file(posix.join(root, path))
-
-	return path !== '' && (await markdown.exists()) ? [[path, await markdown.text()]] : []
+			return reason === '' ? [] : [{ source, line, target, reason }]
+		}),
+	)
 }
 
 async function main() {
 	const root = posix.join(import.meta.dir, '../..')
-	const listed = await $`git ls-files -z -- ${'*.md'}`.cwd(root).text()
+	const tracked = await $`git ls-files -z`.cwd(root).text()
+	// A file deleted from the working tree stays listed until the deletion is staged.
+	const deleted = await $`git ls-files -z --deleted`.cwd(root).text()
+	const gone = new Set(deleted.split('\0'))
+	const files = new Set(tracked.split('\0').filter((path) => path !== '' && !gone.has(path)))
+	const markdownPaths = [...files].filter((path) => path.endsWith('.md'))
 
-	const read = await Promise.all(listed.split('\0').map(async (path) => readDocument(root, path)))
-	const documents = new Map(read.flat())
-	const broken = await findBrokenLinks(documents, async (path) => isInRepository(root, path))
+	const texts = await Promise.all(
+		markdownPaths.map(async (path) => file(posix.join(root, path)).text()),
+	)
+
+	const documents = new Map(markdownPaths.map((path, index) => [path, texts[index] ?? '']))
+	const broken = findBrokenLinks(documents, files)
 
 	if (broken.length === 0) {
 		console.log(`Links in ${documents.size} Markdown files resolve.`)
