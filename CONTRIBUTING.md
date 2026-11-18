@@ -36,6 +36,7 @@ bun run fmt:check
 bun run lint
 bun run check:license
 bun run check:links
+bun run check:migrations
 bun run build
 bun run e2e
 ```
@@ -48,6 +49,9 @@ bun run e2e
   formats everything; `bun run lint:fix` applies automatic lint fixes, so review its diff.
 - `check:license` fails on a source file without its SPDX header, and `check:links` on a broken
   relative link or anchor in the Markdown files.
+- `check:migrations` fails when your branch changed a database migration that is on `origin/main`,
+  or added one that sorts before the last migration there; run `git fetch origin main` first. See the
+  [migrations README](packages/app/src/server/db/migrations/README.md).
 - After changing dependencies, also run `bun run notices -- --check`.
 
 CI runs the same commands. `ci.yml` runs the whole list on every pull request and every push to

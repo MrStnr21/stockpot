@@ -35,7 +35,7 @@ stockpot/
 │   ├── ui/             @stockpot/ui: shared primitives and theme tokens, source exports, no build step
 │   └── website/        the documentation site (M9)
 ├── tools/              @stockpot/tools: lint plugins, the license header check, third-party
-│                       notices and the docs link check; later evals and migration checks
+│                       notices, the docs link check and the migration check; later evals
 ├── docs/               principles, architecture, guidelines, ADRs; later engines, design canvas,
 │                       install and privacy
 ├── deploy/             launchd service for a Mac, Docker image and compose file (M8, M9)

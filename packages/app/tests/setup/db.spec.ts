@@ -22,8 +22,8 @@ const potFactory = Factory.define<Pot>(({ sequence }) => ({
 describe('createTestDb', () => {
 	let sqlite: Database
 
-	beforeEach(() => {
-		;({ sqlite } = createTestDb())
+	beforeEach(async () => {
+		;({ sqlite } = await createTestDb())
 		sqlite.run('CREATE TABLE pot (id INTEGER PRIMARY KEY, label TEXT NOT NULL)')
 		sqlite.run(
 			'CREATE TABLE scrap (id INTEGER PRIMARY KEY, pot_id INTEGER NOT NULL REFERENCES pot (id))',
@@ -51,8 +51,8 @@ describe('createTestDb', () => {
 		).toEqual({ name: '__drizzle_migrations' })
 	})
 
-	it('gives every call a database of its own', () => {
-		const { sqlite: otherSqlite } = createTestDb()
+	it('gives every call a database of its own', async () => {
+		const { sqlite: otherSqlite } = await createTestDb()
 
 		expect(otherSqlite.query("SELECT name FROM sqlite_schema WHERE name = 'pot'").get()).toBeNull()
 	})
