@@ -1,0 +1,29 @@
+{
+	"name": "@stockpot/tools",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"check": "bunx tsc --noEmit",
+		"fmt": "bunx --bun prettier --cache --write .",
+		"fmt:check": "bunx --bun prettier --cache --check .",
+		"lint": "OXLINT_TSGOLINT_PATH=./lint/tsrs-lint.ts bunx --bun oxlint --deny-warnings",
+		"lint:fix": "OXLINT_TSGOLINT_PATH=./lint/tsrs-lint.ts bunx --bun oxlint --deny-warnings --fix",
+		"test": "bun test --pass-with-no-tests"
+	},
+	"dependencies": {
+		"valibot": "^1.5.0"
+	},
+	"devDependencies": {
+		"@configg/bases": "^0.1.11",
+		"@ianvs/prettier-plugin-sort-imports": "^4.7.1",
+		"@oxlint/plugins": "^1.94.0",
+		"@types/bun": "^1.4.4",
+		"eslint-plugin-astro": "^3.2.1",
+		"eslint-plugin-svelte": "^3.24.1",
+		"oxlint": "^1.94.0",
+		"prettier": "^3.10.1",
+		"tsrs": "^0.25.0-ts7.1.0-beta",
+		"typescript": "^6.0.3"
+	}
+}

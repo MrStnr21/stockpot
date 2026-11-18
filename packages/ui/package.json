@@ -7,13 +7,36 @@
 		"./theme.css": "./src/theme.css",
 		"./*": "./src/components/*/index.ts"
 	},
+	"scripts": {
+		"check": "bunx --bun astro check",
+		"fmt": "bunx --bun prettier --cache --write .",
+		"fmt:check": "bunx --bun prettier --cache --check .",
+		"lint": "OXLINT_TSGOLINT_PATH=../../tools/lint/tsrs-lint.ts bunx --bun oxlint --deny-warnings",
+		"lint:fix": "OXLINT_TSGOLINT_PATH=../../tools/lint/tsrs-lint.ts bunx --bun oxlint --deny-warnings --fix",
+		"test": "bun test --pass-with-no-tests"
+	},
 	"peerDependencies": {
 		"svelte": "^5.57.3",
 		"tailwindcss": "^4.3.5"
 	},
 	"devDependencies": {
+		"@astrojs/check": "^0.9.12",
+		"@astrojs/svelte": "^9.1.6",
+		"@configg/bases": "^0.1.11",
+		"@ianvs/prettier-plugin-sort-imports": "^4.7.1",
+		"@tailwindcss/vite": "^4.3.5",
+		"@types/bun": "^1.4.4",
 		"astro": "^7.4.12",
+		"eslint-plugin-astro": "^3.2.1",
+		"eslint-plugin-svelte": "^3.24.1",
+		"oxlint": "^1.94.0",
+		"prettier": "^3.10.1",
+		"prettier-plugin-astro": "^1.1.2",
+		"prettier-plugin-svelte": "^4.2.0",
+		"prettier-plugin-tailwindcss": "^0.8.1",
 		"svelte": "^5.57.3",
-		"tailwindcss": "^4.3.5"
+		"tailwindcss": "^4.3.5",
+		"tsrs": "^0.25.0-ts7.1.0-beta",
+		"typescript": "^6.0.3"
 	}
 }

@@ -1,0 +1,8 @@
+/*
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ * SPDX-FileCopyrightText: 2026 The stockpot authors
+ */
+
+/* Tailwind with the package tokens, for tooling that needs a full stylesheet (class sorting in Prettier). */
+@import 'tailwindcss';
+@import './theme.css';
