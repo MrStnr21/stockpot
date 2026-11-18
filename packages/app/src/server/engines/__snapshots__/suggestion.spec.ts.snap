@@ -21,9 +21,8 @@ exports[`suggestionFormat derives the same JSON Schema, with the category ids as
       "type": "array",
     },
     "language": {
-      "description": "The ISO 639-1 code of the language the note is written in, such as "en".",
-      "maxLength": 2,
-      "minLength": 2,
+      "description": "The lowercase ISO 639-1 code of the language the note is written in, such as "en".",
+      "pattern": "^[a-z]{2}$",
       "type": "string",
     },
     "senses": {

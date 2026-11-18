@@ -141,8 +141,8 @@ export interface Engine {
 }
 
 /**
- * The four ways a call can fail that the router acts on: it falls back to the next engine on
- * `rate_limited` and `auth`, and retries `timeout` and `invalid` on the same one.
+ * The four ways a call can fail that an engine reports. The router falls back to the next engine on
+ * `rate_limited` and `auth`; the job runner retries `timeout` and `invalid` on the same engine.
  */
 export type EngineFailure =
 	| { readonly kind: 'rate_limited'; readonly resetsAt: Date }
@@ -172,7 +172,10 @@ function describeIssue(issue: v.BaseIssue<unknown>): string {
 	return path === null ? issue.message : `${path}: ${issue.message}`
 }
 
-/** Checks an engine's answer against the call's format, failing with `invalid` when it does not match. */
+/**
+ * Checks an answer against the call's format, failing with `invalid` when it does not match. Each
+ * engine first parses the provider's JSON text itself and maps a parse failure to `invalid` too.
+ */
 export function parseOutput<TSchema extends v.GenericSchema>(
 	output: OutputFormat<TSchema>,
 	answer: JsonValue,

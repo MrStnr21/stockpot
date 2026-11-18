@@ -56,6 +56,12 @@ export function textOrNull(
 	return v.pipe(nullable, v.description(withCap(description, maxLength)))
 }
 
+/** A regex for a JSON Schema `pattern`, which cannot carry flags. */
+export function pattern(source: string): RegExp {
+	// oxlint-disable-next-line eslint/require-unicode-regexp -- JSON Schema patterns cannot carry flags.
+	return new RegExp(source)
+}
+
 /** A list of `item`, from `min` to `max` long. */
 export function list<TItem extends v.GenericSchema>(
 	item: TItem,

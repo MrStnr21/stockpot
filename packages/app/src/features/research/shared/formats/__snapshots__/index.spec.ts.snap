@@ -1002,3 +1002,180 @@ exports[`formats JSON Schemas derives the same JSON Schema for the vocabulary le
   "type": "object",
 }
 `;
+
+exports[`formats JSON Schemas derives the same JSON Schema for the report level 2 1`] = `
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "architecture": {
+      "description": "How that approach would be built: the main parts and how they fit together. At most 2000 characters.",
+      "maxLength": 2000,
+      "minLength": 1,
+      "type": "string",
+    },
+    "effort": {
+      "description": "A rough estimate of the work for a first usable version, and what dominates it. At most 500 characters.",
+      "maxLength": 500,
+      "minLength": 1,
+      "type": "string",
+    },
+    "recommendation": {
+      "description": "The approach you would take and why, building on the first report. At most 800 characters.",
+      "maxLength": 800,
+      "minLength": 1,
+      "type": "string",
+    },
+    "sources": {
+      "description": "Pages that back the card up, best first. Leave the list empty rather than add a page you did not see.",
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "description": "The title of the page, as the page itself shows it. At most 200 characters.",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string",
+          },
+          "url": {
+            "description": "The address of a page you opened or saw in search results while writing this card. Never an address from memory or one you built yourself.",
+            "format": "uri",
+            "maxLength": 2000,
+            "pattern": "^https?:\\/\\/",
+            "type": "string",
+          },
+        },
+        "required": [
+          "title",
+          "url",
+        ],
+        "type": "object",
+      },
+      "maxItems": 10,
+      "minItems": 0,
+      "type": "array",
+    },
+    "uncertain": {
+      "description": "True when you could not confirm the main facts: the term is too new, too narrow or ambiguous, or the sources disagree.",
+      "type": "boolean",
+    },
+    "unknowns": {
+      "description": "What to find out before building, most important first.",
+      "items": {
+        "description": "One open question. At most 300 characters.",
+        "maxLength": 300,
+        "minLength": 1,
+        "type": "string",
+      },
+      "maxItems": 6,
+      "minItems": 1,
+      "type": "array",
+    },
+  },
+  "required": [
+    "recommendation",
+    "architecture",
+    "unknowns",
+    "effort",
+    "sources",
+    "uncertain",
+  ],
+  "type": "object",
+}
+`;
+
+exports[`formats JSON Schemas derives the same JSON Schema for the report level 3 1`] = `
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "milestones": {
+      "description": "Milestones from the prototype to a first usable version, in order.",
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "description": "The milestone. At most 80 characters.",
+            "maxLength": 80,
+            "minLength": 1,
+            "type": "string",
+          },
+          "outcome": {
+            "description": "What works when it is done. At most 300 characters.",
+            "maxLength": 300,
+            "minLength": 1,
+            "type": "string",
+          },
+        },
+        "required": [
+          "name",
+          "outcome",
+        ],
+        "type": "object",
+      },
+      "maxItems": 6,
+      "minItems": 1,
+      "type": "array",
+    },
+    "prototype": {
+      "description": "The smallest version that tests whether the idea works, and how to tell. At most 800 characters.",
+      "maxLength": 800,
+      "minLength": 1,
+      "type": "string",
+    },
+    "sources": {
+      "description": "Pages that back the card up, best first. Leave the list empty rather than add a page you did not see.",
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "description": "The title of the page, as the page itself shows it. At most 200 characters.",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string",
+          },
+          "url": {
+            "description": "The address of a page you opened or saw in search results while writing this card. Never an address from memory or one you built yourself.",
+            "format": "uri",
+            "maxLength": 2000,
+            "pattern": "^https?:\\/\\/",
+            "type": "string",
+          },
+        },
+        "required": [
+          "title",
+          "url",
+        ],
+        "type": "object",
+      },
+      "maxItems": 10,
+      "minItems": 0,
+      "type": "array",
+    },
+    "tools": {
+      "description": "Tools, libraries and services to build it with.",
+      "items": {
+        "description": "One tool, library or service. At most 80 characters.",
+        "maxLength": 80,
+        "minLength": 1,
+        "type": "string",
+      },
+      "maxItems": 8,
+      "minItems": 0,
+      "type": "array",
+    },
+    "uncertain": {
+      "description": "True when you could not confirm the main facts: the term is too new, too narrow or ambiguous, or the sources disagree.",
+      "type": "boolean",
+    },
+  },
+  "required": [
+    "prototype",
+    "milestones",
+    "tools",
+    "sources",
+    "uncertain",
+  ],
+  "type": "object",
+}
+`;

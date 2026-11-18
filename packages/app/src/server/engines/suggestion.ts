@@ -7,7 +7,7 @@
  */
 import * as v from 'valibot'
 
-import { deriveJsonSchema, list, text } from '#/lib/json-schema'
+import { deriveJsonSchema, list, pattern, text } from '#/lib/json-schema'
 
 import type { OutputFormat } from './contract'
 
@@ -16,8 +16,10 @@ const instructions =
 
 const language = v.pipe(
 	v.string(),
-	v.length(2),
-	v.description('The ISO 639-1 code of the language the note is written in, such as "en".'),
+	v.regex(pattern('^[a-z]{2}$')),
+	v.description(
+		'The lowercase ISO 639-1 code of the language the note is written in, such as "en".',
+	),
 )
 
 /**
@@ -54,9 +56,18 @@ type SuggestionSchema = ReturnType<typeof suggestionSchema>
 
 export type Suggestion = v.InferOutput<SuggestionSchema>
 
-/** What capture hands an engine to suggest one of `categoryIds`. */
+/**
+ * What capture hands an engine to suggest one of `categoryIds`. With no categories there is nothing
+ * to suggest, so capture does not call `suggest` then, and this throws.
+ */
 export function suggestionFormat(categoryIds: readonly string[]): OutputFormat<SuggestionSchema> {
-	const schema = suggestionSchema(categoryIds)
+	const ids = [...new Set(categoryIds)]
+
+	if (ids.length === 0) {
+		throw new Error('A suggestion needs at least one category to choose from')
+	}
+
+	const schema = suggestionSchema(ids)
 
 	return { id: 'suggestion', instructions, schema, jsonSchema: deriveJsonSchema(schema) }
 }

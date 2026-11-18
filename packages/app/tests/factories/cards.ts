@@ -116,6 +116,24 @@ export const briefCardFactory = Factory.define<Card<'brief', 1>>(() => ({
 	uncertain: false,
 }))
 
+export const reportFeasibilityFactory = Factory.define<Card<'report', 2>>(() => ({
+	recommendation: 'Start with rule-based parsing: it covers most recipe sites and needs no model.',
+	architecture:
+		'A parser turns a pasted recipe into quantities and units; a scaler multiplies them.',
+	unknowns: ['How many recipes use free-form quantities such as "a handful"?'],
+	effort: 'A few weekends for a first version; unit conversion takes most of it.',
+	sources: sourceFactory.buildList(2),
+	uncertain: true,
+}))
+
+export const reportPlanFactory = Factory.define<Card<'report', 3>>(() => ({
+	prototype: 'A page that scales one pasted recipe, tried on twenty real ones.',
+	milestones: [{ name: 'Parser', outcome: 'Quantities and units come out of most recipes.' }],
+	tools: ['A unit conversion library'],
+	sources: sourceFactory.buildList(1),
+	uncertain: false,
+}))
+
 /** Level 2 of every format that shares it. */
 export const deeperCardFactory = Factory.define<Card<'technology', 2>>(() => ({
 	howItWorks: 'Pages of a B-tree are read from the file on demand and cached in memory.',
@@ -142,6 +160,6 @@ export const cardFactories = {
 	technology: { 1: technologyCardFactory, 2: deeperCardFactory, 3: handsOnCardFactory },
 	comparison: { 1: comparisonCardFactory, 2: deeperCardFactory, 3: handsOnCardFactory },
 	concept: { 1: conceptCardFactory, 2: deeperCardFactory, 3: handsOnCardFactory },
-	report: { 1: reportCardFactory, 2: deeperCardFactory, 3: handsOnCardFactory },
+	report: { 1: reportCardFactory, 2: reportFeasibilityFactory, 3: reportPlanFactory },
 	brief: { 1: briefCardFactory, 2: deeperCardFactory, 3: handsOnCardFactory },
 } as const satisfies { [F in FormatId]: { [D in Depth]: Factory<Card<F, D>> } }

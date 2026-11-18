@@ -43,18 +43,19 @@ map to a model ID for each engine), the timeout and an abort signal.
 An engine returns the validated answer with the id of the engine that wrote it, the model ID the
 provider reported and the time the call took. It validates the answer with `parseOutput`, which
 checks it against the format's Valibot schema: the Valibot schema is the source of truth, whatever
-the provider was told.
+the provider was told. The provider returns JSON text, which each engine parses itself; a parse
+failure is `invalid` too.
 
 ### Errors
 
 A failure the router acts on is an `EngineError` of one of four kinds:
 
-| Kind           | When                                                                    | What happens                                                                                                                                   |
-| -------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `rate_limited` | The provider's usage limit is reached; carries `resetsAt`               | The router falls back to the next engine. Its output is marked a draft and queued to be redone by the primary engine after `resetsAt` (ENG-6). |
-| `auth`         | The key or login is rejected                                            | The router falls back to the next engine, and settings show the engine as failing.                                                             |
-| `timeout`      | No answer within the timeout; the engine stops the call or process      | The job runner retries on the same engine with backoff; after two retries the note is marked failed and can be restarted by hand.              |
-| `invalid`      | The answer is not JSON or does not match the schema; carries the issues | As `timeout`. The issues name each field, such as `summary: Invalid length`, and are logged with the run.                                      |
+| Kind           | When                                                                    | What happens                                                                                                                                                                      |
+| -------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `rate_limited` | The provider's usage limit is reached; carries `resetsAt`               | The router falls back to the next engine. A card from it is marked a draft and queued to be redone by the primary engine after `resetsAt` (ENG-6); a suggestion is never a draft. |
+| `auth`         | The key or login is rejected                                            | The router falls back to the next engine, and settings show the engine as failing.                                                                                                |
+| `timeout`      | No answer within the timeout; the engine stops the call or process      | The job runner retries on the same engine with backoff; after two retries the note is marked failed and can be restarted by hand.                                                 |
+| `invalid`      | The answer is not JSON or does not match the schema; carries the issues | As `timeout`. The issues name each field, such as `summary: Invalid length`, and are logged with the run.                                                                         |
 
 Anything else an engine throws is an ordinary error, which the job runner retries the same way.
 
@@ -172,12 +173,21 @@ is a separate card; the engine gets the lower levels with the call and must not 
 | 2     | How it works and what it trades off | `howItWorks` (a few short paragraphs); `tradeoffs` (1–6); `sources` (up to 5); `uncertain`                                    |
 | 3     | Hands-on, with sources              | `steps` (1–8, a walkthrough under an hour); `example` (code or a worked example, or `null`); `sources` (up to 8); `uncertain` |
 
-Levels 2 and 3 are shared by every format except `vocabulary`, whose levels fit a word:
+Levels 2 and 3 are shared by every format except `vocabulary` and `report`. A word has levels of
+its own:
 
 | Level | Purpose  | Fields                                                                                                                     |
 | ----- | -------- | -------------------------------------------------------------------------------------------------------------------------- |
 | 2     | Nuance   | `nuance` (register and connotation); `synonyms` (0–5 `{ word, difference }`); `collocations` (0–8); `sources`; `uncertain` |
 | 3     | Practice | `exercises` (3–6 `{ prompt, answer }`, easy to hard); `sources`; `uncertain`                                               |
+
+A `report` is already a long researched answer, so its level 1 asks for a thorough report rather than
+a card to read in a minute, and its levels move from the landscape towards building the idea:
+
+| Level | Purpose     | Fields                                                                                                                                                                                                         |
+| ----- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2     | Feasibility | `recommendation` (the approach to take and why); `architecture` (how it would be built); `unknowns` (1–6 open questions); `effort` (a rough estimate and what dominates it); `sources` (up to 10); `uncertain` |
+| 3     | Build plan  | `prototype` (the smallest version that tests the idea); `milestones` (1–6 `{ name, outcome }`); `tools` (0–8); `sources` (up to 10); `uncertain`                                                               |
 
 ## Suggestions
 
@@ -191,7 +201,7 @@ feature builds it.
 | ------------ | ------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | `categories` | 1–3 category ids          | The categories that fit, best first; the first is preselected                                                       |
 | `senses`     | 0–4 `{ sense, category }` | The distinct common meanings of an ambiguous term, most likely first, each with its category; empty for one meaning |
-| `language`   | two letters               | The ISO 639-1 code of the language the note is written in                                                           |
+| `language`   | two lowercase letters     | The ISO 639-1 code of the language the note is written in                                                           |
 
 A suggestion never searches: it uses the fastest engine and answers from what the model knows.
 Capture checks the owner's history first and calls the engine only when the term is new (CAP-3).
@@ -261,5 +271,6 @@ single category, and set the fallback order.
 - **Fallback** happens on `rate_limited` and `auth` only, to the next configured engine in the
   order; an engine that is not configured is skipped. `research` has no default fallback, because
   the OpenAI-compatible engine writes from text only and cannot search; the job waits for the reset.
-- **Drafts.** Output from a fallback engine is marked a draft and redone by the primary engine once
-  its limit resets.
+- **Drafts.** A card from a fallback engine is marked a draft and redone by the primary engine once
+  its limit resets. Drafts apply to cards only: a suggestion is not stored, so one from a fallback
+  engine is simply shown.

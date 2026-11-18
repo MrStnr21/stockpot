@@ -43,6 +43,22 @@ describe('suggestionFormat', () => {
 		expect(suggestionFormat(categoryIds).jsonSchema).toMatchSnapshot()
 	})
 
+	it('rejects a language code that is not lowercase', () => {
+		expect(v.is(suggestionFormat(categoryIds).schema, { ...sabr, language: 'EN' })).toBe(false)
+	})
+
+	it('lists each category id once', () => {
+		const schema = suggestionFormat([...categoryIds, 'english']).jsonSchema
+
+		expect(schema).toMatchObject({
+			properties: { categories: { items: { enum: categoryIds } } },
+		})
+	})
+
+	it('refuses to build a suggestion without categories', () => {
+		expect(() => suggestionFormat([])).toThrow('at least one category')
+	})
+
 	it('makes every object in its JSON Schema strict', () => {
 		expect(looseObjects(suggestionFormat(categoryIds).jsonSchema)).toEqual([])
 	})

@@ -12,18 +12,14 @@
  */
 import * as v from 'valibot'
 
-import { list, text, textOrNull, type List } from '#/lib/json-schema'
+import { list, pattern, text, textOrNull, type List } from '#/lib/json-schema'
 import type { Depth } from '#/server/engines/contract'
 
 // The field helpers live in lib/ because the suggestion schema in server/engines uses them too.
 export { list, text, textOrNull } from '#/lib/json-schema'
 
-/*
- * HTTP(S) only, also in the JSON Schema, so a provider never offers another scheme. JSON Schema
- * patterns carry no flags, which is why this regex has none.
- */
-// oxlint-disable-next-line eslint/require-unicode-regexp -- JSON Schema patterns cannot carry flags.
-const httpUrl = /^https?:\/\//
+// HTTP(S) only, also in the JSON Schema, so a provider never offers another scheme.
+const httpUrl = pattern('^https?://')
 
 const url = v.pipe(
 	v.string(),

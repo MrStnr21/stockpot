@@ -24,6 +24,8 @@ const distinctSchemas = [
 	['shared level 3', handsOnLevel.schema],
 	['vocabulary level 2', formats.vocabulary.levels[2].schema],
 	['vocabulary level 3', formats.vocabulary.levels[3].schema],
+	['report level 2', formats.report.levels[2].schema],
+	['report level 3', formats.report.levels[3].schema],
 ] as const
 
 describe('formats', () => {
