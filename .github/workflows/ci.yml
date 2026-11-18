@@ -48,6 +48,9 @@ jobs:
       - name: Licence headers
         run: bun run check:license
 
+      - name: Links in the docs
+        run: bun run check:links
+
       # On pull requests notices.yml regenerates the file instead.
       - name: Third-party notices up to date
         if: github.event_name != 'pull_request'

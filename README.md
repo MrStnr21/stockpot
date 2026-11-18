@@ -21,6 +21,12 @@ bun run dev     # http://localhost:4321
 bun run build
 ```
 
+[CONTRIBUTING.md](CONTRIBUTING.md) covers setup, the full check list and how branches, commits and
+pull requests are written. The rules the code follows are in [docs/](docs/): the
+[engineering principles](docs/principles.md), the [architecture](docs/architecture.md) and the
+[contributor guidelines](docs/guidelines/README.md). What comes next is in the
+[roadmap](ROADMAP.md).
+
 ## License
 
 stockpot is free software, licensed under the GNU Affero General Public License, version 3 or any

@@ -8,7 +8,7 @@ import { componentConfig, specOverride } from '../../tools/lint/base.ts'
 /*
  * Layers from docs/architecture.md ("Dependency rules"). Patterns match whole file paths, and the
  * first layer that matches wins, so the more specific feature layers come before `feature-root`
- * and `entry` takes whatever is left (pages/, layouts/, middleware.ts).
+ * and `entry` takes whatever is left in src/ (pages/, layouts/, middleware.ts).
  */
 function layer(category: string, pattern: string | string[], capture?: string[]) {
 	return { category, pattern, stopMatching: true, ...(capture && { capture }) }
@@ -32,8 +32,15 @@ const layerFiles = [
 		['feature'],
 	),
 	layer('feature-root', 'src/features/*/**', ['feature']),
+	layer('service-worker', 'src/sw.ts'),
 	layer('entry', 'src/**'),
+	// Setup, factories and end-to-end specs: only specs and other test support may import them.
+	layer('test-support', 'tests/**'),
 ]
+
+const appLayers = layerFiles.flatMap(({ category }) =>
+	category === 'test-support' ? [] : [category],
+)
 
 function layers(...categories: string[]) {
 	return { file: { categories } }
@@ -51,7 +58,7 @@ const ownFeature = [own('feature-server'), own('feature-shared'), own('feature-r
 const policies = [
 	// Packages and built-ins are allowed everywhere; the isomorphic rule below narrows that.
 	{ allow: { to: { module: { origin: ['external', 'core'] } } } },
-	{ from: layers('entry'), allow: { to: layers(...layerFiles.map(({ category }) => category)) } },
+	{ from: layers('entry'), allow: { to: layers(...appLayers) } },
 	{
 		from: layers('feature-server', 'feature-root'),
 		allow: { to: [layers('server', 'lib'), ...ownFeature] },
@@ -65,9 +72,9 @@ const policies = [
 				own('feature-shared'),
 				own('feature-client'),
 				own('feature-client-astro'),
-				own('feature-root'),
 			],
 		},
+		// Not the feature root: root files are server code, and the browser bundle must not reach it.
 		message: 'feature client code may import only its own shared and client, components/ and lib/',
 	},
 	{
@@ -85,8 +92,8 @@ const policies = [
 	},
 	{
 		from: layers('feature-shared'),
-		allow: { to: layers('lib') },
-		message: 'shared/ may import only lib/',
+		allow: { to: [layers('lib'), own('feature-shared')] },
+		message: 'shared/ may import only its own shared/ and lib/',
 	},
 	{
 		// Shared code re-exports server types, type-only.
@@ -111,12 +118,21 @@ const policies = [
 	},
 	{ from: layers('lib'), allow: { to: layers('lib') }, message: 'lib/ may import only lib/' },
 	{
-		from: layers('lib', 'feature-shared', 'component-svelte'),
+		from: layers('service-worker'),
+		allow: { to: layers('lib', 'feature-shared') },
+		message: 'sw.ts may import only lib/ and feature shared/',
+	},
+	{
+		from: layers('lib', 'feature-shared', 'feature-client', 'component-svelte', 'service-worker'),
 		disallow: { to: { module: { source: ['node:*', 'bun:*', 'bun'] } } },
 		message: 'isomorphic code must not import runtime built-ins',
 	},
-	// Specs import `bun:test` and the shared helpers in tests/, whatever layer they sit in. Later policies win.
-	{ from: layers('test'), allow: { to: { module: { origin: ['external', 'core'] } } } },
+	{ from: layers('test-support'), allow: { to: layers(...appLayers, 'test-support') } },
+	// Specs import `bun:test` and the helpers in tests/, whatever layer they sit in. Later policies win.
+	{
+		from: layers('test'),
+		allow: { to: [{ module: { origin: ['external', 'core'] } }, layers('test-support')] },
+	},
 ]
 
 export default defineConfig({
