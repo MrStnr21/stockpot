@@ -1,0 +1,1181 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`formats JSON Schemas derives the same JSON Schema for the vocabulary level 1 1`] = `
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "aliases": {
+      "description": "Other names, spellings and abbreviations of the term in this meaning.",
+      "items": {
+        "description": "Another name or spelling. At most 80 characters.",
+        "maxLength": 80,
+        "minLength": 1,
+        "type": "string",
+      },
+      "maxItems": 5,
+      "minItems": 0,
+      "type": "array",
+    },
+    "difficulty": {
+      "description": "How hard the word is for an upper-intermediate learner to use correctly.",
+      "enum": [
+        "easy",
+        "medium",
+        "hard",
+      ],
+      "type": "string",
+    },
+    "examples": {
+      "description": "Two usage examples, each with its translation.",
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "text": {
+            "description": "A short sentence that uses the word the way people really do. At most 300 characters.",
+            "maxLength": 300,
+            "minLength": 1,
+            "type": "string",
+          },
+          "translation": {
+            "description": "The sentence in the card language. At most 300 characters.",
+            "maxLength": 300,
+            "minLength": 1,
+            "type": "string",
+          },
+        },
+        "required": [
+          "text",
+          "translation",
+        ],
+        "type": "object",
+      },
+      "maxItems": 3,
+      "minItems": 2,
+      "type": "array",
+    },
+    "mistake": {
+      "anyOf": [
+        {
+          "maxLength": 300,
+          "minLength": 1,
+          "type": "string",
+        },
+        {
+          "type": "null",
+        },
+      ],
+      "description": "The mistake learners typically make with it (articles, calques from their own language, false friends), or null when there is none worth noting. At most 300 characters.",
+    },
+    "modelSentences": {
+      "description": "Two sentences the reader can reuse as templates, with the word in a common construction.",
+      "items": {
+        "description": "One sentence. At most 300 characters.",
+        "maxLength": 300,
+        "minLength": 1,
+        "type": "string",
+      },
+      "maxItems": 3,
+      "minItems": 2,
+      "type": "array",
+    },
+    "partOfSpeech": {
+      "description": "The part of speech.",
+      "enum": [
+        "noun",
+        "verb",
+        "adjective",
+        "adverb",
+        "phrasal verb",
+        "idiom",
+        "phrase",
+        "other",
+      ],
+      "type": "string",
+    },
+    "sense": {
+      "description": "The meaning of the term this card explains, in a few words, such as "YouTube streaming protocol". Name it even when the term has only one meaning. At most 120 characters.",
+      "maxLength": 120,
+      "minLength": 1,
+      "type": "string",
+    },
+    "sources": {
+      "description": "Dictionary or usage pages, only for slang and new expressions; usually empty.",
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "description": "The title of the page, as the page itself shows it. At most 200 characters.",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string",
+          },
+          "url": {
+            "description": "The address of a page you opened or saw in search results while writing this card. Never an address from memory or one you built yourself.",
+            "format": "uri",
+            "maxLength": 2000,
+            "pattern": "^https?:\\/\\/",
+            "type": "string",
+          },
+        },
+        "required": [
+          "title",
+          "url",
+        ],
+        "type": "object",
+      },
+      "maxItems": 3,
+      "minItems": 0,
+      "type": "array",
+    },
+    "translation": {
+      "description": "The translation into the card language: one word, or a few when one is not enough. At most 160 characters.",
+      "maxLength": 160,
+      "minLength": 1,
+      "type": "string",
+    },
+    "uncertain": {
+      "description": "True when you could not confirm the main facts: the term is too new, too narrow or ambiguous, or the sources disagree.",
+      "type": "boolean",
+    },
+  },
+  "required": [
+    "sense",
+    "aliases",
+    "translation",
+    "partOfSpeech",
+    "difficulty",
+    "examples",
+    "modelSentences",
+    "mistake",
+    "sources",
+    "uncertain",
+  ],
+  "type": "object",
+}
+`;
+
+exports[`formats JSON Schemas derives the same JSON Schema for the technology level 1 1`] = `
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "aliases": {
+      "description": "Other names, spellings and abbreviations of the term in this meaning.",
+      "items": {
+        "description": "Another name or spelling. At most 80 characters.",
+        "maxLength": 80,
+        "minLength": 1,
+        "type": "string",
+      },
+      "maxItems": 5,
+      "minItems": 0,
+      "type": "array",
+    },
+    "analogy": {
+      "description": "An analogy to something a software developer already knows. The category instructions may name the stack to draw on. At most 500 characters.",
+      "maxLength": 500,
+      "minLength": 1,
+      "type": "string",
+    },
+    "relevance": {
+      "anyOf": [
+        {
+          "maxLength": 500,
+          "minLength": 1,
+          "type": "string",
+        },
+        {
+          "type": "null",
+        },
+      ],
+      "description": "Why it matters to the reader, judged from where they saw it (the context); null when there is no context. At most 500 characters.",
+    },
+    "sense": {
+      "description": "The meaning of the term this card explains, in a few words, such as "YouTube streaming protocol". Name it even when the term has only one meaning. At most 120 characters.",
+      "maxLength": 120,
+      "minLength": 1,
+      "type": "string",
+    },
+    "sources": {
+      "description": "Pages to dig deeper: the official site and documentation first.",
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "description": "The title of the page, as the page itself shows it. At most 200 characters.",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string",
+          },
+          "url": {
+            "description": "The address of a page you opened or saw in search results while writing this card. Never an address from memory or one you built yourself.",
+            "format": "uri",
+            "maxLength": 2000,
+            "pattern": "^https?:\\/\\/",
+            "type": "string",
+          },
+        },
+        "required": [
+          "title",
+          "url",
+        ],
+        "type": "object",
+      },
+      "maxItems": 5,
+      "minItems": 0,
+      "type": "array",
+    },
+    "summary": {
+      "description": "What it is, in one sentence. At most 280 characters.",
+      "maxLength": 280,
+      "minLength": 1,
+      "type": "string",
+    },
+    "uncertain": {
+      "description": "True when you could not confirm the main facts: the term is too new, too narrow or ambiguous, or the sources disagree.",
+      "type": "boolean",
+    },
+  },
+  "required": [
+    "sense",
+    "aliases",
+    "summary",
+    "analogy",
+    "relevance",
+    "sources",
+    "uncertain",
+  ],
+  "type": "object",
+}
+`;
+
+exports[`formats JSON Schemas derives the same JSON Schema for the comparison level 1 1`] = `
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "aliases": {
+      "description": "Other names, spellings and abbreviations of the term in this meaning.",
+      "items": {
+        "description": "Another name or spelling. At most 80 characters.",
+        "maxLength": 80,
+        "minLength": 1,
+        "type": "string",
+      },
+      "maxItems": 5,
+      "minItems": 0,
+      "type": "array",
+    },
+    "alternatives": {
+      "description": "The closest alternatives, compared with the subject: a table with one row each.",
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "cons": {
+            "description": "Where the subject is worse than this alternative. At most 300 characters.",
+            "maxLength": 300,
+            "minLength": 1,
+            "type": "string",
+          },
+          "name": {
+            "description": "The alternative. At most 80 characters.",
+            "maxLength": 80,
+            "minLength": 1,
+            "type": "string",
+          },
+          "pros": {
+            "description": "Where the subject is better than this alternative. At most 300 characters.",
+            "maxLength": 300,
+            "minLength": 1,
+            "type": "string",
+          },
+        },
+        "required": [
+          "name",
+          "pros",
+          "cons",
+        ],
+        "type": "object",
+      },
+      "maxItems": 4,
+      "minItems": 1,
+      "type": "array",
+    },
+    "sense": {
+      "description": "The meaning of the term this card explains, in a few words, such as "YouTube streaming protocol". Name it even when the term has only one meaning. At most 120 characters.",
+      "maxLength": 120,
+      "minLength": 1,
+      "type": "string",
+    },
+    "sources": {
+      "description": "Two or three primary sources to read: the announcement, the paper, the documentation.",
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "description": "The title of the page, as the page itself shows it. At most 200 characters.",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string",
+          },
+          "url": {
+            "description": "The address of a page you opened or saw in search results while writing this card. Never an address from memory or one you built yourself.",
+            "format": "uri",
+            "maxLength": 2000,
+            "pattern": "^https?:\\/\\/",
+            "type": "string",
+          },
+        },
+        "required": [
+          "title",
+          "url",
+        ],
+        "type": "object",
+      },
+      "maxItems": 5,
+      "minItems": 0,
+      "type": "array",
+    },
+    "summary": {
+      "description": "What it is, in one sentence. At most 280 characters.",
+      "maxLength": 280,
+      "minLength": 1,
+      "type": "string",
+    },
+    "uncertain": {
+      "description": "True when you could not confirm the main facts: the term is too new, too narrow or ambiguous, or the sources disagree.",
+      "type": "boolean",
+    },
+    "worksWith": {
+      "description": "Tools, platforms and formats it works with.",
+      "items": {
+        "description": "One tool, platform or format. At most 80 characters.",
+        "maxLength": 80,
+        "minLength": 1,
+        "type": "string",
+      },
+      "maxItems": 8,
+      "minItems": 0,
+      "type": "array",
+    },
+  },
+  "required": [
+    "sense",
+    "aliases",
+    "summary",
+    "alternatives",
+    "worksWith",
+    "sources",
+    "uncertain",
+  ],
+  "type": "object",
+}
+`;
+
+exports[`formats JSON Schemas derives the same JSON Schema for the concept level 1 1`] = `
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "aliases": {
+      "description": "Other names, spellings and abbreviations of the term in this meaning.",
+      "items": {
+        "description": "Another name or spelling. At most 80 characters.",
+        "maxLength": 80,
+        "minLength": 1,
+        "type": "string",
+      },
+      "maxItems": 5,
+      "minItems": 0,
+      "type": "array",
+    },
+    "analogy": {
+      "description": "An analogy from everyday life or from software. At most 500 characters.",
+      "maxLength": 500,
+      "minLength": 1,
+      "type": "string",
+    },
+    "example": {
+      "description": "One concrete example. At most 600 characters.",
+      "maxLength": 600,
+      "minLength": 1,
+      "type": "string",
+    },
+    "explanation": {
+      "description": "A plain explanation in two to four sentences. At most 1200 characters.",
+      "maxLength": 1200,
+      "minLength": 1,
+      "type": "string",
+    },
+    "seenIn": {
+      "description": "Where the reader will meet it: fields, tools, situations.",
+      "items": {
+        "description": "One place. At most 120 characters.",
+        "maxLength": 120,
+        "minLength": 1,
+        "type": "string",
+      },
+      "maxItems": 5,
+      "minItems": 1,
+      "type": "array",
+    },
+    "sense": {
+      "description": "The meaning of the term this card explains, in a few words, such as "YouTube streaming protocol". Name it even when the term has only one meaning. At most 120 characters.",
+      "maxLength": 120,
+      "minLength": 1,
+      "type": "string",
+    },
+    "sources": {
+      "description": "Pages that back the card up, best first. Leave the list empty rather than add a page you did not see.",
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "description": "The title of the page, as the page itself shows it. At most 200 characters.",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string",
+          },
+          "url": {
+            "description": "The address of a page you opened or saw in search results while writing this card. Never an address from memory or one you built yourself.",
+            "format": "uri",
+            "maxLength": 2000,
+            "pattern": "^https?:\\/\\/",
+            "type": "string",
+          },
+        },
+        "required": [
+          "title",
+          "url",
+        ],
+        "type": "object",
+      },
+      "maxItems": 5,
+      "minItems": 0,
+      "type": "array",
+    },
+    "uncertain": {
+      "description": "True when you could not confirm the main facts: the term is too new, too narrow or ambiguous, or the sources disagree.",
+      "type": "boolean",
+    },
+  },
+  "required": [
+    "sense",
+    "aliases",
+    "explanation",
+    "analogy",
+    "example",
+    "seenIn",
+    "sources",
+    "uncertain",
+  ],
+  "type": "object",
+}
+`;
+
+exports[`formats JSON Schemas derives the same JSON Schema for the report level 1 1`] = `
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "aliases": {
+      "description": "Other names, spellings and abbreviations of the term in this meaning.",
+      "items": {
+        "description": "Another name or spelling. At most 80 characters.",
+        "maxLength": 80,
+        "minLength": 1,
+        "type": "string",
+      },
+      "maxItems": 5,
+      "minItems": 0,
+      "type": "array",
+    },
+    "approaches": {
+      "description": "Ways to build it, each with its main trade-off.",
+      "items": {
+        "description": "One approach and its main trade-off. At most 400 characters.",
+        "maxLength": 400,
+        "minLength": 1,
+        "type": "string",
+      },
+      "maxItems": 5,
+      "minItems": 1,
+      "type": "array",
+    },
+    "existing": {
+      "description": "Solutions and competitors that already exist; empty when you found none.",
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "description": "The product, project or approach. At most 80 characters.",
+            "maxLength": 80,
+            "minLength": 1,
+            "type": "string",
+          },
+          "note": {
+            "description": "What it does and how it differs from the idea. At most 300 characters.",
+            "maxLength": 300,
+            "minLength": 1,
+            "type": "string",
+          },
+        },
+        "required": [
+          "name",
+          "note",
+        ],
+        "type": "object",
+      },
+      "maxItems": 8,
+      "minItems": 0,
+      "type": "array",
+    },
+    "firstSteps": {
+      "description": "Concrete first steps, in order.",
+      "items": {
+        "description": "One step. At most 300 characters.",
+        "maxLength": 300,
+        "minLength": 1,
+        "type": "string",
+      },
+      "maxItems": 5,
+      "minItems": 1,
+      "type": "array",
+    },
+    "risks": {
+      "description": "What could make it fail: technical, legal, market.",
+      "items": {
+        "description": "One risk. At most 300 characters.",
+        "maxLength": 300,
+        "minLength": 1,
+        "type": "string",
+      },
+      "maxItems": 5,
+      "minItems": 1,
+      "type": "array",
+    },
+    "sense": {
+      "description": "The meaning of the term this card explains, in a few words, such as "YouTube streaming protocol". Name it even when the term has only one meaning. At most 120 characters.",
+      "maxLength": 120,
+      "minLength": 1,
+      "type": "string",
+    },
+    "sources": {
+      "description": "Pages that back the card up, best first. Leave the list empty rather than add a page you did not see.",
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "description": "The title of the page, as the page itself shows it. At most 200 characters.",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string",
+          },
+          "url": {
+            "description": "The address of a page you opened or saw in search results while writing this card. Never an address from memory or one you built yourself.",
+            "format": "uri",
+            "maxLength": 2000,
+            "pattern": "^https?:\\/\\/",
+            "type": "string",
+          },
+        },
+        "required": [
+          "title",
+          "url",
+        ],
+        "type": "object",
+      },
+      "maxItems": 10,
+      "minItems": 0,
+      "type": "array",
+    },
+    "summary": {
+      "description": "The idea restated in one or two sentences: what it is and for whom. At most 500 characters.",
+      "maxLength": 500,
+      "minLength": 1,
+      "type": "string",
+    },
+    "uncertain": {
+      "description": "True when you could not confirm the main facts: the term is too new, too narrow or ambiguous, or the sources disagree.",
+      "type": "boolean",
+    },
+  },
+  "required": [
+    "sense",
+    "aliases",
+    "summary",
+    "existing",
+    "approaches",
+    "risks",
+    "firstSteps",
+    "sources",
+    "uncertain",
+  ],
+  "type": "object",
+}
+`;
+
+exports[`formats JSON Schemas derives the same JSON Schema for the brief level 1 1`] = `
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "aliases": {
+      "description": "Other names, spellings and abbreviations of the term in this meaning.",
+      "items": {
+        "description": "Another name or spelling. At most 80 characters.",
+        "maxLength": 80,
+        "minLength": 1,
+        "type": "string",
+      },
+      "maxItems": 5,
+      "minItems": 0,
+      "type": "array",
+    },
+    "explanation": {
+      "description": "A short explanation in two or three sentences. At most 800 characters.",
+      "maxLength": 800,
+      "minLength": 1,
+      "type": "string",
+    },
+    "sense": {
+      "description": "The meaning of the term this card explains, in a few words, such as "YouTube streaming protocol". Name it even when the term has only one meaning. At most 120 characters.",
+      "maxLength": 120,
+      "minLength": 1,
+      "type": "string",
+    },
+    "sources": {
+      "description": "Pages that back the card up, best first. Leave the list empty rather than add a page you did not see.",
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "description": "The title of the page, as the page itself shows it. At most 200 characters.",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string",
+          },
+          "url": {
+            "description": "The address of a page you opened or saw in search results while writing this card. Never an address from memory or one you built yourself.",
+            "format": "uri",
+            "maxLength": 2000,
+            "pattern": "^https?:\\/\\/",
+            "type": "string",
+          },
+        },
+        "required": [
+          "title",
+          "url",
+        ],
+        "type": "object",
+      },
+      "maxItems": 5,
+      "minItems": 0,
+      "type": "array",
+    },
+    "uncertain": {
+      "description": "True when you could not confirm the main facts: the term is too new, too narrow or ambiguous, or the sources disagree.",
+      "type": "boolean",
+    },
+  },
+  "required": [
+    "sense",
+    "aliases",
+    "explanation",
+    "sources",
+    "uncertain",
+  ],
+  "type": "object",
+}
+`;
+
+exports[`formats JSON Schemas derives the same JSON Schema for the shared level 2 1`] = `
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "howItWorks": {
+      "description": "How it works underneath, in a few short paragraphs, starting where the earlier card stopped. At most 2000 characters.",
+      "maxLength": 2000,
+      "minLength": 1,
+      "type": "string",
+    },
+    "sources": {
+      "description": "Pages that back the card up, best first. Leave the list empty rather than add a page you did not see.",
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "description": "The title of the page, as the page itself shows it. At most 200 characters.",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string",
+          },
+          "url": {
+            "description": "The address of a page you opened or saw in search results while writing this card. Never an address from memory or one you built yourself.",
+            "format": "uri",
+            "maxLength": 2000,
+            "pattern": "^https?:\\/\\/",
+            "type": "string",
+          },
+        },
+        "required": [
+          "title",
+          "url",
+        ],
+        "type": "object",
+      },
+      "maxItems": 5,
+      "minItems": 0,
+      "type": "array",
+    },
+    "tradeoffs": {
+      "description": "What it costs, where it breaks down and when to choose something else.",
+      "items": {
+        "description": "One trade-off or limit. At most 300 characters.",
+        "maxLength": 300,
+        "minLength": 1,
+        "type": "string",
+      },
+      "maxItems": 6,
+      "minItems": 1,
+      "type": "array",
+    },
+    "uncertain": {
+      "description": "True when you could not confirm the main facts: the term is too new, too narrow or ambiguous, or the sources disagree.",
+      "type": "boolean",
+    },
+  },
+  "required": [
+    "howItWorks",
+    "tradeoffs",
+    "sources",
+    "uncertain",
+  ],
+  "type": "object",
+}
+`;
+
+exports[`formats JSON Schemas derives the same JSON Schema for the shared level 3 1`] = `
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "example": {
+      "anyOf": [
+        {
+          "maxLength": 4000,
+          "minLength": 1,
+          "type": "string",
+        },
+        {
+          "type": "null",
+        },
+      ],
+      "description": "A code sample or a worked example that the steps use, or null when none fits. At most 4000 characters.",
+    },
+    "sources": {
+      "description": "Primary sources and in-depth material: documentation, specifications, papers, talks. Best first.",
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "description": "The title of the page, as the page itself shows it. At most 200 characters.",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string",
+          },
+          "url": {
+            "description": "The address of a page you opened or saw in search results while writing this card. Never an address from memory or one you built yourself.",
+            "format": "uri",
+            "maxLength": 2000,
+            "pattern": "^https?:\\/\\/",
+            "type": "string",
+          },
+        },
+        "required": [
+          "title",
+          "url",
+        ],
+        "type": "object",
+      },
+      "maxItems": 8,
+      "minItems": 0,
+      "type": "array",
+    },
+    "steps": {
+      "description": "A walkthrough the reader can follow in under an hour, in order.",
+      "items": {
+        "description": "One step. At most 300 characters.",
+        "maxLength": 300,
+        "minLength": 1,
+        "type": "string",
+      },
+      "maxItems": 8,
+      "minItems": 1,
+      "type": "array",
+    },
+    "uncertain": {
+      "description": "True when you could not confirm the main facts: the term is too new, too narrow or ambiguous, or the sources disagree.",
+      "type": "boolean",
+    },
+  },
+  "required": [
+    "steps",
+    "example",
+    "sources",
+    "uncertain",
+  ],
+  "type": "object",
+}
+`;
+
+exports[`formats JSON Schemas derives the same JSON Schema for the vocabulary level 2 1`] = `
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "collocations": {
+      "description": "Words it usually goes with, such as "make a decision".",
+      "items": {
+        "description": "One collocation. At most 80 characters.",
+        "maxLength": 80,
+        "minLength": 1,
+        "type": "string",
+      },
+      "maxItems": 8,
+      "minItems": 0,
+      "type": "array",
+    },
+    "nuance": {
+      "description": "Register, connotation and when native speakers reach for it, in a short paragraph. At most 1200 characters.",
+      "maxLength": 1200,
+      "minLength": 1,
+      "type": "string",
+    },
+    "sources": {
+      "description": "Pages that back the card up, best first. Leave the list empty rather than add a page you did not see.",
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "description": "The title of the page, as the page itself shows it. At most 200 characters.",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string",
+          },
+          "url": {
+            "description": "The address of a page you opened or saw in search results while writing this card. Never an address from memory or one you built yourself.",
+            "format": "uri",
+            "maxLength": 2000,
+            "pattern": "^https?:\\/\\/",
+            "type": "string",
+          },
+        },
+        "required": [
+          "title",
+          "url",
+        ],
+        "type": "object",
+      },
+      "maxItems": 3,
+      "minItems": 0,
+      "type": "array",
+    },
+    "synonyms": {
+      "description": "Near synonyms and how each one differs.",
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "difference": {
+            "description": "How it differs in meaning or use. At most 300 characters.",
+            "maxLength": 300,
+            "minLength": 1,
+            "type": "string",
+          },
+          "word": {
+            "description": "A near synonym. At most 80 characters.",
+            "maxLength": 80,
+            "minLength": 1,
+            "type": "string",
+          },
+        },
+        "required": [
+          "word",
+          "difference",
+        ],
+        "type": "object",
+      },
+      "maxItems": 5,
+      "minItems": 0,
+      "type": "array",
+    },
+    "uncertain": {
+      "description": "True when you could not confirm the main facts: the term is too new, too narrow or ambiguous, or the sources disagree.",
+      "type": "boolean",
+    },
+  },
+  "required": [
+    "nuance",
+    "synonyms",
+    "collocations",
+    "sources",
+    "uncertain",
+  ],
+  "type": "object",
+}
+`;
+
+exports[`formats JSON Schemas derives the same JSON Schema for the vocabulary level 3 1`] = `
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "exercises": {
+      "description": "Exercises that make the reader use the word, from easy to hard.",
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "answer": {
+            "description": "The expected answer. At most 300 characters.",
+            "maxLength": 300,
+            "minLength": 1,
+            "type": "string",
+          },
+          "prompt": {
+            "description": "A gap to fill or a sentence to translate. At most 300 characters.",
+            "maxLength": 300,
+            "minLength": 1,
+            "type": "string",
+          },
+        },
+        "required": [
+          "prompt",
+          "answer",
+        ],
+        "type": "object",
+      },
+      "maxItems": 6,
+      "minItems": 3,
+      "type": "array",
+    },
+    "sources": {
+      "description": "Pages that back the card up, best first. Leave the list empty rather than add a page you did not see.",
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "description": "The title of the page, as the page itself shows it. At most 200 characters.",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string",
+          },
+          "url": {
+            "description": "The address of a page you opened or saw in search results while writing this card. Never an address from memory or one you built yourself.",
+            "format": "uri",
+            "maxLength": 2000,
+            "pattern": "^https?:\\/\\/",
+            "type": "string",
+          },
+        },
+        "required": [
+          "title",
+          "url",
+        ],
+        "type": "object",
+      },
+      "maxItems": 3,
+      "minItems": 0,
+      "type": "array",
+    },
+    "uncertain": {
+      "description": "True when you could not confirm the main facts: the term is too new, too narrow or ambiguous, or the sources disagree.",
+      "type": "boolean",
+    },
+  },
+  "required": [
+    "exercises",
+    "sources",
+    "uncertain",
+  ],
+  "type": "object",
+}
+`;
+
+exports[`formats JSON Schemas derives the same JSON Schema for the report level 2 1`] = `
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "architecture": {
+      "description": "How that approach would be built: the main parts and how they fit together. At most 2000 characters.",
+      "maxLength": 2000,
+      "minLength": 1,
+      "type": "string",
+    },
+    "effort": {
+      "description": "A rough estimate of the work for a first usable version, and what dominates it. At most 500 characters.",
+      "maxLength": 500,
+      "minLength": 1,
+      "type": "string",
+    },
+    "recommendation": {
+      "description": "The approach you would take and why, building on the first report. At most 800 characters.",
+      "maxLength": 800,
+      "minLength": 1,
+      "type": "string",
+    },
+    "sources": {
+      "description": "Pages that back the card up, best first. Leave the list empty rather than add a page you did not see.",
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "description": "The title of the page, as the page itself shows it. At most 200 characters.",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string",
+          },
+          "url": {
+            "description": "The address of a page you opened or saw in search results while writing this card. Never an address from memory or one you built yourself.",
+            "format": "uri",
+            "maxLength": 2000,
+            "pattern": "^https?:\\/\\/",
+            "type": "string",
+          },
+        },
+        "required": [
+          "title",
+          "url",
+        ],
+        "type": "object",
+      },
+      "maxItems": 10,
+      "minItems": 0,
+      "type": "array",
+    },
+    "uncertain": {
+      "description": "True when you could not confirm the main facts: the term is too new, too narrow or ambiguous, or the sources disagree.",
+      "type": "boolean",
+    },
+    "unknowns": {
+      "description": "What to find out before building, most important first.",
+      "items": {
+        "description": "One open question. At most 300 characters.",
+        "maxLength": 300,
+        "minLength": 1,
+        "type": "string",
+      },
+      "maxItems": 6,
+      "minItems": 1,
+      "type": "array",
+    },
+  },
+  "required": [
+    "recommendation",
+    "architecture",
+    "unknowns",
+    "effort",
+    "sources",
+    "uncertain",
+  ],
+  "type": "object",
+}
+`;
+
+exports[`formats JSON Schemas derives the same JSON Schema for the report level 3 1`] = `
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "milestones": {
+      "description": "Milestones from the prototype to a first usable version, in order.",
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "description": "The milestone. At most 80 characters.",
+            "maxLength": 80,
+            "minLength": 1,
+            "type": "string",
+          },
+          "outcome": {
+            "description": "What works when it is done. At most 300 characters.",
+            "maxLength": 300,
+            "minLength": 1,
+            "type": "string",
+          },
+        },
+        "required": [
+          "name",
+          "outcome",
+        ],
+        "type": "object",
+      },
+      "maxItems": 6,
+      "minItems": 1,
+      "type": "array",
+    },
+    "prototype": {
+      "description": "The smallest version that tests whether the idea works, and how to tell. At most 800 characters.",
+      "maxLength": 800,
+      "minLength": 1,
+      "type": "string",
+    },
+    "sources": {
+      "description": "Pages that back the card up, best first. Leave the list empty rather than add a page you did not see.",
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "description": "The title of the page, as the page itself shows it. At most 200 characters.",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string",
+          },
+          "url": {
+            "description": "The address of a page you opened or saw in search results while writing this card. Never an address from memory or one you built yourself.",
+            "format": "uri",
+            "maxLength": 2000,
+            "pattern": "^https?:\\/\\/",
+            "type": "string",
+          },
+        },
+        "required": [
+          "title",
+          "url",
+        ],
+        "type": "object",
+      },
+      "maxItems": 10,
+      "minItems": 0,
+      "type": "array",
+    },
+    "tools": {
+      "description": "Tools, libraries and services to build it with.",
+      "items": {
+        "description": "One tool, library or service. At most 80 characters.",
+        "maxLength": 80,
+        "minLength": 1,
+        "type": "string",
+      },
+      "maxItems": 8,
+      "minItems": 0,
+      "type": "array",
+    },
+    "uncertain": {
+      "description": "True when you could not confirm the main facts: the term is too new, too narrow or ambiguous, or the sources disagree.",
+      "type": "boolean",
+    },
+  },
+  "required": [
+    "prototype",
+    "milestones",
+    "tools",
+    "sources",
+    "uncertain",
+  ],
+  "type": "object",
+}
+`;

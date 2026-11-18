@@ -1,0 +1,67 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`suggestionFormat derives the same JSON Schema, with the category ids as an enum 1`] = `
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "categories": {
+      "description": "One to three categories that fit the note, best first.",
+      "items": {
+        "description": "The id of one of the categories listed.",
+        "enum": [
+          "english",
+          "technology",
+          "other",
+        ],
+        "type": "string",
+      },
+      "maxItems": 3,
+      "minItems": 1,
+      "type": "array",
+    },
+    "language": {
+      "description": "The lowercase ISO 639-1 code of the language the note is written in, such as "en".",
+      "pattern": "^[a-z]{2}$",
+      "type": "string",
+    },
+    "senses": {
+      "description": "The distinct common meanings of the term, most likely first, each with the category it belongs to. Empty when it has one meaning.",
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "category": {
+            "description": "The id of one of the categories listed.",
+            "enum": [
+              "english",
+              "technology",
+              "other",
+            ],
+            "type": "string",
+          },
+          "sense": {
+            "description": "The meaning, in a few words, such as "baseball statistics". At most 80 characters.",
+            "maxLength": 80,
+            "minLength": 1,
+            "type": "string",
+          },
+        },
+        "required": [
+          "sense",
+          "category",
+        ],
+        "type": "object",
+      },
+      "maxItems": 4,
+      "minItems": 0,
+      "type": "array",
+    },
+  },
+  "required": [
+    "categories",
+    "senses",
+    "language",
+  ],
+  "type": "object",
+}
+`;

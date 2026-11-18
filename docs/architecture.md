@@ -36,7 +36,7 @@ stockpot/
 │   └── website/        the documentation site (M9)
 ├── tools/              @stockpot/tools: lint plugins, the license header check, third-party
 │                       notices, the docs link check and the migration check; later evals
-├── docs/               principles, architecture, guidelines, ADRs; later engines, design canvas,
+├── docs/               principles, architecture, engines, guidelines, ADRs; later design canvas,
 │                       install and privacy
 ├── deploy/             launchd service for a Mac, Docker image and compose file (M8, M9)
 ├── skills/             operator skills for installing and running an instance (M9)
@@ -70,7 +70,8 @@ src/
 │   ├── http.ts         route helpers, JSON errors, body limits
 │   ├── config.ts       the validated environment
 │   └── metrics.ts      Prometheus metrics, next to health and logs
-├── lib/            Isomorphic utilities: term normalization, dates and time zones
+├── lib/            Isomorphic utilities: term normalization, dates and time zones, format ids,
+│                   JSON Schema helpers
 ├── middleware.ts   Resolves the owner or device for every request
 └── sw.ts           The service worker: offline shell and push handling, browser code only
 ```
@@ -149,19 +150,22 @@ in `src/server/engines/`:
 - **The contract** (`contract.ts`, ENG-1) has three tasks: `suggest` proposes categories for a note
   while it is typed, `explain` writes a card in a category's format, and `research` writes a longer
   report for an idea. A failure is one of four error kinds: `rate_limited` (with the time the limit
-  resets), `auth`, `timeout` and `invalid` (output that does not match the schema).
+  resets), `auth`, `timeout` and `invalid` (output that does not match the schema). The answer
+  to `suggest` has its schema next to it, in `suggestion.ts`, because it is not a card.
 - **Concrete engines** implement the contract: the agent command engine (`agent-cli.ts`), Gemini
   (`gemini.ts`) and any OpenAI-compatible endpoint (`openai-compatible.ts`). Provider SDKs and
   command-line details stay inside these files.
 - **The router** (`router.ts`, ENG-6) picks an engine for each task and category from a routing
-  table, falls back to the next engine on `rate_limited` or `auth`, marks fallback output as a draft
-  and queues it to be redone by the primary engine once the limit resets.
+  table, falls back to the next engine on `rate_limited` or `auth`, marks a card from a fallback
+  engine as a draft and queues it to be redone by the primary engine once the limit resets.
 
 Everything outside `src/server/engines/` calls the router with contract types and never imports a
 concrete engine or a provider SDK. The research feature owns the card formats and passes the format's
-schema with each call, so engines stay free of feature imports. Lint does not tell one `server/`
-module from another, so review checks this boundary. The formats, prompts, privacy rule and
-routing table are recorded with the contract in `docs/engines.md` (ENG-1).
+schema with each call, so engines stay free of feature imports. The format ids and the helpers that
+turn a Valibot schema into JSON Schema sit in `src/lib/`, where categories, research and the engines
+can all reach them. Lint does not tell one `server/` module from another, so review checks this
+boundary. The formats, prompts, privacy rule and routing table are recorded with the contract on the
+[engines page](engines.md).
 
 ## One process and the job runner
 

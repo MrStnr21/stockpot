@@ -28,10 +28,12 @@
 		"@astrojs/node": "^11.1.13",
 		"@astrojs/svelte": "^9.1.6",
 		"@stockpot/ui": "workspace:*",
+		"@valibot/to-json-schema": "^1.8.0",
 		"astro": "^7.4.12",
 		"drizzle-orm": "1.0.0-rc.5",
 		"svelte": "^5.57.3",
-		"tailwindcss": "^4.3.5"
+		"tailwindcss": "^4.3.5",
+		"valibot": "^1.5.0"
 	},
 	"devDependencies": {
 		"@astrojs/check": "^0.9.12",
