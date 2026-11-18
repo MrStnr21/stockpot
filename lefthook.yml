@@ -25,6 +25,16 @@ pre-commit:
       glob: *formatted
       run: *prettier
       stage_fixed: true
+    # THIRD_PARTY_NOTICES.md follows the dependencies; CI on main fails when it is stale.
+    - name: notices
+      glob:
+        - 'package.json'
+        - 'packages/*/package.json'
+        - 'bun.lock'
+      run: bun run notices && git add THIRD_PARTY_NOTICES.md
+    - name: license
+      glob: '*.{astro,cjs,css,html,js,mjs,sh,svelte,toml,ts,yaml,yml}'
+      run: bun run check:license
 
 pre-push:
   parallel: true

@@ -5,4 +5,9 @@ import { defineConfig } from 'oxlint'
 
 import { scriptConfig, specOverride } from './lint/base.ts'
 
-export default defineConfig({ ...scriptConfig, overrides: [specOverride(['**/*.spec.ts'])] })
+export default defineConfig({
+	...scriptConfig,
+	overrides: [specOverride(['**/*.spec.ts'])],
+	// The tools are command-line programs: the console is their output.
+	rules: { ...scriptConfig.rules, 'eslint/no-console': 'off' },
+})

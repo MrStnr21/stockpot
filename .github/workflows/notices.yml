@@ -1,0 +1,74 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 The stockpot authors
+
+# THIRD_PARTY_NOTICES.md is generated from the run-time dependencies, and ci.yml fails on main when it
+# is stale. The pre-commit hook regenerates it for local commits; this regenerates it on pull requests
+# whose commits skip hooks (Dependabot) and pushes the result to the branch. A fork's branch cannot be
+# pushed to, so a fork's PR only fails while the file is stale.
+#
+# A push made with GITHUB_TOKEN starts no workflows, so the job dispatches checks.yml for the new head.
+name: Notices
+
+on:
+  pull_request:
+    paths:
+      - package.json
+      - packages/*/package.json
+      - bun.lock
+
+permissions:
+  contents: read
+
+concurrency:
+  group: notices-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  notices:
+    name: Regenerate third-party notices
+    runs-on: ubuntu-latest
+    permissions:
+      # Dependabot runs get a read-only token unless the job asks for more.
+      contents: write
+      actions: write
+    env:
+      SAME_REPO: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+    steps:
+      # The branch itself, not the merge commit, so the result can be pushed back to it.
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+
+      # No lifecycle scripts: the root postinstall would install the Git hooks the commit below must skip.
+      - name: Install dependencies
+        run: bun install --frozen-lockfile --ignore-scripts
+
+      # Also fails when a new dependency's licence is not compatible with AGPL-3.0-or-later.
+      - name: Regenerate notices
+        run: bun run notices
+
+      - name: Push regenerated notices
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet -- THIRD_PARTY_NOTICES.md; then
+            echo "THIRD_PARTY_NOTICES.md is up to date."
+            exit 0
+          fi
+          if [ "$SAME_REPO" != "true" ]; then
+            echo "::error::THIRD_PARTY_NOTICES.md is stale. Run: bun run notices"
+            exit 1
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898182+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Regenerate third-party notices' -- THIRD_PARTY_NOTICES.md
+          git push origin "HEAD:$HEAD_REF"
+          gh workflow run checks.yml --ref "$HEAD_REF"

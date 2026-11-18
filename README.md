@@ -24,4 +24,6 @@ bun run build
 ## License
 
 stockpot is free software, licensed under the GNU Affero General Public License, version 3 or any
-later version (AGPL-3.0-or-later).
+later version (AGPL-3.0-or-later): see [LICENSE](LICENSE). If you run a modified version for others
+over a network, offer them its source. Third-party packages keep their own licences, listed in
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
