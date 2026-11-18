@@ -41,7 +41,7 @@ exports[`suggestionFormat derives the same JSON Schema, with the category ids as
             "type": "string",
           },
           "sense": {
-            "description": "The meaning, in a few words, such as "baseball statistics".",
+            "description": "The meaning, in a few words, such as "baseball statistics". At most 80 characters.",
             "maxLength": 80,
             "minLength": 1,
             "type": "string",

@@ -8,7 +8,7 @@ exports[`formats JSON Schemas derives the same JSON Schema for the vocabulary le
     "aliases": {
       "description": "Other names, spellings and abbreviations of the term in this meaning.",
       "items": {
-        "description": "Another name or spelling.",
+        "description": "Another name or spelling. At most 80 characters.",
         "maxLength": 80,
         "minLength": 1,
         "type": "string",
@@ -32,13 +32,13 @@ exports[`formats JSON Schemas derives the same JSON Schema for the vocabulary le
         "additionalProperties": false,
         "properties": {
           "text": {
-            "description": "A short sentence that uses the word the way people really do.",
+            "description": "A short sentence that uses the word the way people really do. At most 300 characters.",
             "maxLength": 300,
             "minLength": 1,
             "type": "string",
           },
           "translation": {
-            "description": "The sentence in the card language.",
+            "description": "The sentence in the card language. At most 300 characters.",
             "maxLength": 300,
             "minLength": 1,
             "type": "string",
@@ -65,12 +65,12 @@ exports[`formats JSON Schemas derives the same JSON Schema for the vocabulary le
           "type": "null",
         },
       ],
-      "description": "The mistake learners typically make with it (articles, calques from their own language, false friends), or null when there is none worth noting.",
+      "description": "The mistake learners typically make with it (articles, calques from their own language, false friends), or null when there is none worth noting. At most 300 characters.",
     },
     "modelSentences": {
       "description": "Two sentences the reader can reuse as templates, with the word in a common construction.",
       "items": {
-        "description": "One sentence.",
+        "description": "One sentence. At most 300 characters.",
         "maxLength": 300,
         "minLength": 1,
         "type": "string",
@@ -94,7 +94,7 @@ exports[`formats JSON Schemas derives the same JSON Schema for the vocabulary le
       "type": "string",
     },
     "sense": {
-      "description": "The meaning of the term this card explains, in a few words, such as "YouTube streaming protocol". Name it even when the term has only one meaning.",
+      "description": "The meaning of the term this card explains, in a few words, such as "YouTube streaming protocol". Name it even when the term has only one meaning. At most 120 characters.",
       "maxLength": 120,
       "minLength": 1,
       "type": "string",
@@ -105,7 +105,7 @@ exports[`formats JSON Schemas derives the same JSON Schema for the vocabulary le
         "additionalProperties": false,
         "properties": {
           "title": {
-            "description": "The title of the page, as the page itself shows it.",
+            "description": "The title of the page, as the page itself shows it. At most 200 characters.",
             "maxLength": 200,
             "minLength": 1,
             "type": "string",
@@ -129,7 +129,7 @@ exports[`formats JSON Schemas derives the same JSON Schema for the vocabulary le
       "type": "array",
     },
     "translation": {
-      "description": "The translation into the card language: one word, or a few when one is not enough.",
+      "description": "The translation into the card language: one word, or a few when one is not enough. At most 160 characters.",
       "maxLength": 160,
       "minLength": 1,
       "type": "string",
@@ -163,7 +163,7 @@ exports[`formats JSON Schemas derives the same JSON Schema for the technology le
     "aliases": {
       "description": "Other names, spellings and abbreviations of the term in this meaning.",
       "items": {
-        "description": "Another name or spelling.",
+        "description": "Another name or spelling. At most 80 characters.",
         "maxLength": 80,
         "minLength": 1,
         "type": "string",
@@ -173,7 +173,7 @@ exports[`formats JSON Schemas derives the same JSON Schema for the technology le
       "type": "array",
     },
     "analogy": {
-      "description": "An analogy to something a software developer already knows. The category instructions may name the stack to draw on.",
+      "description": "An analogy to something a software developer already knows. The category instructions may name the stack to draw on. At most 500 characters.",
       "maxLength": 500,
       "minLength": 1,
       "type": "string",
@@ -189,10 +189,10 @@ exports[`formats JSON Schemas derives the same JSON Schema for the technology le
           "type": "null",
         },
       ],
-      "description": "Why it matters to the reader, judged from where they saw it (the context); null when there is no context.",
+      "description": "Why it matters to the reader, judged from where they saw it (the context); null when there is no context. At most 500 characters.",
     },
     "sense": {
-      "description": "The meaning of the term this card explains, in a few words, such as "YouTube streaming protocol". Name it even when the term has only one meaning.",
+      "description": "The meaning of the term this card explains, in a few words, such as "YouTube streaming protocol". Name it even when the term has only one meaning. At most 120 characters.",
       "maxLength": 120,
       "minLength": 1,
       "type": "string",
@@ -203,7 +203,7 @@ exports[`formats JSON Schemas derives the same JSON Schema for the technology le
         "additionalProperties": false,
         "properties": {
           "title": {
-            "description": "The title of the page, as the page itself shows it.",
+            "description": "The title of the page, as the page itself shows it. At most 200 characters.",
             "maxLength": 200,
             "minLength": 1,
             "type": "string",
@@ -227,7 +227,7 @@ exports[`formats JSON Schemas derives the same JSON Schema for the technology le
       "type": "array",
     },
     "summary": {
-      "description": "What it is, in one sentence.",
+      "description": "What it is, in one sentence. At most 280 characters.",
       "maxLength": 280,
       "minLength": 1,
       "type": "string",
@@ -258,7 +258,7 @@ exports[`formats JSON Schemas derives the same JSON Schema for the comparison le
     "aliases": {
       "description": "Other names, spellings and abbreviations of the term in this meaning.",
       "items": {
-        "description": "Another name or spelling.",
+        "description": "Another name or spelling. At most 80 characters.",
         "maxLength": 80,
         "minLength": 1,
         "type": "string",
@@ -273,19 +273,19 @@ exports[`formats JSON Schemas derives the same JSON Schema for the comparison le
         "additionalProperties": false,
         "properties": {
           "cons": {
-            "description": "Where the subject is worse than this alternative.",
+            "description": "Where the subject is worse than this alternative. At most 300 characters.",
             "maxLength": 300,
             "minLength": 1,
             "type": "string",
           },
           "name": {
-            "description": "The alternative.",
+            "description": "The alternative. At most 80 characters.",
             "maxLength": 80,
             "minLength": 1,
             "type": "string",
           },
           "pros": {
-            "description": "Where the subject is better than this alternative.",
+            "description": "Where the subject is better than this alternative. At most 300 characters.",
             "maxLength": 300,
             "minLength": 1,
             "type": "string",
@@ -303,7 +303,7 @@ exports[`formats JSON Schemas derives the same JSON Schema for the comparison le
       "type": "array",
     },
     "sense": {
-      "description": "The meaning of the term this card explains, in a few words, such as "YouTube streaming protocol". Name it even when the term has only one meaning.",
+      "description": "The meaning of the term this card explains, in a few words, such as "YouTube streaming protocol". Name it even when the term has only one meaning. At most 120 characters.",
       "maxLength": 120,
       "minLength": 1,
       "type": "string",
@@ -314,7 +314,7 @@ exports[`formats JSON Schemas derives the same JSON Schema for the comparison le
         "additionalProperties": false,
         "properties": {
           "title": {
-            "description": "The title of the page, as the page itself shows it.",
+            "description": "The title of the page, as the page itself shows it. At most 200 characters.",
             "maxLength": 200,
             "minLength": 1,
             "type": "string",
@@ -338,7 +338,7 @@ exports[`formats JSON Schemas derives the same JSON Schema for the comparison le
       "type": "array",
     },
     "summary": {
-      "description": "What it is, in one sentence.",
+      "description": "What it is, in one sentence. At most 280 characters.",
       "maxLength": 280,
       "minLength": 1,
       "type": "string",
@@ -350,7 +350,7 @@ exports[`formats JSON Schemas derives the same JSON Schema for the comparison le
     "worksWith": {
       "description": "Tools, platforms and formats it works with.",
       "items": {
-        "description": "One tool, platform or format.",
+        "description": "One tool, platform or format. At most 80 characters.",
         "maxLength": 80,
         "minLength": 1,
         "type": "string",
@@ -381,7 +381,7 @@ exports[`formats JSON Schemas derives the same JSON Schema for the concept level
     "aliases": {
       "description": "Other names, spellings and abbreviations of the term in this meaning.",
       "items": {
-        "description": "Another name or spelling.",
+        "description": "Another name or spelling. At most 80 characters.",
         "maxLength": 80,
         "minLength": 1,
         "type": "string",
@@ -391,19 +391,19 @@ exports[`formats JSON Schemas derives the same JSON Schema for the concept level
       "type": "array",
     },
     "analogy": {
-      "description": "An analogy from everyday life or from software.",
+      "description": "An analogy from everyday life or from software. At most 500 characters.",
       "maxLength": 500,
       "minLength": 1,
       "type": "string",
     },
     "example": {
-      "description": "One concrete example.",
+      "description": "One concrete example. At most 600 characters.",
       "maxLength": 600,
       "minLength": 1,
       "type": "string",
     },
     "explanation": {
-      "description": "A plain explanation in two to four sentences.",
+      "description": "A plain explanation in two to four sentences. At most 1200 characters.",
       "maxLength": 1200,
       "minLength": 1,
       "type": "string",
@@ -411,7 +411,7 @@ exports[`formats JSON Schemas derives the same JSON Schema for the concept level
     "seenIn": {
       "description": "Where the reader will meet it: fields, tools, situations.",
       "items": {
-        "description": "One place.",
+        "description": "One place. At most 120 characters.",
         "maxLength": 120,
         "minLength": 1,
         "type": "string",
@@ -421,7 +421,7 @@ exports[`formats JSON Schemas derives the same JSON Schema for the concept level
       "type": "array",
     },
     "sense": {
-      "description": "The meaning of the term this card explains, in a few words, such as "YouTube streaming protocol". Name it even when the term has only one meaning.",
+      "description": "The meaning of the term this card explains, in a few words, such as "YouTube streaming protocol". Name it even when the term has only one meaning. At most 120 characters.",
       "maxLength": 120,
       "minLength": 1,
       "type": "string",
@@ -432,7 +432,7 @@ exports[`formats JSON Schemas derives the same JSON Schema for the concept level
         "additionalProperties": false,
         "properties": {
           "title": {
-            "description": "The title of the page, as the page itself shows it.",
+            "description": "The title of the page, as the page itself shows it. At most 200 characters.",
             "maxLength": 200,
             "minLength": 1,
             "type": "string",
@@ -482,7 +482,7 @@ exports[`formats JSON Schemas derives the same JSON Schema for the report level 
     "aliases": {
       "description": "Other names, spellings and abbreviations of the term in this meaning.",
       "items": {
-        "description": "Another name or spelling.",
+        "description": "Another name or spelling. At most 80 characters.",
         "maxLength": 80,
         "minLength": 1,
         "type": "string",
@@ -494,7 +494,7 @@ exports[`formats JSON Schemas derives the same JSON Schema for the report level 
     "approaches": {
       "description": "Ways to build it, each with its main trade-off.",
       "items": {
-        "description": "One approach and its main trade-off.",
+        "description": "One approach and its main trade-off. At most 400 characters.",
         "maxLength": 400,
         "minLength": 1,
         "type": "string",
@@ -509,13 +509,13 @@ exports[`formats JSON Schemas derives the same JSON Schema for the report level 
         "additionalProperties": false,
         "properties": {
           "name": {
-            "description": "The product, project or approach.",
+            "description": "The product, project or approach. At most 80 characters.",
             "maxLength": 80,
             "minLength": 1,
             "type": "string",
           },
           "note": {
-            "description": "What it does and how it differs from the idea.",
+            "description": "What it does and how it differs from the idea. At most 300 characters.",
             "maxLength": 300,
             "minLength": 1,
             "type": "string",
@@ -534,7 +534,7 @@ exports[`formats JSON Schemas derives the same JSON Schema for the report level 
     "firstSteps": {
       "description": "Concrete first steps, in order.",
       "items": {
-        "description": "One step.",
+        "description": "One step. At most 300 characters.",
         "maxLength": 300,
         "minLength": 1,
         "type": "string",
@@ -546,7 +546,7 @@ exports[`formats JSON Schemas derives the same JSON Schema for the report level 
     "risks": {
       "description": "What could make it fail: technical, legal, market.",
       "items": {
-        "description": "One risk.",
+        "description": "One risk. At most 300 characters.",
         "maxLength": 300,
         "minLength": 1,
         "type": "string",
@@ -556,7 +556,7 @@ exports[`formats JSON Schemas derives the same JSON Schema for the report level 
       "type": "array",
     },
     "sense": {
-      "description": "The meaning of the term this card explains, in a few words, such as "YouTube streaming protocol". Name it even when the term has only one meaning.",
+      "description": "The meaning of the term this card explains, in a few words, such as "YouTube streaming protocol". Name it even when the term has only one meaning. At most 120 characters.",
       "maxLength": 120,
       "minLength": 1,
       "type": "string",
@@ -567,7 +567,7 @@ exports[`formats JSON Schemas derives the same JSON Schema for the report level 
         "additionalProperties": false,
         "properties": {
           "title": {
-            "description": "The title of the page, as the page itself shows it.",
+            "description": "The title of the page, as the page itself shows it. At most 200 characters.",
             "maxLength": 200,
             "minLength": 1,
             "type": "string",
@@ -591,7 +591,7 @@ exports[`formats JSON Schemas derives the same JSON Schema for the report level 
       "type": "array",
     },
     "summary": {
-      "description": "The idea restated in one or two sentences: what it is and for whom.",
+      "description": "The idea restated in one or two sentences: what it is and for whom. At most 500 characters.",
       "maxLength": 500,
       "minLength": 1,
       "type": "string",
@@ -624,7 +624,7 @@ exports[`formats JSON Schemas derives the same JSON Schema for the brief level 1
     "aliases": {
       "description": "Other names, spellings and abbreviations of the term in this meaning.",
       "items": {
-        "description": "Another name or spelling.",
+        "description": "Another name or spelling. At most 80 characters.",
         "maxLength": 80,
         "minLength": 1,
         "type": "string",
@@ -634,13 +634,13 @@ exports[`formats JSON Schemas derives the same JSON Schema for the brief level 1
       "type": "array",
     },
     "explanation": {
-      "description": "A short explanation in two or three sentences.",
+      "description": "A short explanation in two or three sentences. At most 800 characters.",
       "maxLength": 800,
       "minLength": 1,
       "type": "string",
     },
     "sense": {
-      "description": "The meaning of the term this card explains, in a few words, such as "YouTube streaming protocol". Name it even when the term has only one meaning.",
+      "description": "The meaning of the term this card explains, in a few words, such as "YouTube streaming protocol". Name it even when the term has only one meaning. At most 120 characters.",
       "maxLength": 120,
       "minLength": 1,
       "type": "string",
@@ -651,7 +651,7 @@ exports[`formats JSON Schemas derives the same JSON Schema for the brief level 1
         "additionalProperties": false,
         "properties": {
           "title": {
-            "description": "The title of the page, as the page itself shows it.",
+            "description": "The title of the page, as the page itself shows it. At most 200 characters.",
             "maxLength": 200,
             "minLength": 1,
             "type": "string",
@@ -696,7 +696,7 @@ exports[`formats JSON Schemas derives the same JSON Schema for the shared level 
   "additionalProperties": false,
   "properties": {
     "howItWorks": {
-      "description": "How it works underneath, in a few short paragraphs, starting where the earlier card stopped.",
+      "description": "How it works underneath, in a few short paragraphs, starting where the earlier card stopped. At most 2000 characters.",
       "maxLength": 2000,
       "minLength": 1,
       "type": "string",
@@ -707,7 +707,7 @@ exports[`formats JSON Schemas derives the same JSON Schema for the shared level 
         "additionalProperties": false,
         "properties": {
           "title": {
-            "description": "The title of the page, as the page itself shows it.",
+            "description": "The title of the page, as the page itself shows it. At most 200 characters.",
             "maxLength": 200,
             "minLength": 1,
             "type": "string",
@@ -733,7 +733,7 @@ exports[`formats JSON Schemas derives the same JSON Schema for the shared level 
     "tradeoffs": {
       "description": "What it costs, where it breaks down and when to choose something else.",
       "items": {
-        "description": "One trade-off or limit.",
+        "description": "One trade-off or limit. At most 300 characters.",
         "maxLength": 300,
         "minLength": 1,
         "type": "string",
@@ -773,7 +773,7 @@ exports[`formats JSON Schemas derives the same JSON Schema for the shared level 
           "type": "null",
         },
       ],
-      "description": "A code sample or a worked example that the steps use, or null when none fits.",
+      "description": "A code sample or a worked example that the steps use, or null when none fits. At most 4000 characters.",
     },
     "sources": {
       "description": "Primary sources and in-depth material: documentation, specifications, papers, talks. Best first.",
@@ -781,7 +781,7 @@ exports[`formats JSON Schemas derives the same JSON Schema for the shared level 
         "additionalProperties": false,
         "properties": {
           "title": {
-            "description": "The title of the page, as the page itself shows it.",
+            "description": "The title of the page, as the page itself shows it. At most 200 characters.",
             "maxLength": 200,
             "minLength": 1,
             "type": "string",
@@ -807,7 +807,7 @@ exports[`formats JSON Schemas derives the same JSON Schema for the shared level 
     "steps": {
       "description": "A walkthrough the reader can follow in under an hour, in order.",
       "items": {
-        "description": "One step.",
+        "description": "One step. At most 300 characters.",
         "maxLength": 300,
         "minLength": 1,
         "type": "string",
@@ -839,7 +839,7 @@ exports[`formats JSON Schemas derives the same JSON Schema for the vocabulary le
     "collocations": {
       "description": "Words it usually goes with, such as "make a decision".",
       "items": {
-        "description": "One collocation.",
+        "description": "One collocation. At most 80 characters.",
         "maxLength": 80,
         "minLength": 1,
         "type": "string",
@@ -849,7 +849,7 @@ exports[`formats JSON Schemas derives the same JSON Schema for the vocabulary le
       "type": "array",
     },
     "nuance": {
-      "description": "Register, connotation and when native speakers reach for it, in a short paragraph.",
+      "description": "Register, connotation and when native speakers reach for it, in a short paragraph. At most 1200 characters.",
       "maxLength": 1200,
       "minLength": 1,
       "type": "string",
@@ -860,7 +860,7 @@ exports[`formats JSON Schemas derives the same JSON Schema for the vocabulary le
         "additionalProperties": false,
         "properties": {
           "title": {
-            "description": "The title of the page, as the page itself shows it.",
+            "description": "The title of the page, as the page itself shows it. At most 200 characters.",
             "maxLength": 200,
             "minLength": 1,
             "type": "string",
@@ -889,13 +889,13 @@ exports[`formats JSON Schemas derives the same JSON Schema for the vocabulary le
         "additionalProperties": false,
         "properties": {
           "difference": {
-            "description": "How it differs in meaning or use.",
+            "description": "How it differs in meaning or use. At most 300 characters.",
             "maxLength": 300,
             "minLength": 1,
             "type": "string",
           },
           "word": {
-            "description": "A near synonym.",
+            "description": "A near synonym. At most 80 characters.",
             "maxLength": 80,
             "minLength": 1,
             "type": "string",
@@ -938,13 +938,13 @@ exports[`formats JSON Schemas derives the same JSON Schema for the vocabulary le
         "additionalProperties": false,
         "properties": {
           "answer": {
-            "description": "The expected answer.",
+            "description": "The expected answer. At most 300 characters.",
             "maxLength": 300,
             "minLength": 1,
             "type": "string",
           },
           "prompt": {
-            "description": "A gap to fill or a sentence to translate.",
+            "description": "A gap to fill or a sentence to translate. At most 300 characters.",
             "maxLength": 300,
             "minLength": 1,
             "type": "string",
@@ -966,7 +966,7 @@ exports[`formats JSON Schemas derives the same JSON Schema for the vocabulary le
         "additionalProperties": false,
         "properties": {
           "title": {
-            "description": "The title of the page, as the page itself shows it.",
+            "description": "The title of the page, as the page itself shows it. At most 200 characters.",
             "maxLength": 200,
             "minLength": 1,
             "type": "string",

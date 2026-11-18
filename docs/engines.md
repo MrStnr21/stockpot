@@ -99,15 +99,39 @@ Every format fits what JSON Schema can express, under these rules:
 - patterns carry no regex flags, which JSON Schema cannot hold;
 - the derivation runs with `errorMode: 'throw'`, so a schema that JSON Schema cannot express fails
   in the specs rather than reaching an engine half-converted;
-- an engine may strip keywords its provider does not accept, such as `$schema` or `format`, but it
-  always validates with the Valibot schema.
+- a text field's description ends with its cap ("At most 280 characters."), because providers drop
+  length keywords and the model reads descriptions.
 
-The exact JSON Schema of every format and depth level is pinned in
+The exact JSON Schema of each distinct format and depth level is pinned in
 [`index.spec.ts.snap`](../packages/app/src/features/research/shared/formats/__snapshots__/index.spec.ts.snap)
 and the suggestion's in
 [`suggestion.spec.ts.snap`](../packages/app/src/server/engines/__snapshots__/suggestion.spec.ts.snap);
 the specs also check that each format accepts a sample card and rejects broken ones. A change to a
 format shows up there in review.
+
+### Provider schemas
+
+No provider accepts every draft-07 keyword, so each engine **must** adapt the derived JSON Schema to
+its provider before sending it, and must still validate the answer with the Valibot schema on our
+side. Whatever a provider drops or ignores, an answer that breaks the format fails with `invalid`.
+
+- **OpenAI-compatible, strict mode** (ENG-5): strict mode rejects `minLength`, `maxLength`,
+  `$schema`, and any `format` outside its allowed list, which excludes the `uri` our sources use. The
+  engine strips those keywords everywhere in the schema, recursing into `properties`, `items` and
+  `anyOf`. The caps stay in the descriptions.
+- **Gemini** (ENG-4): Google's
+  [structured-output guide](https://aistudio.google.com/docs/structured-output), read on 2026-11-18,
+  documents the Interactions API, which takes the schema in `response_format` (an object of type
+  `text` whose `schema` field holds it). It says `minLength` and `maxLength` are stripped and
+  ignored rather than rejected; `minItems`, `maxItems`, `required`, `enum`, `description` and
+  `additionalProperties` are supported; `format` is supported for strings, with `date-time`, `date`
+  and `time` as examples; and a schema that is too complex is rejected with `400 INVALID_ARGUMENT`.
+  The `generateContent` reference lists both `responseSchema` and `responseJsonSchema` in its
+  generation config but does not say which to prefer. To verify with a real call in ENG-4: which of
+  `response_format`, `responseJsonSchema` and `responseSchema` the engine uses, and how each treats
+  `pattern`, `format: uri`, `anyOf` and `$schema`.
+- **Agent command** (ENG-3): the schema goes to the command as its template says; what the agent
+  enforces depends on the agent, so validation on our side is the only guarantee.
 
 ### Fields every card shares
 
