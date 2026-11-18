@@ -246,7 +246,7 @@ interface ProcessRunner {
 
 const thisProcess: ProcessRunner = {}
 
-/** Starts the one runner of this process; the entry that starts the server calls it. */
+/** Starts the one runner of this process. Nothing calls it yet: the README says why. */
 export function startRunner(options: RunnerOptions): Runner {
 	if (thisProcess.runner !== undefined) {
 		throw new Error('The job runner has already started')
