@@ -65,8 +65,8 @@ export const noteStatuses = [
 export type NoteStatus = (typeof noteStatuses)[number]
 
 /*
- * The search migration indexes `text` and `context` in the `search` FTS5 table with triggers on this
- * table: a migration that rebuilds it must create those triggers again (see migrations/README.md).
+ * Triggers on this table keep `text` and `context` in the `note_search` FTS5 index: a migration that
+ * rebuilds the table must create them again (see migrations/README.md).
  */
 export const notes = sqliteTable(
 	'notes',

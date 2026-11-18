@@ -14,8 +14,8 @@ export interface CardSource {
 
 /*
  * Cards: what an engine wrote for a note, or for a term and its sense, in a category's format. `body`
- * holds the format's blocks as JSON; the search migration indexes its string values in the `search`
- * FTS5 table with triggers on this table (see migrations/README.md).
+ * holds the format's blocks as JSON. Triggers on this table copy its string values into the
+ * `note_search` FTS5 index (see migrations/README.md).
  */
 export const explanations = sqliteTable(
 	'explanations',

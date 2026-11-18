@@ -169,3 +169,55 @@ CREATE UNIQUE INDEX `terms_term_meaning_idx` ON `terms` (`term`,`meaning`);--> s
 CREATE INDEX `terms_category_id_idx` ON `terms` (`category_id`);--> statement-breakpoint
 CREATE INDEX `explanations_note_id_created_at_idx` ON `explanations` (`note_id`,`created_at`);--> statement-breakpoint
 CREATE INDEX `explanations_term_id_idx` ON `explanations` (`term_id`);
+--> statement-breakpoint
+/* Hand-written from here on: drizzle-kit does not model FTS5 tables, views or triggers (README.md).
+ * note_search holds one row per note, keyed by the note's id: its text, its context and the text of
+ * its cards. The prefix indexes keep search-as-you-type on the index. */
+CREATE VIRTUAL TABLE `note_search` USING fts5(
+	`text`,
+	`context`,
+	`cards`,
+	tokenize = 'unicode61 remove_diacritics 2',
+	prefix = '2 3'
+);
+--> statement-breakpoint
+/* The string values in a note's card bodies, without the JSON keys that every card of a format shares. */
+CREATE VIEW `note_card_text` AS
+	SELECT `explanations`.`note_id`, group_concat(`body_value`.`value`, ' ') AS `cards`
+	FROM `explanations`, json_tree(`explanations`.`body`) AS `body_value`
+	WHERE `explanations`.`note_id` IS NOT NULL AND `body_value`.`type` = 'text'
+	GROUP BY `explanations`.`note_id`;
+--> statement-breakpoint
+CREATE TRIGGER `notes_search_insert` AFTER INSERT ON `notes` BEGIN
+	INSERT INTO `note_search` (`rowid`, `text`, `context`, `cards`)
+	VALUES (new.`id`, new.`text`, new.`context`, '');
+END;
+--> statement-breakpoint
+CREATE TRIGGER `notes_search_update` AFTER UPDATE OF `text`, `context` ON `notes` BEGIN
+	UPDATE `note_search` SET `text` = new.`text`, `context` = new.`context` WHERE `rowid` = new.`id`;
+END;
+--> statement-breakpoint
+CREATE TRIGGER `notes_search_delete` AFTER DELETE ON `notes` BEGIN
+	DELETE FROM `note_search` WHERE `rowid` = old.`id`;
+END;
+--> statement-breakpoint
+CREATE TRIGGER `explanations_search_insert` AFTER INSERT ON `explanations` BEGIN
+	UPDATE `note_search`
+	SET `cards` = coalesce((SELECT `cards` FROM `note_card_text` WHERE `note_id` = new.`note_id`), '')
+	WHERE `rowid` = new.`note_id`;
+END;
+--> statement-breakpoint
+CREATE TRIGGER `explanations_search_update` AFTER UPDATE OF `note_id`, `body` ON `explanations` BEGIN
+	UPDATE `note_search`
+	SET `cards` = coalesce((SELECT `cards` FROM `note_card_text` WHERE `note_id` = old.`note_id`), '')
+	WHERE `rowid` = old.`note_id`;
+	UPDATE `note_search`
+	SET `cards` = coalesce((SELECT `cards` FROM `note_card_text` WHERE `note_id` = new.`note_id`), '')
+	WHERE `rowid` = new.`note_id`;
+END;
+--> statement-breakpoint
+CREATE TRIGGER `explanations_search_delete` AFTER DELETE ON `explanations` BEGIN
+	UPDATE `note_search`
+	SET `cards` = coalesce((SELECT `cards` FROM `note_card_text` WHERE `note_id` = old.`note_id`), '')
+	WHERE `rowid` = old.`note_id`;
+END;
