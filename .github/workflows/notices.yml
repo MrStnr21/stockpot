@@ -2,11 +2,12 @@
 # SPDX-FileCopyrightText: 2026 The stockpot authors
 
 # THIRD_PARTY_NOTICES.md is generated from the run-time dependencies, and ci.yml fails on main when it
-# is stale. The pre-commit hook regenerates it for local commits; this regenerates it on pull requests
-# whose commits skip hooks (Dependabot) and pushes the result to the branch. A fork's branch cannot be
-# pushed to, so a fork's PR only fails while the file is stale.
+# is stale. The pre-commit hook regenerates it for local commits. This runs on every pull request that
+# changes dependencies and, when the file is stale (commits that skipped the hooks, such as
+# Dependabot's), pushes the regenerated file to the branch. A fork's branch cannot be pushed to, so a
+# fork's PR only fails while the file is stale.
 #
-# A push made with GITHUB_TOKEN starts no workflows, so the job dispatches checks.yml for the new head.
+# A push made with GITHUB_TOKEN starts no workflows, so the job dispatches ci.yml for the new head.
 name: Notices
 
 on:
@@ -71,4 +72,4 @@ jobs:
           git config user.email '41898182+github-actions[bot]@users.noreply.github.com'
           git commit -m 'Regenerate third-party notices' -- THIRD_PARTY_NOTICES.md
           git push origin "HEAD:$HEAD_REF"
-          gh workflow run checks.yml --ref "$HEAD_REF"
+          gh workflow run ci.yml --ref "$HEAD_REF"
