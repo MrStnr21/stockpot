@@ -221,3 +221,10 @@ CREATE TRIGGER `explanations_search_delete` AFTER DELETE ON `explanations` BEGIN
 	SET `cards` = coalesce((SELECT `cards` FROM `note_card_text` WHERE `note_id` = old.`note_id`), '')
 	WHERE `rowid` = old.`note_id`;
 END;
+--> statement-breakpoint
+/* A card written for a term alone goes with its term. The foreign key would set its term_id to NULL,
+ * which the explanations_subject check rejects, so the term could never be deleted. Cards that also
+ * belong to a note keep the note and lose only the term. */
+CREATE TRIGGER `terms_delete_cards` BEFORE DELETE ON `terms` BEGIN
+	DELETE FROM `explanations` WHERE `term_id` = old.`id` AND `note_id` IS NULL;
+END;

@@ -19,8 +19,9 @@ rebase, delete your folder and generate it again.
 
 ## Hand-written SQL
 
-drizzle-kit does not model FTS5 tables, views or triggers, so the full-text search index is
-hand-written at the end of the first migration, below the generated statements:
+drizzle-kit does not model FTS5 tables, views or triggers, so the full-text search index and one
+trigger for terms are hand-written at the end of the first migration, below the generated
+statements:
 
 - **`note_search`**, an FTS5 table with one row per note, keyed by the note's id (`rowid`), with three
   columns: `text` and `context` from the note, and `cards`, the text of every card written for the
@@ -33,6 +34,10 @@ hand-written at the end of the first migration, below the generated statements:
   `context`) and `notes_search_delete` on `notes`, and `explanations_search_insert`,
   `explanations_search_update` (of `note_id` or `body`) and `explanations_search_delete` on
   `explanations`.
+- **`terms_delete_cards`** deletes the cards written for a term alone before the term goes. Its
+  foreign key would set their `term_id` to NULL, which the `explanations_subject` check rejects, so
+  without the trigger such a term could never be deleted. Cards that also belong to a note keep the
+  note and lose only the term.
 
 Search joins the index to the notes by id and orders by relevance:
 
@@ -44,7 +49,7 @@ ORDER BY rank
 ```
 
 When drizzle-kit cannot change a table in place it rebuilds it: it creates a new table, copies the
-rows, drops the old one and renames the new one. Dropping `notes` or `explanations` drops their
-triggers too, so a migration that rebuilds either table must create its triggers again at the end;
-the search specs fail when they are missing. Later hand-written SQL goes in a folder of its own,
+rows, drops the old one and renames the new one. Dropping `notes`, `explanations` or `terms` drops
+their triggers too, so a migration that rebuilds one of them must create its triggers again at the
+end; the specs fail when they are missing. Later hand-written SQL goes in a folder of its own,
 made with `bun run db:generate -- --custom --name <what-it-does>`.
