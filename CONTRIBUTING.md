@@ -52,7 +52,8 @@ bun run e2e
 
 CI runs the same commands. `checks.yml` runs the fast part on every pull request: `check`, `test`,
 `fmt:check` and `lint`, plus secret scanning. `ci.yml` runs the whole list on `main`, plus
-`bun run notices -- --check`. Run the full list locally before you ask for review.
+`bun run notices -- --check`. `notices.yml` regenerates the third-party notices on pull requests
+that change dependencies. Run the full list locally before you ask for review.
 
 For a user-facing change, also try the flow in a browser at phone and desktop widths, and say in
 the pull request what you checked.
@@ -63,7 +64,8 @@ the pull request what you checked.
 [lefthook.yml](lefthook.yml):
 
 - **pre-commit** formats the staged files with each workspace's Prettier config and stages the
-  result; secret scanning also runs here;
+  result, runs `bun run check:license` when source files are staged, regenerates and stages
+  `THIRD_PARTY_NOTICES.md` when dependencies change, and scans for secrets;
 - **pre-push** runs `bun run check` and `bun run lint`.
 
 The hooks are a fast subset of the check list above, not a replacement for it. To run one by
@@ -122,4 +124,5 @@ comment has an answer.
 ## License of contributions
 
 stockpot is licensed under the GNU Affero General Public License, version 3 or any later version
-(AGPL-3.0-or-later). By contributing, you agree that your contribution is licensed the same way.
+(AGPL-3.0-or-later); see [LICENSE](LICENSE). By contributing, you agree that your contribution is
+licensed the same way.

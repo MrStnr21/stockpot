@@ -38,8 +38,9 @@ Every source file starts with a two-line SPDX header in its own comment syntax:
 ```
 
 CSS uses one `/* … */` block, Astro frontmatter uses `//` inside the `---` fence, Svelte and HTML
-use an `<!-- … -->` block, and YAML and TOML use `#`. Markdown and JSON files have no header.
-`bun run check:license` fails on a source file without one.
+use an `<!-- … -->` block, and YAML, TOML and shell scripts use `#`. A shebang line may come first.
+Markdown and JSON files have no header; the [LICENSE](../../LICENSE) covers them.
+`bun run check:license` fails on a source file without one, and the pre-commit hook runs it.
 
 ## Imports
 
@@ -78,11 +79,13 @@ A suppression must not outlive its violation: `reportUnusedDisableDirectives` is
 unused one fails lint. `bun run lint:fix` applies the automatic fixes; review its diff before you
 keep it.
 
-The shared settings carry a few permanent exceptions, each with its reason next to it: `no-undef`
-is off in `.svelte` files and `no-useless-assignment` in `.astro` files because oxlint cannot see
-across their script blocks and templates, `unicorn/filename-case` is off because routes are named
-after their parameters, and the Testing Library rules are dropped because specs run without a DOM.
-These do not license switching off further rules.
+The configs carry a few permanent exceptions, each with its reason next to it: `no-undef` is off
+in `.svelte` files and `no-useless-assignment` in `.astro` files because oxlint cannot see across
+their script blocks and templates; `unicorn/filename-case` is off because routes are named after
+their parameters; the Testing Library rules are dropped because specs run without a DOM;
+`init-declarations` is off in specs, which declare `let` state and assign it in a hook; and
+`no-console` is off in `tools/`, whose programs report on the console. These do not license
+switching off further rules.
 
 ## Formatting
 

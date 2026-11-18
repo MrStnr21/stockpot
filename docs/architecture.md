@@ -63,7 +63,7 @@ src/
 │   ├── settings/       runtime settings stored in the database
 │   └── integrations/   optional outside services (after v0.1)
 ├── server/         Shared server capabilities, no product logic:
-│   ├── db/             Drizzle schema and the SQLite connection
+│   ├── db/             Drizzle schema, migrations and the SQLite connection
 │   ├── jobs/           the job runner and daily schedules
 │   ├── auth/           the owner account, sessions and device tokens
 │   ├── engines/        the engine contract, concrete engines and the router
@@ -104,7 +104,7 @@ a single file or a folder of these parts:
 | Feature root                   | any other file in `features/X/`                                      | same as feature server                                                          |
 | Entry                          | everything else: `pages/`, `layouts/`, `middleware.ts`, `sw.ts`      | every layer above, including any feature                                        |
 
-Three rules apply across the table:
+Four rules apply across the table:
 
 - **Features never import each other.** Every "own feature" entry means the importing file's own
   folder. When two features need the same thing, it moves into `server/`, `lib/` or `components/`,
@@ -113,6 +113,8 @@ Three rules apply across the table:
   shared and the non-Astro components must not import `node:*`, `bun` or `bun:*`, because they also
   run in the browser.
 - **No import cycles.** `import/no-cycle` fails on runtime cycles; type-only cycles are allowed.
+- **Specs keep their layer.** A `*.spec.ts` file follows the row of the folder it sits in, and may
+  also import packages, runtime built-ins such as `bun:test`, and the shared helpers in `tests/`.
 
 Because `server/` may not import features, the direction of calls is always feature → server. When
 a capability in `server/` needs to run feature code (a job handler, for example), the feature

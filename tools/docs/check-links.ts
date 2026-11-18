@@ -6,7 +6,7 @@
  * heading fails CI instead of reaching readers. Web and mail links are left alone: checking them would
  * make the run slow and dependent on the network.
  */
-import { $, file, stderr, stdout, write } from 'bun'
+import { $, file } from 'bun'
 import { posix } from 'node:path'
 
 export interface BrokenLink {
@@ -222,8 +222,7 @@ async function readDocument(root: string, path: string): Promise<[string, string
 }
 
 async function main() {
-	const toplevel = await $`git rev-parse --show-toplevel`.text()
-	const root = toplevel.trim()
+	const root = posix.join(import.meta.dir, '../..')
 	const listed = await $`git ls-files -z -- ${'*.md'}`.cwd(root).text()
 
 	const read = await Promise.all(listed.split('\0').map(async (path) => readDocument(root, path)))
@@ -231,7 +230,7 @@ async function main() {
 	const broken = await findBrokenLinks(documents, async (path) => isInRepository(root, path))
 
 	if (broken.length === 0) {
-		await write(stdout, `Links in ${documents.size} Markdown files resolve.\n`)
+		console.log(`Links in ${documents.size} Markdown files resolve.`)
 
 		return
 	}
@@ -240,7 +239,7 @@ async function main() {
 		({ source, line, target, reason }) => `${source}:${line}: ${target} (${reason})`,
 	)
 
-	await write(stderr, `${lines.join('\n')}\n\n${broken.length} broken link(s).\n`)
+	console.error(`${lines.join('\n')}\n\n${broken.length} broken link(s).`)
 	process.exit(1)
 }
 

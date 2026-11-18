@@ -11,13 +11,17 @@ bun test ./src/server/jobs/runner.spec.ts  # one file
 bun run e2e                                # Playwright, from the repository root
 ```
 
-Unit tests use `bun:test`. In the app, a preload set in `bunfig.toml` seeds Faker so that test
-data is the same on every run.
+Unit tests use `bun:test`. In the app, `bunfig.toml` finds specs in `src/` and next to the helpers
+in `tests/`, leaves `tests/e2e/` to Playwright, and preloads `tests/setup/faker.ts`, which seeds
+Faker once so that generated data, and any failure it causes, repeats exactly. Import the shared
+helpers through the `#tests/` alias, such as `#tests/setup/db`.
 
 ## Spec files
 
 Every unit test is a spec next to the module it tests: `runner.ts` is tested in `runner.spec.ts`,
-and a route `[id].ts` in `[id].spec.ts`. Import the test API from `bun:test`.
+and a route `[id].ts` in `[id].spec.ts`. Import the test API from `bun:test`. A spec keeps the
+import rules of the folder it sits in, plus `bun:test` and the helpers in `tests/` (see the
+[dependency rules](../architecture.md#dependency-rules)).
 
 - **One top-level `describe`** per file, named for the unit under test: a function, a module, a
   route or a page, such as `describe('normalizeTerm', …)` or `describe('POST /api/notes', …)`.
@@ -50,7 +54,8 @@ describe('normalizeTerm', () => {
 ```
 
 The `specs/structure` lint rule in `tools/lint/specs.ts` (repository-root path) checks this
-layout, and `bun run lint` fails on a spec that breaks it.
+layout in every workspace's specs, and `bun run lint` fails on a spec that breaks it. Oxlint's own
+`jest` and `vitest` rules cannot do this: they skip files that import from `bun:test`.
 
 ## Factories
 
@@ -58,6 +63,9 @@ Build test data with [Fishery](https://github.com/thoughtbot/fishery) factories 
 directly. Shared factories live in `tests/factories/`, one file per kind of data, named for what
 they build: `noteFactory`, `categoryFactory`.
 
+- A factory that persists rows takes the spec's database as a transient parameter
+  (`DbTransientParams` from `#tests/factories/db`):
+  `await noteRowFactory.transient({ db }).create({ text: 'Bun' })`.
 - Set only the values the test checks or needs for its setup; let the factory fill in the rest.
 - Make presets with `.params()`, and lists with `.buildList()` or `.createList()`.
 - Let built data infer its type; do not annotate it at the call site.
@@ -67,9 +75,11 @@ they build: `noteFactory`, `categoryFactory`.
 
 ## The test database
 
-`createTestDb()` from `tests/setup/db.ts` opens an in-memory SQLite database, applies the
-migrations and turns on foreign keys. Create one per spec file and pass its `db` to factories and
-to the code under test. A spec that guards a query budget can also assert the plan with
+`createTestDb()` from `#tests/setup/db` (`tests/setup/db.ts`) opens an in-memory SQLite database,
+applies every migration from `src/server/db/migrations/` and turns on foreign keys, the way the
+server opens its file. It returns `{ sqlite, db }`: pass `db` to factories and to the code under
+test. Each call is a fresh database, so create one per spec file, or per `describe` when tests must
+not see each other's rows. A spec that guards a query budget can also assert the plan with
 `EXPLAIN QUERY PLAN` and fail when an index stops being used.
 
 ## Assertions and mocks
@@ -84,8 +94,11 @@ to the code under test. A spec that guards a query budget can also assert the pl
 
 ## End-to-end tests
 
-Playwright specs live in `tests/e2e/` and run against a production build with `bun run e2e`. The
-first run needs a browser: `bunx playwright install chromium`. Playwright has no `it`, so these
-specs use `test`, wrapped in one top-level `test.describe`, with `test.beforeEach` and the other
-hooks scoped inside it. Cover the flows a person actually takes (capture a note, open Today, act on
-a card), at phone width as well as desktop width.
+Playwright specs live in `tests/e2e/`. `bun run e2e` builds the app and runs them against the
+production server (`playwright.config.ts`). The first run needs a browser:
+`bunx playwright install chromium`.
+
+Playwright has no `it`, so these specs use `test`, wrapped in one top-level `test.describe`, with
+`test.beforeEach` and the other hooks scoped inside it. The Playwright lint rules check this, and
+also reject focused or skipped tests, conditionals inside a test, fixed waits and missing `await`s.
+Cover the flows a person actually takes: capture a note, open Today, act on a card.
