@@ -1,12 +1,13 @@
 {
 	"extends": "astro/tsconfigs/strict",
 	"include": [".astro/types.d.ts", "**/*"],
-	"exclude": ["dist"],
+	"exclude": ["dist", "playwright-report", "test-results"],
 	"compilerOptions": {
 		"erasableSyntaxOnly": true,
 		"resolvePackageJsonImports": true,
 		"paths": {
-			"#/*": ["./src/*"]
+			"#/*": ["./src/*"],
+			"#tests/*": ["./tests/*"]
 		}
 	}
 }

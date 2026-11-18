@@ -3,10 +3,11 @@
 
 import { defineConfig } from 'oxlint'
 
-import { componentConfig } from '../../tools/lint/base.ts'
+import { componentConfig, specOverride } from '../../tools/lint/base.ts'
 
 export default defineConfig({
 	...componentConfig,
+	overrides: [...componentConfig.overrides, specOverride(['src/**/*.spec.ts'])],
 	rules: {
 		...componentConfig.rules,
 		// The UI package is isomorphic and stands alone: no runtime built-ins, no app modules.

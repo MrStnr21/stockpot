@@ -4,7 +4,8 @@
 	"private": true,
 	"type": "module",
 	"imports": {
-		"#/*": "./src/*"
+		"#/*": "./src/*",
+		"#tests/*": "./tests/*"
 	},
 	"scripts": {
 		"dev": "bunx --bun astro dev",
@@ -18,26 +19,32 @@
 		"fmt:check": "bunx --bun prettier --cache --check .",
 		"lint": "OXLINT_TSGOLINT_PATH=../../tools/lint/tsrs-lint.ts bunx --bun oxlint --deny-warnings",
 		"lint:fix": "OXLINT_TSGOLINT_PATH=../../tools/lint/tsrs-lint.ts bunx --bun oxlint --deny-warnings --fix",
-		"test": "bun test --pass-with-no-tests"
+		"test": "bun test --pass-with-no-tests",
+		"e2e": "bun run build && bunx --bun playwright test"
 	},
 	"dependencies": {
 		"@astrojs/node": "^11.1.13",
 		"@astrojs/svelte": "^9.1.6",
 		"@stockpot/ui": "workspace:*",
 		"astro": "^7.4.12",
+		"drizzle-orm": "1.0.0-rc.5",
 		"svelte": "^5.57.3",
 		"tailwindcss": "^4.3.5"
 	},
 	"devDependencies": {
 		"@astrojs/check": "^0.9.12",
 		"@configg/bases": "^0.1.11",
+		"@faker-js/faker": "^10.6.0",
 		"@ianvs/prettier-plugin-sort-imports": "^4.7.1",
+		"@playwright/test": "^1.65.1",
 		"@tailwindcss/vite": "^4.3.5",
 		"@types/bun": "^1.4.4",
 		"eslint-import-resolver-typescript": "^4.4.5",
 		"eslint-plugin-astro": "^3.2.1",
 		"eslint-plugin-boundaries": "^7.4.4",
+		"eslint-plugin-playwright": "^2.12.2",
 		"eslint-plugin-svelte": "^3.24.1",
+		"fishery": "^2.4.0",
 		"oxlint": "^1.94.0",
 		"prettier": "^3.10.1",
 		"prettier-plugin-astro": "^1.1.2",

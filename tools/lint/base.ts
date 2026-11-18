@@ -23,9 +23,17 @@ function withoutTestingLibrary(overrides: Overrides): Overrides {
 		...override,
 		jsPlugins:
 			override.jsPlugins?.filter((plugin) => plugin !== 'eslint-plugin-testing-library') ?? null,
-		rules: Object.fromEntries(
-			Object.entries(override.rules ?? {}).filter(([rule]) => !rule.startsWith('testing-library/')),
-		),
+		rules: {
+			...Object.fromEntries(
+				Object.entries(override.rules ?? {}).filter(
+					([rule]) => !rule.startsWith('testing-library/'),
+				),
+			),
+			// The preset sets the `.spec` pattern at the top level, where the Vitest plugin is off, so it never applies.
+			...(override.plugins?.includes('vitest') === true && {
+				'vitest/consistent-test-filename': ['error', { pattern: String.raw`.*\.spec\.ts$` }],
+			}),
+		},
 	}))
 }
 
@@ -94,6 +102,22 @@ const componentOverrides: Overrides = [
 		rules: { 'eslint/no-undef': 'error', 'eslint/no-useless-assignment': 'off' },
 	},
 ]
+
+// Oxlint's `jest` and `vitest` rules skip files that import from `bun:test`, so a local plugin checks specs.
+const specsPlugin = { name: 'specs', specifier: `${import.meta.dirname}/specs.ts` }
+
+/** The spec layout of docs/guidelines/tests.md for the `bun:test` specs matched by `files`. */
+export function specOverride(files: string[]): Overrides[number] {
+	return {
+		files,
+		jsPlugins: [specsPlugin],
+		rules: {
+			'specs/structure': 'error',
+			// A spec declares `let` state at the top of a `describe` and assigns it in a hook.
+			'eslint/init-declarations': 'off',
+		},
+	}
+}
 
 /** Browser and server code with Astro and Svelte components: the app and the UI package. */
 export const componentConfig = {

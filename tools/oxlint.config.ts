@@ -3,6 +3,6 @@
 
 import { defineConfig } from 'oxlint'
 
-import { scriptConfig } from './lint/base.ts'
+import { scriptConfig, specOverride } from './lint/base.ts'
 
-export default defineConfig(scriptConfig)
+export default defineConfig({ ...scriptConfig, overrides: [specOverride(['**/*.spec.ts'])] })
