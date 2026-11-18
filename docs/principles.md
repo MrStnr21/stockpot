@@ -100,8 +100,9 @@ separate lanes. These rules keep them out of each other's way.
    change in that story's issue, rather than editing the files itself.
 2. **Migrations.** Schema changes add a new migration; a migration that shipped in a release is
    never edited, because running instances have already applied it. When two branches both change
-   the schema, the one that merges second rebases and regenerates its migration. CI checks this once
-   the database lands (SRV-1).
+   the schema, the one that merges second rebases and regenerates its migration. CI holds every
+   migration on `main` to this: `bun run check:migrations` fails when one changes, or when a new one
+   sorts before the last one there.
 3. **Stubs over waiting.** If a dependency has not merged yet, code against its interface with a
    stub and delete the stub when the real module lands. Capture, for example, can save notes against
    a `suggest` stub that returns no categories while the engines are still being built.

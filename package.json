@@ -23,6 +23,7 @@
 		"lint:fix": "bun run --filter '@stockpot/*' lint:fix",
 		"check:license": "bun tools/license/check-license.ts",
 		"check:links": "bun tools/docs/check-links.ts",
+		"check:migrations": "bun tools/migrations/check-migrations.ts",
 		"notices": "bun tools/notices/generate-notices.ts",
 		"postinstall": "lefthook install"
 	},

@@ -58,6 +58,12 @@ jobs:
       - name: Links in the docs
         run: bun run check:links
 
+      # The checkout is shallow and holds no main; the check compares the migrations with it.
+      - name: Migrations on main unchanged
+        run: |
+          git fetch --no-tags --depth=1 origin +refs/heads/main:refs/remotes/origin/main
+          bun run check:migrations
+
       # On pull requests notices.yml regenerates the file instead.
       - name: Third-party notices up to date
         if: github.event_name != 'pull_request'
