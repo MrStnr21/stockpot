@@ -3,6 +3,7 @@
 	"version": "0.0.0",
 	"private": true,
 	"type": "module",
+	"license": "AGPL-3.0-or-later",
 	"packageManager": "bun@1.4.3",
 	"workspaces": [
 		"packages/*",
@@ -19,6 +20,8 @@
 		"fmt:check": "bun run --filter '@stockpot/*' fmt:check && bunx --bun prettier --cache --ignore-path .gitignore --ignore-path .prettierignore --ignore-path .git/info/exclude --check .",
 		"lint": "bun run --filter '@stockpot/*' lint",
 		"lint:fix": "bun run --filter '@stockpot/*' lint:fix",
+		"check:license": "bun tools/license/check-license.ts",
+		"notices": "bun tools/notices/generate-notices.ts",
 		"postinstall": "lefthook install"
 	},
 	"devDependencies": {
