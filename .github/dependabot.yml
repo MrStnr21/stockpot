@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 The stockpot authors
+
+version: 2
+updates:
+  - package-ecosystem: bun
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      # One pull request a week for the tooling's minor and patch releases.
+      dev-dependencies:
+        dependency-type: development
+        update-types: [minor, patch]
+    ignore:
+      # astro check does not accept TypeScript 7 yet; the type-aware linter already runs on it (tsrs).
+      - dependency-name: typescript
+        versions: ['>=7']
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

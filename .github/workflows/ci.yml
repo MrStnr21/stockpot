@@ -1,0 +1,95 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 The stockpot authors
+
+# The full check list, the build and the end-to-end suite on every push to main. Dependabot pull
+# requests get it too, before merge: nobody runs the list locally for them.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: Check, test and build
+    if: github.event_name != 'pull_request' || github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Type-check
+        run: bun run check
+
+      - name: Unit tests
+        run: bun run test
+
+      - name: Format check
+        run: bun run fmt:check
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Licence headers
+        run: bun run check:license
+
+      # On pull requests notices.yml regenerates the file instead.
+      - name: Third-party notices up to date
+        if: github.event_name != 'pull_request'
+        run: bun run notices -- --check
+
+      - name: Build
+        run: bun run build
+
+  e2e:
+    name: End-to-end tests
+    if: github.event_name != 'pull_request' || github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Chromium
+        working-directory: packages/app
+        run: bunx playwright install --with-deps chromium
+
+      - name: Build and run the suite
+        run: bun run e2e
+
+      - name: Upload the Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: packages/app/playwright-report/
+          retention-days: 7
+
+  secrets:
+    name: Secret scan
+    if: github.event_name != 'pull_request' || github.event.pull_request.user.login == 'dependabot[bot]'
+    uses: ./.github/workflows/secrets.yml
