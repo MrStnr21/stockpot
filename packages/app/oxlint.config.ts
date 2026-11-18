@@ -3,7 +3,7 @@
 
 import { defineConfig } from 'oxlint'
 
-import { componentConfig } from '../../tools/lint/base.ts'
+import { componentConfig, specOverride } from '../../tools/lint/base.ts'
 
 /*
  * Layers from docs/architecture.md ("Dependency rules"). Patterns match whole file paths, and the
@@ -115,15 +115,37 @@ const policies = [
 		disallow: { to: { module: { source: ['node:*', 'bun:*', 'bun'] } } },
 		message: 'isomorphic code must not import runtime built-ins',
 	},
+	// Specs import `bun:test` and the shared helpers in tests/, whatever layer they sit in. Later policies win.
+	{ from: layers('test'), allow: { to: { module: { origin: ['external', 'core'] } } } },
 ]
 
 export default defineConfig({
 	...componentConfig,
 	settings: {
-		'boundaries/files': layerFiles,
+		// The test category matches first without stopping, so a spec keeps its layer too.
+		'boundaries/files': [{ pattern: '**/*.spec.ts', category: 'test' }, ...layerFiles],
 		'import/resolver': { typescript: { project: './tsconfig.json' } },
 	},
 	jsPlugins: [...componentConfig.jsPlugins, 'eslint-plugin-boundaries'],
+	overrides: [
+		...componentConfig.overrides,
+		specOverride(['src/**/*.spec.ts', 'tests/setup/**/*.spec.ts', 'tests/factories/**/*.spec.ts']),
+		{
+			// Playwright has no `it`: e2e specs keep `test`, inside one top-level `test.describe`.
+			files: ['tests/e2e/**/*.ts'],
+			jsPlugins: ['eslint-plugin-playwright'],
+			rules: {
+				'playwright/missing-playwright-await': 'error',
+				'playwright/no-conditional-in-test': 'error',
+				'playwright/no-focused-test': 'error',
+				'playwright/no-skipped-test': 'error',
+				'playwright/no-wait-for-timeout': 'error',
+				'playwright/require-hook': 'error',
+				'playwright/require-top-level-describe': ['error', { maxTopLevelDescribes: 1 }],
+				'playwright/valid-expect': 'error',
+			},
+		},
+	],
 	rules: {
 		...componentConfig.rules,
 		'boundaries/dependencies': ['error', { default: 'disallow', checkAllOrigins: true, policies }],

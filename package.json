@@ -14,6 +14,7 @@
 		"start": "bun run -F @stockpot/app start",
 		"check": "bun run --filter '@stockpot/*' check",
 		"test": "bun run --filter '@stockpot/*' test",
+		"e2e": "bun run -F @stockpot/app e2e",
 		"fmt": "bun run --filter '@stockpot/*' fmt && bunx --bun prettier --cache --ignore-path .gitignore --ignore-path .prettierignore --ignore-path .git/info/exclude --write .",
 		"fmt:check": "bun run --filter '@stockpot/*' fmt:check && bunx --bun prettier --cache --ignore-path .gitignore --ignore-path .prettierignore --ignore-path .git/info/exclude --check .",
 		"lint": "bun run --filter '@stockpot/*' lint",
