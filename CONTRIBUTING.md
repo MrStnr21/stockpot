@@ -50,11 +50,11 @@ bun run e2e
   relative link or anchor in the Markdown files.
 - After changing dependencies, also run `bun run notices -- --check`.
 
-CI runs the same commands. `checks.yml` runs the fast part on every pull request: `check`, `test`,
-`fmt:check`, `lint`, `check:license` and `check:links`, plus a gitleaks scan of the history.
-`ci.yml` runs the whole list on every push to `main`, plus `bun run notices -- --check`;
-Dependabot pull requests get it before merge. `notices.yml` regenerates the third-party notices on
-pull requests that change dependencies. Run the full list locally before you ask for review.
+CI runs the same commands. `ci.yml` runs the whole list on every pull request and every push to
+`main`, plus a gitleaks scan of the history; on `main` it also runs `bun run notices -- --check`.
+`notices.yml` regenerates the third-party notices on pull requests that change dependencies. A pull
+request can be merged only when the `ci.yml` jobs pass. Run the full list locally before you ask for
+review: it is faster than waiting for CI to find the same failure.
 
 For a user-facing change, also try the flow in a browser at phone and desktop widths, and say in
 the pull request what you checked.
