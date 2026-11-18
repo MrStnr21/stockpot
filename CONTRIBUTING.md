@@ -49,8 +49,8 @@ bun run e2e
   formats everything; `bun run lint:fix` applies automatic lint fixes, so review its diff.
 - `check:license` fails on a source file without its SPDX header, and `check:links` on a broken
   relative link or anchor in the Markdown files.
-- `check:migrations` fails when a database migration that is on `origin/main` changed, or when a
-  new one sorts before the last migration there; run `git fetch origin main` first. See the
+- `check:migrations` fails when your branch changed a database migration that is on `origin/main`,
+  or added one that sorts before the last migration there; run `git fetch origin main` first. See the
   [migrations README](packages/app/src/server/db/migrations/README.md).
 - After changing dependencies, also run `bun run notices -- --check`.
 

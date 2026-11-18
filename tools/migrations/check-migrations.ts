@@ -5,8 +5,13 @@
  * Fails when a migration that is already on main changed. Instances record each migration by its
  * folder name and never run it again, so an edit would reach fresh installs only and split the schema
  * in two. A new migration must also sort after every migration on main, so that every instance
- * applies them in the same order. Compares the working tree with `origin/main`, or the ref passed as
- * the first argument.
+ * applies them in the same order.
+ *
+ * On a branch, the shipped folders come from `origin/main` (or the ref passed as an argument), but the
+ * edits come from the branch alone: its diff since the merge base. Main may be ahead of a branch, as on
+ * a re-run of an old merge commit or a run that notices.yml dispatches on a pull request's head, and
+ * main's newer migrations are not the branch's edits. With `--push`, it checks the commit a push to
+ * main added against the commit before it; squash merges make every push one commit.
  */
 import { $, argv, Glob } from 'bun'
 import { posix } from 'node:path'
@@ -78,62 +83,110 @@ export function findMigrationProblems({
 	return [...edited, ...misplaced]
 }
 
-function lines(output: string) {
-	return output.split('\n').filter((line) => line !== '')
+export interface CheckOptions {
+	/** The repository root. */
+	root: string
+	/** The ref whose migrations count as shipped on a branch. */
+	base: string
+	/** Check the commit a push to main added against the commit before it. */
+	push: boolean
 }
 
-async function main() {
-	const root = posix.join(import.meta.dir, '../..')
-	const base = argv[2] ?? 'origin/main'
+// NUL-separated output keeps paths outside ASCII exactly as they are.
+async function git(root: string, args: string[]) {
+	return $`git -c core.quotePath=false ${args}`.cwd(root).quiet().text()
+}
 
-	const known = await $`git rev-parse --verify --quiet ${`${base}^{commit}`}`
-		.cwd(root)
-		.nothrow()
-		.quiet()
+function entries(output: string) {
+	return output.split('\0').filter((entry) => entry !== '')
+}
 
-	if (known.exitCode !== 0) {
-		console.error(`${base} is not available here: fetch it first (git fetch origin main).`)
-		process.exit(1)
+async function editsSince(root: string, base: string, push: boolean) {
+	if (push) {
+		return 'HEAD^'
 	}
 
+	const found = await $`git merge-base ${base} HEAD`.cwd(root).nothrow().quiet()
+
+	if (found.exitCode !== 0) {
+		throw new Error(
+			`No merge base of ${base} and HEAD: fetch their history (git fetch --unshallow).`,
+		)
+	}
+
+	return found.text().trim()
+}
+
+export async function collectMigrationState({
+	root,
+	base,
+	push,
+}: CheckOptions): Promise<MigrationState> {
 	const prefix = `${migrationsPath}/`
+	const since = await editsSince(root, base, push)
 
-	const tree = await $`git ls-tree -d --name-only ${base} ${prefix}`.cwd(root).text()
+	const [tree, diff, untracked] = await Promise.all([
+		git(root, ['ls-tree', '-d', '--name-only', '-z', push ? 'HEAD^' : base, prefix]),
+		git(root, ['diff', '--no-renames', '--name-status', '-z', since, '--', migrationsPath]),
+		git(root, ['ls-files', '--others', '--exclude-standard', '-z', '--', migrationsPath]),
+	])
 
-	const diff = await $`git diff --no-renames --name-status ${base} -- ${migrationsPath}`
-		.cwd(root)
-		.text()
-
-	const untracked = await $`git ls-files --others --exclude-standard -- ${migrationsPath}`
-		.cwd(root)
-		.text()
+	const diffEntries = entries(diff)
 
 	const changes = [
-		...lines(diff).map((line) => {
-			const [status = '', path = ''] = line.split('\t')
-
-			return { status, path: path.slice(prefix.length) }
-		}),
-		...lines(untracked).map((path) => ({ status: 'A', path: path.slice(prefix.length) })),
+		...diffEntries.flatMap((status, index) =>
+			index % 2 === 0
+				? [{ status, path: (diffEntries[index + 1] ?? '').slice(prefix.length) }]
+				: [],
+		),
+		...entries(untracked).map((path) => ({ status: 'A', path: path.slice(prefix.length) })),
 	]
 
 	const migrationFiles = await Array.fromAsync(
 		new Glob('*/migration.sql').scan({ cwd: posix.join(root, migrationsPath) }),
 	)
 
-	const shipped = lines(tree).map((path) => posix.basename(path))
-	const current = migrationFiles.map((path) => posix.dirname(path))
-	const problems = findMigrationProblems({ shipped, current, changes })
+	return {
+		shipped: entries(tree).map((path) => posix.basename(path)),
+		current: migrationFiles.map((path) => posix.dirname(path)),
+		changes,
+	}
+}
+
+export async function checkMigrations(options: CheckOptions): Promise<MigrationProblem[]> {
+	return findMigrationProblems(await collectMigrationState(options))
+}
+
+async function main() {
+	const root = posix.join(import.meta.dir, '../..')
+	const push = argv.includes('--push')
+	const base = argv.slice(2).find((argument) => !argument.startsWith('--')) ?? 'origin/main'
+	const shippedRef = push ? 'HEAD^' : base
+
+	const known = await $`git rev-parse --verify --quiet ${`${shippedRef}^{commit}`}`
+		.cwd(root)
+		.nothrow()
+		.quiet()
+
+	if (known.exitCode !== 0) {
+		console.error(`${shippedRef} is not available here: fetch the history of main first.`)
+		process.exit(1)
+	}
+
+	const state = await collectMigrationState({ root, base, push })
+	const problems = findMigrationProblems(state)
 
 	if (problems.length === 0) {
-		const added = current.filter((folder) => !shipped.includes(folder)).length
+		const added = state.current.filter((folder) => !state.shipped.includes(folder)).length
 
-		console.log(`The ${shipped.length} migration(s) on ${base} are unchanged; ${added} new.`)
+		console.log(
+			`The ${state.shipped.length} migration(s) on ${shippedRef} are unchanged; ${added} new.`,
+		)
 
 		return
 	}
 
-	const report = problems.map(({ path, reason }) => `${prefix}${path}: ${reason}`)
+	const report = problems.map(({ path, reason }) => `${migrationsPath}/${path}: ${reason}`)
 
 	console.error(
 		`${report.join('\n')}\n\nA migration on main is never edited: restore it and add a new one. ` +

@@ -26,10 +26,12 @@ jobs:
     name: Check, test and build
     runs-on: ubuntu-latest
     steps:
+      # The whole history: the migration check needs main, the merge base with it, and HEAD^.
       - name: Checkout
         uses: actions/checkout@v7
         with:
           persist-credentials: false
+          fetch-depth: 0
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
@@ -58,11 +60,9 @@ jobs:
       - name: Links in the docs
         run: bun run check:links
 
-      # The checkout is shallow and holds no main; the check compares the migrations with it.
+      # A push to main is one squash commit, checked against the commit before it.
       - name: Migrations on main unchanged
-        run: |
-          git fetch --no-tags --depth=1 origin +refs/heads/main:refs/remotes/origin/main
-          bun run check:migrations
+        run: bun run check:migrations ${{ github.event_name == 'push' && '-- --push' || '' }}
 
       # On pull requests notices.yml regenerates the file instead.
       - name: Third-party notices up to date
