@@ -35,6 +35,15 @@ pre-commit:
     - name: license
       glob: '*.{astro,cjs,css,html,js,mjs,sh,svelte,toml,ts,yaml,yml}'
       run: bun run check:license
+    # The repository is public: a key that lands in a commit stays in its history. CI scans with gitleaks;
+    # locally, gitleaks when it is installed, otherwise secretlint from the dev dependencies.
+    - name: secrets
+      run: |
+        if command -v gitleaks >/dev/null 2>&1; then
+          gitleaks git --pre-commit --staged --redact --no-banner
+        else
+          bunx --bun --no-install secretlint --secretlintignore .gitignore {staged_files}
+        fi
 
 pre-push:
   parallel: true

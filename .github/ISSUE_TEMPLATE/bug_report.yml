@@ -1,0 +1,61 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 The stockpot authors
+
+name: Bug report
+description: Something in stockpot does not work as it should.
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: stockpot version
+      description: A release tag, or the commit you run if you build from source.
+      placeholder: v0.1.0 or 1a2b3c4
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How you run it
+      options:
+        - From source
+        - Docker
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: client
+    attributes:
+      label: Device and browser
+      placeholder: iPhone, Safari 26 (home screen app)
+    validations:
+      required: true
+  - type: textarea
+    id: what_happened
+    attributes:
+      label: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. …
+        2. …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Remove API keys, tokens, note contents and other personal data before you paste.
+      render: shell
+    validations:
+      required: false

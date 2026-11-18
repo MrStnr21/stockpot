@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 The stockpot authors
+
+name: Documentation
+description: Something in the documentation is wrong, unclear or missing.
+labels: [documentation]
+body:
+  - type: input
+    id: page
+    attributes:
+      label: Page or section
+      placeholder: docs/architecture.md, "Dependency rules"
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is wrong or missing?
+    validations:
+      required: true

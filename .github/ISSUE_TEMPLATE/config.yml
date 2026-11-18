@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 The stockpot authors
+
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security issue
+    url: https://github.com/MrStnr21/stockpot/security/advisories/new
+    about: Please report vulnerabilities privately, not in a public issue.
