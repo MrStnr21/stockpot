@@ -27,6 +27,23 @@ pull requests are written. The rules the code follows are in [docs/](docs/): the
 [contributor guidelines](docs/guidelines/README.md). What comes next is in the
 [roadmap](ROADMAP.md).
 
+## Configuration
+
+An instance reads a few environment variables when it starts, and stops with a message naming the
+variable when one is invalid. Every other setting is changed in the app and stored in the database.
+
+| Variable                 | Default                                | What it sets                                                                                                               |
+| ------------------------ | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `STOCKPOT_DATA_DIR`      | `data`, in the working directory       | The folder that holds the database                                                                                         |
+| `PORT`                   | `4321`                                 | The port the server listens on                                                                                             |
+| `HOST`                   | `localhost`                            | The address the server listens on; `0.0.0.0` for every interface                                                           |
+| `STOCKPOT_PUBLIC_ORIGIN` | `http://localhost:` and the port       | The address you open stockpot at, such as `https://stockpot.example.ts.net`; set it when that is not the default           |
+| `STOCKPOT_SOURCE_URL`    | `https://github.com/MrStnr21/stockpot` | Where the source of your instance is published; point it at your fork if you change the code, as the AGPL asks (see below) |
+
+Engine keys and the agent command are stored in the database as plain text and never sent back to
+a browser, so keep the data directory readable only by the account that runs stockpot, and treat its
+backups the same way.
+
 ## License
 
 stockpot is free software, licensed under the GNU Affero General Public License, version 3 or any
