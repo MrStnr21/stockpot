@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
 import { describe, expect, it } from 'bun:test'
+import { looseObjects } from '#tests/setup/json-schema'
 import * as v from 'valibot'
 
 import { suggestionFormat, type Suggestion } from './suggestion'
@@ -40,5 +41,9 @@ describe('suggestionFormat', () => {
 
 	it('derives the same JSON Schema, with the category ids as an enum', () => {
 		expect(suggestionFormat(categoryIds).jsonSchema).toMatchSnapshot()
+	})
+
+	it('makes every object in its JSON Schema strict', () => {
+		expect(looseObjects(suggestionFormat(categoryIds).jsonSchema)).toEqual([])
 	})
 })

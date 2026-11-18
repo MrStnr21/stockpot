@@ -2,26 +2,29 @@
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
 import { describe, expect, it } from 'bun:test'
-import type { JsonSchema } from '@valibot/to-json-schema'
 import { cardFactories } from '#tests/factories/cards'
+import { looseObjects } from '#tests/setup/json-schema'
 import * as v from 'valibot'
 
 import { formatIds } from '#/lib/format-ids'
+import { deriveJsonSchema } from '#/lib/json-schema'
 
+import { deeperLevel, handsOnLevel } from './common'
 import { cardFormat, depths, formats } from './index'
 
 const cases = formatIds.flatMap((id) => depths.map((depth) => [id, depth] as const))
 
-/** Every object schema in `schema`, itself included. */
-function objectNodes(schema: JsonSchema): JsonSchema[] {
-	const items = schema.items === undefined ? [] : [schema.items].flat()
-	const children = [...Object.values(schema.properties ?? {}), ...items, ...(schema.anyOf ?? [])]
-	const own = schema.type === 'object' ? [schema] : []
-	// A JSON Schema definition may also be `true` or `false`; the derived ones never are.
-	const childSchemas = children.filter((child) => child !== true && child !== false)
-
-	return [...own, ...childSchemas.flatMap((child) => objectNodes(child))]
-}
+/*
+ * Each schema a card can use, once: the shared levels 2 and 3 back five formats, so snapshotting every
+ * format and depth would repeat them and hide which change touched what.
+ */
+const distinctSchemas = [
+	...formatIds.map((id) => [`${id} level 1`, formats[id].levels[1].schema] as const),
+	['shared level 2', deeperLevel.schema],
+	['shared level 3', handsOnLevel.schema],
+	['vocabulary level 2', formats.vocabulary.levels[2].schema],
+	['vocabulary level 3', formats.vocabulary.levels[3].schema],
+] as const
 
 describe('formats', () => {
 	describe('cardFormat', () => {
@@ -50,23 +53,28 @@ describe('formats', () => {
 			expect(v.is(cardFormat(id, depth).schema, broken)).toBe(false)
 		})
 
-		it.each(cases)('derives the same JSON Schema for %s at depth %d', (id, depth) => {
-			expect(cardFormat(id, depth).jsonSchema).toMatchSnapshot()
-		})
-
-		it.each(cases)('makes every object strict in the %s schema at depth %d', (id, depth) => {
-			const nodes = objectNodes(cardFormat(id, depth).jsonSchema)
-
-			expect(nodes.map((node) => node.additionalProperties)).toEqual(nodes.map(() => false))
-			expect(nodes.map((node) => node.required)).toEqual(
-				nodes.map((node) => Object.keys(node.properties ?? {})),
-			)
-		})
-
 		it('joins the format and level instructions', () => {
 			expect(cardFormat('concept', 2).instructions).toBe(
 				`${formats.concept.instructions}\n\n${formats.concept.levels[2].instructions}`,
 			)
+		})
+	})
+
+	describe('JSON Schemas', () => {
+		it('covers every schema a format uses at any depth', () => {
+			const covered = new Set<v.GenericSchema>(distinctSchemas.map(([, schema]) => schema))
+
+			expect(cases.filter(([id, depth]) => !covered.has(formats[id].levels[depth].schema))).toEqual(
+				[],
+			)
+		})
+
+		it.each(distinctSchemas)('derives the same JSON Schema for the %s', (_name, schema) => {
+			expect(deriveJsonSchema(schema)).toMatchSnapshot()
+		})
+
+		it.each(distinctSchemas)('makes every object strict in the %s', (_name, schema) => {
+			expect(looseObjects(deriveJsonSchema(schema))).toEqual([])
 		})
 	})
 })

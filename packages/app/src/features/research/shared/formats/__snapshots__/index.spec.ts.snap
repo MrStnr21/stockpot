@@ -1,6 +1,6 @@
 // Bun Snapshot v1, https://bun.sh/docs/test/snapshots
 
-exports[`formats cardFormat derives the same JSON Schema for vocabulary at depth 1 1`] = `
+exports[`formats JSON Schemas derives the same JSON Schema for the vocabulary level 1 1`] = `
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "additionalProperties": false,
@@ -155,179 +155,7 @@ exports[`formats cardFormat derives the same JSON Schema for vocabulary at depth
 }
 `;
 
-exports[`formats cardFormat derives the same JSON Schema for vocabulary at depth 2 1`] = `
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "additionalProperties": false,
-  "properties": {
-    "collocations": {
-      "description": "Words it usually goes with, such as "make a decision".",
-      "items": {
-        "description": "One collocation.",
-        "maxLength": 80,
-        "minLength": 1,
-        "type": "string",
-      },
-      "maxItems": 8,
-      "minItems": 0,
-      "type": "array",
-    },
-    "nuance": {
-      "description": "Register, connotation and when native speakers reach for it, in a short paragraph.",
-      "maxLength": 1200,
-      "minLength": 1,
-      "type": "string",
-    },
-    "sources": {
-      "description": "Pages that back the card up, best first. Leave the list empty rather than add a page you did not see.",
-      "items": {
-        "additionalProperties": false,
-        "properties": {
-          "title": {
-            "description": "The title of the page, as the page itself shows it.",
-            "maxLength": 200,
-            "minLength": 1,
-            "type": "string",
-          },
-          "url": {
-            "description": "The address of a page you opened or saw in search results while writing this card. Never an address from memory or one you built yourself.",
-            "format": "uri",
-            "maxLength": 2000,
-            "pattern": "^https?:\\/\\/",
-            "type": "string",
-          },
-        },
-        "required": [
-          "title",
-          "url",
-        ],
-        "type": "object",
-      },
-      "maxItems": 3,
-      "minItems": 0,
-      "type": "array",
-    },
-    "synonyms": {
-      "description": "Near synonyms and how each one differs.",
-      "items": {
-        "additionalProperties": false,
-        "properties": {
-          "difference": {
-            "description": "How it differs in meaning or use.",
-            "maxLength": 300,
-            "minLength": 1,
-            "type": "string",
-          },
-          "word": {
-            "description": "A near synonym.",
-            "maxLength": 80,
-            "minLength": 1,
-            "type": "string",
-          },
-        },
-        "required": [
-          "word",
-          "difference",
-        ],
-        "type": "object",
-      },
-      "maxItems": 5,
-      "minItems": 0,
-      "type": "array",
-    },
-    "uncertain": {
-      "description": "True when you could not confirm the main facts: the term is too new, too narrow or ambiguous, or the sources disagree.",
-      "type": "boolean",
-    },
-  },
-  "required": [
-    "nuance",
-    "synonyms",
-    "collocations",
-    "sources",
-    "uncertain",
-  ],
-  "type": "object",
-}
-`;
-
-exports[`formats cardFormat derives the same JSON Schema for vocabulary at depth 3 1`] = `
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "additionalProperties": false,
-  "properties": {
-    "exercises": {
-      "description": "Exercises that make the reader use the word, from easy to hard.",
-      "items": {
-        "additionalProperties": false,
-        "properties": {
-          "answer": {
-            "description": "The expected answer.",
-            "maxLength": 300,
-            "minLength": 1,
-            "type": "string",
-          },
-          "prompt": {
-            "description": "A gap to fill or a sentence to translate.",
-            "maxLength": 300,
-            "minLength": 1,
-            "type": "string",
-          },
-        },
-        "required": [
-          "prompt",
-          "answer",
-        ],
-        "type": "object",
-      },
-      "maxItems": 6,
-      "minItems": 3,
-      "type": "array",
-    },
-    "sources": {
-      "description": "Pages that back the card up, best first. Leave the list empty rather than add a page you did not see.",
-      "items": {
-        "additionalProperties": false,
-        "properties": {
-          "title": {
-            "description": "The title of the page, as the page itself shows it.",
-            "maxLength": 200,
-            "minLength": 1,
-            "type": "string",
-          },
-          "url": {
-            "description": "The address of a page you opened or saw in search results while writing this card. Never an address from memory or one you built yourself.",
-            "format": "uri",
-            "maxLength": 2000,
-            "pattern": "^https?:\\/\\/",
-            "type": "string",
-          },
-        },
-        "required": [
-          "title",
-          "url",
-        ],
-        "type": "object",
-      },
-      "maxItems": 3,
-      "minItems": 0,
-      "type": "array",
-    },
-    "uncertain": {
-      "description": "True when you could not confirm the main facts: the term is too new, too narrow or ambiguous, or the sources disagree.",
-      "type": "boolean",
-    },
-  },
-  "required": [
-    "exercises",
-    "sources",
-    "uncertain",
-  ],
-  "type": "object",
-}
-`;
-
-exports[`formats cardFormat derives the same JSON Schema for technology at depth 1 1`] = `
+exports[`formats JSON Schemas derives the same JSON Schema for the technology level 1 1`] = `
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "additionalProperties": false,
@@ -422,148 +250,7 @@ exports[`formats cardFormat derives the same JSON Schema for technology at depth
 }
 `;
 
-exports[`formats cardFormat derives the same JSON Schema for technology at depth 2 1`] = `
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "additionalProperties": false,
-  "properties": {
-    "howItWorks": {
-      "description": "How it works underneath, in a few short paragraphs, starting where the earlier card stopped.",
-      "maxLength": 2000,
-      "minLength": 1,
-      "type": "string",
-    },
-    "sources": {
-      "description": "Pages that back the card up, best first. Leave the list empty rather than add a page you did not see.",
-      "items": {
-        "additionalProperties": false,
-        "properties": {
-          "title": {
-            "description": "The title of the page, as the page itself shows it.",
-            "maxLength": 200,
-            "minLength": 1,
-            "type": "string",
-          },
-          "url": {
-            "description": "The address of a page you opened or saw in search results while writing this card. Never an address from memory or one you built yourself.",
-            "format": "uri",
-            "maxLength": 2000,
-            "pattern": "^https?:\\/\\/",
-            "type": "string",
-          },
-        },
-        "required": [
-          "title",
-          "url",
-        ],
-        "type": "object",
-      },
-      "maxItems": 5,
-      "minItems": 0,
-      "type": "array",
-    },
-    "tradeoffs": {
-      "description": "What it costs, where it breaks down and when to choose something else.",
-      "items": {
-        "description": "One trade-off or limit.",
-        "maxLength": 300,
-        "minLength": 1,
-        "type": "string",
-      },
-      "maxItems": 6,
-      "minItems": 1,
-      "type": "array",
-    },
-    "uncertain": {
-      "description": "True when you could not confirm the main facts: the term is too new, too narrow or ambiguous, or the sources disagree.",
-      "type": "boolean",
-    },
-  },
-  "required": [
-    "howItWorks",
-    "tradeoffs",
-    "sources",
-    "uncertain",
-  ],
-  "type": "object",
-}
-`;
-
-exports[`formats cardFormat derives the same JSON Schema for technology at depth 3 1`] = `
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "additionalProperties": false,
-  "properties": {
-    "example": {
-      "anyOf": [
-        {
-          "maxLength": 4000,
-          "minLength": 1,
-          "type": "string",
-        },
-        {
-          "type": "null",
-        },
-      ],
-      "description": "A code sample or a worked example that the steps use, or null when none fits.",
-    },
-    "sources": {
-      "description": "Primary sources and in-depth material: documentation, specifications, papers, talks. Best first.",
-      "items": {
-        "additionalProperties": false,
-        "properties": {
-          "title": {
-            "description": "The title of the page, as the page itself shows it.",
-            "maxLength": 200,
-            "minLength": 1,
-            "type": "string",
-          },
-          "url": {
-            "description": "The address of a page you opened or saw in search results while writing this card. Never an address from memory or one you built yourself.",
-            "format": "uri",
-            "maxLength": 2000,
-            "pattern": "^https?:\\/\\/",
-            "type": "string",
-          },
-        },
-        "required": [
-          "title",
-          "url",
-        ],
-        "type": "object",
-      },
-      "maxItems": 8,
-      "minItems": 0,
-      "type": "array",
-    },
-    "steps": {
-      "description": "A walkthrough the reader can follow in under an hour, in order.",
-      "items": {
-        "description": "One step.",
-        "maxLength": 300,
-        "minLength": 1,
-        "type": "string",
-      },
-      "maxItems": 8,
-      "minItems": 1,
-      "type": "array",
-    },
-    "uncertain": {
-      "description": "True when you could not confirm the main facts: the term is too new, too narrow or ambiguous, or the sources disagree.",
-      "type": "boolean",
-    },
-  },
-  "required": [
-    "steps",
-    "example",
-    "sources",
-    "uncertain",
-  ],
-  "type": "object",
-}
-`;
-
-exports[`formats cardFormat derives the same JSON Schema for comparison at depth 1 1`] = `
+exports[`formats JSON Schemas derives the same JSON Schema for the comparison level 1 1`] = `
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "additionalProperties": false,
@@ -686,148 +373,7 @@ exports[`formats cardFormat derives the same JSON Schema for comparison at depth
 }
 `;
 
-exports[`formats cardFormat derives the same JSON Schema for comparison at depth 2 1`] = `
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "additionalProperties": false,
-  "properties": {
-    "howItWorks": {
-      "description": "How it works underneath, in a few short paragraphs, starting where the earlier card stopped.",
-      "maxLength": 2000,
-      "minLength": 1,
-      "type": "string",
-    },
-    "sources": {
-      "description": "Pages that back the card up, best first. Leave the list empty rather than add a page you did not see.",
-      "items": {
-        "additionalProperties": false,
-        "properties": {
-          "title": {
-            "description": "The title of the page, as the page itself shows it.",
-            "maxLength": 200,
-            "minLength": 1,
-            "type": "string",
-          },
-          "url": {
-            "description": "The address of a page you opened or saw in search results while writing this card. Never an address from memory or one you built yourself.",
-            "format": "uri",
-            "maxLength": 2000,
-            "pattern": "^https?:\\/\\/",
-            "type": "string",
-          },
-        },
-        "required": [
-          "title",
-          "url",
-        ],
-        "type": "object",
-      },
-      "maxItems": 5,
-      "minItems": 0,
-      "type": "array",
-    },
-    "tradeoffs": {
-      "description": "What it costs, where it breaks down and when to choose something else.",
-      "items": {
-        "description": "One trade-off or limit.",
-        "maxLength": 300,
-        "minLength": 1,
-        "type": "string",
-      },
-      "maxItems": 6,
-      "minItems": 1,
-      "type": "array",
-    },
-    "uncertain": {
-      "description": "True when you could not confirm the main facts: the term is too new, too narrow or ambiguous, or the sources disagree.",
-      "type": "boolean",
-    },
-  },
-  "required": [
-    "howItWorks",
-    "tradeoffs",
-    "sources",
-    "uncertain",
-  ],
-  "type": "object",
-}
-`;
-
-exports[`formats cardFormat derives the same JSON Schema for comparison at depth 3 1`] = `
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "additionalProperties": false,
-  "properties": {
-    "example": {
-      "anyOf": [
-        {
-          "maxLength": 4000,
-          "minLength": 1,
-          "type": "string",
-        },
-        {
-          "type": "null",
-        },
-      ],
-      "description": "A code sample or a worked example that the steps use, or null when none fits.",
-    },
-    "sources": {
-      "description": "Primary sources and in-depth material: documentation, specifications, papers, talks. Best first.",
-      "items": {
-        "additionalProperties": false,
-        "properties": {
-          "title": {
-            "description": "The title of the page, as the page itself shows it.",
-            "maxLength": 200,
-            "minLength": 1,
-            "type": "string",
-          },
-          "url": {
-            "description": "The address of a page you opened or saw in search results while writing this card. Never an address from memory or one you built yourself.",
-            "format": "uri",
-            "maxLength": 2000,
-            "pattern": "^https?:\\/\\/",
-            "type": "string",
-          },
-        },
-        "required": [
-          "title",
-          "url",
-        ],
-        "type": "object",
-      },
-      "maxItems": 8,
-      "minItems": 0,
-      "type": "array",
-    },
-    "steps": {
-      "description": "A walkthrough the reader can follow in under an hour, in order.",
-      "items": {
-        "description": "One step.",
-        "maxLength": 300,
-        "minLength": 1,
-        "type": "string",
-      },
-      "maxItems": 8,
-      "minItems": 1,
-      "type": "array",
-    },
-    "uncertain": {
-      "description": "True when you could not confirm the main facts: the term is too new, too narrow or ambiguous, or the sources disagree.",
-      "type": "boolean",
-    },
-  },
-  "required": [
-    "steps",
-    "example",
-    "sources",
-    "uncertain",
-  ],
-  "type": "object",
-}
-`;
-
-exports[`formats cardFormat derives the same JSON Schema for concept at depth 1 1`] = `
+exports[`formats JSON Schemas derives the same JSON Schema for the concept level 1 1`] = `
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "additionalProperties": false,
@@ -928,148 +474,7 @@ exports[`formats cardFormat derives the same JSON Schema for concept at depth 1 
 }
 `;
 
-exports[`formats cardFormat derives the same JSON Schema for concept at depth 2 1`] = `
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "additionalProperties": false,
-  "properties": {
-    "howItWorks": {
-      "description": "How it works underneath, in a few short paragraphs, starting where the earlier card stopped.",
-      "maxLength": 2000,
-      "minLength": 1,
-      "type": "string",
-    },
-    "sources": {
-      "description": "Pages that back the card up, best first. Leave the list empty rather than add a page you did not see.",
-      "items": {
-        "additionalProperties": false,
-        "properties": {
-          "title": {
-            "description": "The title of the page, as the page itself shows it.",
-            "maxLength": 200,
-            "minLength": 1,
-            "type": "string",
-          },
-          "url": {
-            "description": "The address of a page you opened or saw in search results while writing this card. Never an address from memory or one you built yourself.",
-            "format": "uri",
-            "maxLength": 2000,
-            "pattern": "^https?:\\/\\/",
-            "type": "string",
-          },
-        },
-        "required": [
-          "title",
-          "url",
-        ],
-        "type": "object",
-      },
-      "maxItems": 5,
-      "minItems": 0,
-      "type": "array",
-    },
-    "tradeoffs": {
-      "description": "What it costs, where it breaks down and when to choose something else.",
-      "items": {
-        "description": "One trade-off or limit.",
-        "maxLength": 300,
-        "minLength": 1,
-        "type": "string",
-      },
-      "maxItems": 6,
-      "minItems": 1,
-      "type": "array",
-    },
-    "uncertain": {
-      "description": "True when you could not confirm the main facts: the term is too new, too narrow or ambiguous, or the sources disagree.",
-      "type": "boolean",
-    },
-  },
-  "required": [
-    "howItWorks",
-    "tradeoffs",
-    "sources",
-    "uncertain",
-  ],
-  "type": "object",
-}
-`;
-
-exports[`formats cardFormat derives the same JSON Schema for concept at depth 3 1`] = `
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "additionalProperties": false,
-  "properties": {
-    "example": {
-      "anyOf": [
-        {
-          "maxLength": 4000,
-          "minLength": 1,
-          "type": "string",
-        },
-        {
-          "type": "null",
-        },
-      ],
-      "description": "A code sample or a worked example that the steps use, or null when none fits.",
-    },
-    "sources": {
-      "description": "Primary sources and in-depth material: documentation, specifications, papers, talks. Best first.",
-      "items": {
-        "additionalProperties": false,
-        "properties": {
-          "title": {
-            "description": "The title of the page, as the page itself shows it.",
-            "maxLength": 200,
-            "minLength": 1,
-            "type": "string",
-          },
-          "url": {
-            "description": "The address of a page you opened or saw in search results while writing this card. Never an address from memory or one you built yourself.",
-            "format": "uri",
-            "maxLength": 2000,
-            "pattern": "^https?:\\/\\/",
-            "type": "string",
-          },
-        },
-        "required": [
-          "title",
-          "url",
-        ],
-        "type": "object",
-      },
-      "maxItems": 8,
-      "minItems": 0,
-      "type": "array",
-    },
-    "steps": {
-      "description": "A walkthrough the reader can follow in under an hour, in order.",
-      "items": {
-        "description": "One step.",
-        "maxLength": 300,
-        "minLength": 1,
-        "type": "string",
-      },
-      "maxItems": 8,
-      "minItems": 1,
-      "type": "array",
-    },
-    "uncertain": {
-      "description": "True when you could not confirm the main facts: the term is too new, too narrow or ambiguous, or the sources disagree.",
-      "type": "boolean",
-    },
-  },
-  "required": [
-    "steps",
-    "example",
-    "sources",
-    "uncertain",
-  ],
-  "type": "object",
-}
-`;
-
-exports[`formats cardFormat derives the same JSON Schema for report at depth 1 1`] = `
+exports[`formats JSON Schemas derives the same JSON Schema for the report level 1 1`] = `
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "additionalProperties": false,
@@ -1211,148 +616,7 @@ exports[`formats cardFormat derives the same JSON Schema for report at depth 1 1
 }
 `;
 
-exports[`formats cardFormat derives the same JSON Schema for report at depth 2 1`] = `
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "additionalProperties": false,
-  "properties": {
-    "howItWorks": {
-      "description": "How it works underneath, in a few short paragraphs, starting where the earlier card stopped.",
-      "maxLength": 2000,
-      "minLength": 1,
-      "type": "string",
-    },
-    "sources": {
-      "description": "Pages that back the card up, best first. Leave the list empty rather than add a page you did not see.",
-      "items": {
-        "additionalProperties": false,
-        "properties": {
-          "title": {
-            "description": "The title of the page, as the page itself shows it.",
-            "maxLength": 200,
-            "minLength": 1,
-            "type": "string",
-          },
-          "url": {
-            "description": "The address of a page you opened or saw in search results while writing this card. Never an address from memory or one you built yourself.",
-            "format": "uri",
-            "maxLength": 2000,
-            "pattern": "^https?:\\/\\/",
-            "type": "string",
-          },
-        },
-        "required": [
-          "title",
-          "url",
-        ],
-        "type": "object",
-      },
-      "maxItems": 5,
-      "minItems": 0,
-      "type": "array",
-    },
-    "tradeoffs": {
-      "description": "What it costs, where it breaks down and when to choose something else.",
-      "items": {
-        "description": "One trade-off or limit.",
-        "maxLength": 300,
-        "minLength": 1,
-        "type": "string",
-      },
-      "maxItems": 6,
-      "minItems": 1,
-      "type": "array",
-    },
-    "uncertain": {
-      "description": "True when you could not confirm the main facts: the term is too new, too narrow or ambiguous, or the sources disagree.",
-      "type": "boolean",
-    },
-  },
-  "required": [
-    "howItWorks",
-    "tradeoffs",
-    "sources",
-    "uncertain",
-  ],
-  "type": "object",
-}
-`;
-
-exports[`formats cardFormat derives the same JSON Schema for report at depth 3 1`] = `
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "additionalProperties": false,
-  "properties": {
-    "example": {
-      "anyOf": [
-        {
-          "maxLength": 4000,
-          "minLength": 1,
-          "type": "string",
-        },
-        {
-          "type": "null",
-        },
-      ],
-      "description": "A code sample or a worked example that the steps use, or null when none fits.",
-    },
-    "sources": {
-      "description": "Primary sources and in-depth material: documentation, specifications, papers, talks. Best first.",
-      "items": {
-        "additionalProperties": false,
-        "properties": {
-          "title": {
-            "description": "The title of the page, as the page itself shows it.",
-            "maxLength": 200,
-            "minLength": 1,
-            "type": "string",
-          },
-          "url": {
-            "description": "The address of a page you opened or saw in search results while writing this card. Never an address from memory or one you built yourself.",
-            "format": "uri",
-            "maxLength": 2000,
-            "pattern": "^https?:\\/\\/",
-            "type": "string",
-          },
-        },
-        "required": [
-          "title",
-          "url",
-        ],
-        "type": "object",
-      },
-      "maxItems": 8,
-      "minItems": 0,
-      "type": "array",
-    },
-    "steps": {
-      "description": "A walkthrough the reader can follow in under an hour, in order.",
-      "items": {
-        "description": "One step.",
-        "maxLength": 300,
-        "minLength": 1,
-        "type": "string",
-      },
-      "maxItems": 8,
-      "minItems": 1,
-      "type": "array",
-    },
-    "uncertain": {
-      "description": "True when you could not confirm the main facts: the term is too new, too narrow or ambiguous, or the sources disagree.",
-      "type": "boolean",
-    },
-  },
-  "required": [
-    "steps",
-    "example",
-    "sources",
-    "uncertain",
-  ],
-  "type": "object",
-}
-`;
-
-exports[`formats cardFormat derives the same JSON Schema for brief at depth 1 1`] = `
+exports[`formats JSON Schemas derives the same JSON Schema for the brief level 1 1`] = `
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "additionalProperties": false,
@@ -1426,7 +690,7 @@ exports[`formats cardFormat derives the same JSON Schema for brief at depth 1 1`
 }
 `;
 
-exports[`formats cardFormat derives the same JSON Schema for brief at depth 2 1`] = `
+exports[`formats JSON Schemas derives the same JSON Schema for the shared level 2 1`] = `
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "additionalProperties": false,
@@ -1493,7 +757,7 @@ exports[`formats cardFormat derives the same JSON Schema for brief at depth 2 1`
 }
 `;
 
-exports[`formats cardFormat derives the same JSON Schema for brief at depth 3 1`] = `
+exports[`formats JSON Schemas derives the same JSON Schema for the shared level 3 1`] = `
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "additionalProperties": false,
@@ -1560,6 +824,178 @@ exports[`formats cardFormat derives the same JSON Schema for brief at depth 3 1`
   "required": [
     "steps",
     "example",
+    "sources",
+    "uncertain",
+  ],
+  "type": "object",
+}
+`;
+
+exports[`formats JSON Schemas derives the same JSON Schema for the vocabulary level 2 1`] = `
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "collocations": {
+      "description": "Words it usually goes with, such as "make a decision".",
+      "items": {
+        "description": "One collocation.",
+        "maxLength": 80,
+        "minLength": 1,
+        "type": "string",
+      },
+      "maxItems": 8,
+      "minItems": 0,
+      "type": "array",
+    },
+    "nuance": {
+      "description": "Register, connotation and when native speakers reach for it, in a short paragraph.",
+      "maxLength": 1200,
+      "minLength": 1,
+      "type": "string",
+    },
+    "sources": {
+      "description": "Pages that back the card up, best first. Leave the list empty rather than add a page you did not see.",
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "description": "The title of the page, as the page itself shows it.",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string",
+          },
+          "url": {
+            "description": "The address of a page you opened or saw in search results while writing this card. Never an address from memory or one you built yourself.",
+            "format": "uri",
+            "maxLength": 2000,
+            "pattern": "^https?:\\/\\/",
+            "type": "string",
+          },
+        },
+        "required": [
+          "title",
+          "url",
+        ],
+        "type": "object",
+      },
+      "maxItems": 3,
+      "minItems": 0,
+      "type": "array",
+    },
+    "synonyms": {
+      "description": "Near synonyms and how each one differs.",
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "difference": {
+            "description": "How it differs in meaning or use.",
+            "maxLength": 300,
+            "minLength": 1,
+            "type": "string",
+          },
+          "word": {
+            "description": "A near synonym.",
+            "maxLength": 80,
+            "minLength": 1,
+            "type": "string",
+          },
+        },
+        "required": [
+          "word",
+          "difference",
+        ],
+        "type": "object",
+      },
+      "maxItems": 5,
+      "minItems": 0,
+      "type": "array",
+    },
+    "uncertain": {
+      "description": "True when you could not confirm the main facts: the term is too new, too narrow or ambiguous, or the sources disagree.",
+      "type": "boolean",
+    },
+  },
+  "required": [
+    "nuance",
+    "synonyms",
+    "collocations",
+    "sources",
+    "uncertain",
+  ],
+  "type": "object",
+}
+`;
+
+exports[`formats JSON Schemas derives the same JSON Schema for the vocabulary level 3 1`] = `
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "exercises": {
+      "description": "Exercises that make the reader use the word, from easy to hard.",
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "answer": {
+            "description": "The expected answer.",
+            "maxLength": 300,
+            "minLength": 1,
+            "type": "string",
+          },
+          "prompt": {
+            "description": "A gap to fill or a sentence to translate.",
+            "maxLength": 300,
+            "minLength": 1,
+            "type": "string",
+          },
+        },
+        "required": [
+          "prompt",
+          "answer",
+        ],
+        "type": "object",
+      },
+      "maxItems": 6,
+      "minItems": 3,
+      "type": "array",
+    },
+    "sources": {
+      "description": "Pages that back the card up, best first. Leave the list empty rather than add a page you did not see.",
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "description": "The title of the page, as the page itself shows it.",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string",
+          },
+          "url": {
+            "description": "The address of a page you opened or saw in search results while writing this card. Never an address from memory or one you built yourself.",
+            "format": "uri",
+            "maxLength": 2000,
+            "pattern": "^https?:\\/\\/",
+            "type": "string",
+          },
+        },
+        "required": [
+          "title",
+          "url",
+        ],
+        "type": "object",
+      },
+      "maxItems": 3,
+      "minItems": 0,
+      "type": "array",
+    },
+    "uncertain": {
+      "description": "True when you could not confirm the main facts: the term is too new, too narrow or ambiguous, or the sources disagree.",
+      "type": "boolean",
+    },
+  },
+  "required": [
+    "exercises",
     "sources",
     "uncertain",
   ],
