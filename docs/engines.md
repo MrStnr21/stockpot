@@ -204,8 +204,10 @@ prompt changes.
 ## Privacy
 
 A private note reaches an engine as its term alone: no text as typed, context, link or earlier
-cards. `redactPrivate` in the contract applies this, and the router calls it on every input before
-any engine sees it, fallback engines included, so no caller can forget it. The task's own settings
+cards. `redactPrivate` in the contract applies this. The `Engine` methods take only a `Redacted`
+input, which nothing but `redactPrivate` can make, so every path to an engine, fallback included,
+goes through it. It rebuilds the input from the fields the contract defines, so nothing else a
+caller puts on it reaches an engine, whether the note is private or not. The task's own settings
 (the format, the category's name and extra instructions, the depth and the card language) are not
 note data and are sent as for any note; a category's extra instructions apply to every note in it,
 so they should not hold anything the owner would not send with each one.

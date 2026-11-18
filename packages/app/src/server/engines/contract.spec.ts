@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
-import { describe, expect, it } from 'bun:test'
+import { describe, expect, expectTypeOf, it } from 'bun:test'
 import { toJsonSchema } from '@valibot/to-json-schema'
 import {
 	cardInputFactory,
+	engineNoteFactory,
 	privateNoteFactory,
 	suggestInputFactory,
 } from '#tests/factories/engine-input'
@@ -14,6 +15,7 @@ import {
 	EngineError,
 	parseOutput,
 	redactPrivate,
+	type Engine,
 	type EngineFailure,
 	type JsonValue,
 	type OutputFormat,
@@ -69,16 +71,37 @@ describe('engine contract', () => {
 		it('sends only the term of a private note to suggest', () => {
 			const input = suggestInputFactory.build({ note: privateNoteFactory.build() })
 
-			expect(redactPrivate(input)).toEqual({
+			expect(redactPrivate(input)).toMatchObject({
 				...input,
 				note: { term: input.note.term, text: null, context: null, url: null, isPrivate: true },
 			})
 		})
 
-		it('passes a note that is not private through unchanged', () => {
+		it('keeps the text, context, link and earlier cards of a note that is not private', () => {
 			const input = cardInputFactory.build()
 
-			expect(redactPrivate(input)).toBe(input)
+			expect(redactPrivate(input)).toMatchObject({ note: input.note, previous: input.previous })
+		})
+
+		it.each([true, false])(
+			'drops fields the contract does not define, when private is %p',
+			(isPrivate) => {
+				const note = { ...engineNoteFactory.build({ isPrivate }), owner: 'Seen in a team chat' }
+				const input = { ...cardInputFactory.build({ note }), noteText: 'Seen in a team chat' }
+				const redacted = redactPrivate(input)
+
+				expect([redacted, redacted.note].map((value) => Object.keys(value).toSorted())).toEqual([
+					['category', 'depth', 'language', 'note', 'output', 'previous', 'task'],
+					['context', 'isPrivate', 'term', 'text', 'url'],
+				])
+			},
+		)
+
+		it('is the only way to make an input an engine accepts', () => {
+			const input = cardInputFactory.build()
+
+			expectTypeOf(input).not.toExtend<Parameters<Engine['explain']>[0]>()
+			expectTypeOf(redactPrivate(input)).toExtend<Parameters<Engine['explain']>[0]>()
 		})
 	})
 

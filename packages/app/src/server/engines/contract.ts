@@ -113,14 +113,24 @@ export interface EngineResult<TOutput> {
 	readonly elapsedMs: number
 }
 
+/*
+ * Set only by `redactPrivate`. The symbol is not exported, so no other module can build a `Redacted`
+ * value without a type assertion, which review rejects.
+ */
+const redactedMark: unique symbol = Symbol('redacted')
+
+/** An input that went through `redactPrivate`: the only kind an engine accepts. */
+export type Redacted<TInput extends EngineInput> = TInput & { readonly [redactedMark]: true }
+
 type Run<TInput extends EngineInput> = <TSchema extends v.GenericSchema>(
-	input: TInput & { readonly output: OutputFormat<TSchema> },
+	input: Redacted<TInput & { readonly output: OutputFormat<TSchema> }>,
 	options: RunOptions,
 ) => Promise<EngineResult<v.InferOutput<TSchema>>>
 
 /**
- * A language model provider behind the contract. An engine validates its answer with
- * `parseOutput` and reports every failure it recognises as an `EngineError`; anything else it
+ * A language model provider behind the contract. Its methods take only a `Redacted` input, so every
+ * path to an engine, fallback included, goes through `redactPrivate`. An engine validates its answer
+ * with `parseOutput` and reports every failure it recognises as an `EngineError`; anything else it
  * throws is retried by the job runner as an ordinary error.
  */
 export interface Engine {
@@ -179,23 +189,46 @@ export function parseOutput<TSchema extends v.GenericSchema>(
 	)
 }
 
+function redactNote({ term, text, context, url, isPrivate }: EngineNote): EngineNote {
+	return isPrivate
+		? { term, text: null, context: null, url: null, isPrivate }
+		: { term, text, context, url, isPrivate }
+}
+
 /**
  * The privacy rule: a private note reaches an engine as its term alone, without its text, context,
- * link or earlier cards. The router applies it to every call, so no caller can forget it. The task's
- * own settings (format, category, language) are not note data and stay.
+ * link or earlier cards. The task's own settings (format, category, language) are not note data and
+ * stay. The result is rebuilt from the fields the contract defines, so nothing else a caller put on
+ * the input, private or not, reaches an engine.
  */
-export function redactPrivate<TInput extends EngineInput>(input: TInput): TInput {
-	if (!input.note.isPrivate) {
-		return input
+export function redactPrivate<TSchema extends v.GenericSchema>(
+	input: SuggestInput<TSchema>,
+): Redacted<SuggestInput<TSchema>>
+export function redactPrivate<
+	TTask extends 'explain' | 'research',
+	TSchema extends v.GenericSchema,
+>(input: CardInput<TTask, TSchema>): Redacted<CardInput<TTask, TSchema>>
+export function redactPrivate(input: EngineInput): Redacted<EngineInput> {
+	const shared = {
+		note: redactNote(input.note),
+		language: input.language,
+		output: input.output,
+		[redactedMark]: true,
+	} as const
+
+	if (input.task === 'suggest') {
+		const categories = input.categories.map(({ id, name, hint }) => ({ id, name, hint }))
+
+		return { ...shared, task: input.task, categories }
 	}
 
-	const note: EngineNote = {
-		term: input.note.term,
-		text: null,
-		context: null,
-		url: null,
-		isPrivate: true,
-	}
+	const { name, instructions } = input.category
 
-	return input.task === 'suggest' ? { ...input, note } : { ...input, note, previous: [] }
+	return {
+		...shared,
+		task: input.task,
+		category: { name, instructions },
+		depth: input.depth,
+		previous: input.note.isPrivate ? [] : input.previous,
+	}
 }
