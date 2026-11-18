@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
-import { file } from 'bun'
-import { readdir } from 'node:fs/promises'
+import { file, Glob } from 'bun'
 import { dirname, join } from 'node:path'
 import * as v from 'valibot'
 
@@ -70,7 +69,7 @@ async function locate(name: string, from: string, root: string): Promise<string>
 }
 
 async function readText(directory: string, pattern: RegExp): Promise<string | null> {
-	const entries = await readdir(directory)
+	const entries = await Array.fromAsync(new Glob('*').scan({ cwd: directory, onlyFiles: true }))
 	const match = entries.toSorted().find((entry) => pattern.test(entry))
 
 	return match === undefined ? null : file(join(directory, match)).text()
