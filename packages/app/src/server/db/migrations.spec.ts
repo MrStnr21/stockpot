@@ -158,14 +158,19 @@ describe('migrations', () => {
 					WHERE note_search MATCH ${'bun*'}
 					ORDER BY rank`,
 				[
-					'SCAN note_search VIRTUAL TABLE INDEX 32:M3',
+					'SCAN note_search VIRTUAL TABLE INDEX n:M',
 					'SEARCH notes USING INTEGER PRIMARY KEY (rowid=?)',
 				],
 			],
 		])('reads %s through an index', (_path, query, plan) => {
 			const rows = db.all<{ detail: string }>(sql`EXPLAIN QUERY PLAN ${query(db).getSQL()}`)
 
-			expect(rows.map(({ detail }) => detail)).toEqual(plan)
+			// FTS5 encodes its plan after INDEX in numbers that are internal to it: keep only the MATCH.
+			const details = rows.map(({ detail }) =>
+				detail.replace(/(?<=VIRTUAL TABLE INDEX )\d+:M\S*/u, 'n:M'),
+			)
+
+			expect(details).toEqual(plan)
 		})
 	})
 })
