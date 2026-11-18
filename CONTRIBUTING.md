@@ -79,6 +79,10 @@ Every change starts from an issue. Most issues are stories from the roadmap; the
 [the principles](docs/principles.md#story-format). If there is no issue for your change yet, open
 one with the [issue forms](https://github.com/MrStnr21/stockpot/issues/new/choose) first.
 
+Every title starts with an ID in brackets. A roadmap story uses its own, such as `[CAP-1]`.
+Work outside the roadmap takes `[BUG-<n>]` for a bug fix or `[FEATURE-<n>]` for a new feature,
+with running numbers: the first bug fix is `BUG-1`, the next `BUG-2`.
+
 - **One story, one branch, one pull request.** Branch from `main` and name the branch after the
   story in lower case, such as `fnd-6-docs`.
 - **Commit titles** follow `[ID] Imperative summary`. The body is one paragraph on why the change
@@ -95,11 +99,13 @@ one with the [issue forms](https://github.com/MrStnr21/stockpot/issues/new/choos
   Refs: #28
   ```
 
-- **Pull request titles** are the story's title. The description has the same shape and ends with
-  `Closes #n`, so merging closes the story. Fill in the pull request template.
+- **Pull request titles** are the story's title. Fill in the pull request template: **Problem**
+  says why the change is needed, **Behaviour** what changes for a user or a contributor, **Issue**
+  holds `Closes #n` so that merging closes the story, and **Checks run** ticks the checks you ran.
 - Keep a pull request to its story. Unrelated fixes get their own issue.
 - Pull requests are **squash-merged** once CI is green, so the branch's history can be as granular
-  as is useful.
+  as is useful. The squashed commit's subject is `[ID] Summary (#<PR>)`, and its body has the
+  commit shape above, ending with `Closes #<n>` instead of `Refs`.
 
 ## Review
 

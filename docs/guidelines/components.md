@@ -34,8 +34,10 @@ and, once it exists, the design canvas.
 - **App-wide components** that combine primitives (the tab bar, an empty state) live in
   `src/components/`.
 - **Feature components** live in their feature, in `client/` or at the feature root. Follow the
-  [dependency rules](../architecture.md#dependency-rules): a `.svelte` file never imports
-  `server/`, while a server-rendered `.astro` file may.
+  [dependency rules](../architecture.md#dependency-rules): a `.svelte` file or client script
+  imports only `lib/`, `components/` and its own feature's `shared/` and client code, never
+  `server/`, its feature's server or root files, or runtime built-ins. A server-rendered `.astro`
+  file may also import server code.
 
 ## Composition and props
 

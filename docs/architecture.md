@@ -31,11 +31,11 @@ stockpot/
 │   ├── app/            @stockpot/app: the Astro server, pages and the web app
 │   │   ├── src/        see below
 │   │   ├── tests/      setup/ (seeded Faker, createTestDb), factories/, e2e/
-│   │   └── evals/      the eval set and rubric for card quality (ENG-2)
+│   │   └── evals/      the eval set and rubric for card quality (upcoming, ENG-2)
 │   ├── ui/             @stockpot/ui: shared primitives and theme tokens, source exports, no build step
 │   └── website/        the documentation site (M9)
-├── tools/              @stockpot/tools: lint plugins, the docs link check; soon license, notices,
-│                       evals and migration checks
+├── tools/              @stockpot/tools: lint plugins, the license header check, third-party
+│                       notices and the docs link check; later evals and migration checks
 ├── docs/               principles, architecture, guidelines, ADRs; later engines, design canvas,
 │                       install and privacy
 ├── deploy/             launchd service for a Mac, Docker image and compose file (M8, M9)
@@ -43,8 +43,8 @@ stockpot/
 └── .github/            workflows, issue forms, pull request template
 ```
 
-`packages/website`, `deploy/` and `skills/` do not exist yet; they arrive with the milestones
-named above.
+`packages/app/evals/`, `packages/website`, `deploy/` and `skills/` do not exist yet; they arrive
+with the story and milestones named above.
 
 ## The app: `packages/app/src/`
 
@@ -72,7 +72,7 @@ src/
 │   └── metrics.ts      Prometheus metrics, next to health and logs
 ├── lib/            Isomorphic utilities: term normalization, dates and time zones
 ├── middleware.ts   Resolves the owner or device for every request
-└── sw.ts           The service worker: offline shell and push handling
+└── sw.ts           The service worker: offline shell and push handling, browser code only
 ```
 
 Most of these folders are still empty: each arrives with the story that needs it. A feature can be
@@ -82,14 +82,15 @@ a single file or a folder of these parts:
 - `shared/`: isomorphic code and types used on both sides (always a folder);
 - `client/` or `client.ts`, and `.svelte` files at the feature root: code that runs in the browser;
 - `.astro` files in `client/` or at the feature root: markup rendered on the server;
-- any other file at the feature root, such as `index.ts`: it may import what feature server code
-  may, and the feature's client code may import it.
+- any other file at the feature root, such as `index.ts`, is server code: it may import what
+  feature server code may, and the feature's client code may not import it.
 
 ## Dependency rules
 
 [`packages/app/oxlint.config.ts`](../packages/app/oxlint.config.ts) enforces this table through
 `eslint-plugin-boundaries`, and `bun run lint` fails on any import that breaks it. Relative and
-`#/` imports are checked alike. The first row that matches a file decides its layer.
+`#/` imports are checked alike. The first row that matches a file decides its layer. Paths are
+relative to `packages/app/src/`, except `tests/`, which sits next to `src/`.
 
 | Layer                          | Files                                                                | May import                                                                      |
 | ------------------------------ | -------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
@@ -98,23 +99,27 @@ a single file or a folder of these parts:
 | Astro components               | `components/**/*.astro`                                              | `server/`, `lib/`, `components/`                                                |
 | Other components               | the rest of `components/**` (`.svelte`, `.ts`)                       | `lib/`, `components/`                                                           |
 | Feature server                 | `features/X/server/**`, `features/X/server.*`                        | `server/`, `lib/`; own feature's server, shared and root files                  |
-| Feature shared                 | `features/X/shared/**`                                               | `lib/`; `server/` for types only (`import type`)                                |
+| Feature shared                 | `features/X/shared/**`                                               | `lib/`, own feature's shared; `server/` for types only (`import type`)          |
 | Feature server-rendered markup | `features/X/client/**/*.astro`, `features/X/*.astro`                 | `server/`, `lib/`, `components/`; own feature's server, shared, root and client |
-| Feature client                 | `features/X/client/**`, `features/X/client.*`, `features/X/*.svelte` | `lib/`, `components/`; own feature's shared, root and client                    |
+| Feature client                 | `features/X/client/**`, `features/X/client.*`, `features/X/*.svelte` | `lib/`, `components/`; own feature's shared and client, not its root            |
 | Feature root                   | any other file in `features/X/`                                      | same as feature server                                                          |
-| Entry                          | everything else: `pages/`, `layouts/`, `middleware.ts`, `sw.ts`      | every layer above, including any feature                                        |
+| Service worker                 | `sw.ts`                                                              | `lib/`, any feature's shared                                                    |
+| Entry                          | everything else in `src/`: `pages/`, `layouts/`, `middleware.ts`     | every layer above, including any feature                                        |
+| Test support                   | `tests/**`: setup, factories and end-to-end specs                    | every layer above, and `tests/`                                                 |
 
 Four rules apply across the table:
 
 - **Features never import each other.** Every "own feature" entry means the importing file's own
-  folder. When two features need the same thing, it moves into `server/`, `lib/` or `components/`,
-  or a page composes the two.
-- **Packages and runtime built-ins are allowed everywhere, except in isomorphic code.** Lib, feature
-  shared and the non-Astro components must not import `node:*`, `bun` or `bun:*`, because they also
-  run in the browser.
+  folder; only entry files and the service worker reach into other features. When two features need
+  the same thing, it moves into `server/`, `lib/` or `components/`, or a page composes the two.
+- **Packages and runtime built-ins are allowed everywhere, except in browser code.** Lib, feature
+  shared, feature client, the non-Astro components and `sw.ts` must not import `node:*`, `bun` or
+  `bun:*`, because they run in the browser.
 - **No import cycles.** `import/no-cycle` fails on runtime cycles; type-only cycles are allowed.
-- **Specs keep their layer.** A `*.spec.ts` file follows the row of the folder it sits in, and may
-  also import packages, runtime built-ins such as `bun:test`, and the shared helpers in `tests/`.
+- **Only tests import `tests/`.** A `*.spec.ts` file keeps the row of the folder it sits in, and may
+  also import packages, runtime built-ins such as `bun:test`, and `tests/`, whatever its layer.
+  Apart from specs, only other files in `tests/` may import it: app code never depends on test
+  support.
 
 Because `server/` may not import features, the direction of calls is always feature → server. When
 a capability in `server/` needs to run feature code (a job handler, for example), the feature
@@ -123,9 +128,10 @@ registers it with that capability at startup instead of being imported by it.
 ### The UI package
 
 `packages/ui` stands alone. Its [oxlint config](../packages/ui/oxlint.config.ts) forbids `node:*`,
-`bun` and `bun:*` (the components run in the browser) and any import of `@stockpot/app`. Inside the
-package, modules use relative imports. The app imports a primitive by its folder and the theme by
-its CSS entry:
+`bun` and `bun:*`, because the components run in the browser, and any import of the app at any
+depth: `@stockpot/app`, `@stockpot/app/**` or a relative path into `app/src`. UI specs run on Bun
+and may import `bun:test`, but still never the app. Inside the package, modules use relative
+imports. The app imports a primitive by its folder and the theme by its CSS entry:
 
 ```ts
 import { Wordmark } from '@stockpot/ui/wordmark'

@@ -6,6 +6,10 @@ Report vulnerabilities privately through GitHub's **Report a vulnerability** for
 <https://github.com/MrStnr21/stockpot/security/advisories/new>. Do not open a public issue,
 discussion or pull request for a security problem.
 
+If GitHub shows no **Report a vulnerability** button there, private reporting is not available
+yet. Open an issue that asks for a private channel instead, and leave out every detail of the
+problem; you will be contacted to continue privately.
+
 A useful report says which version or commit you tested, how to reproduce the problem, and what an
 attacker could do with it. You will get an answer in the advisory, and disclosure is coordinated
 with you once a fix or mitigation is available.

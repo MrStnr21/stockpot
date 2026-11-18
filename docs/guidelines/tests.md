@@ -20,7 +20,9 @@ helpers through the `#tests/` alias, such as `#tests/setup/db`.
 
 Every unit test is a spec next to the module it tests: `runner.ts` is tested in `runner.spec.ts`,
 and a route `[id].ts` in `[id].spec.ts`. Import the test API from `bun:test`. A spec keeps the
-import rules of the folder it sits in, plus `bun:test` and the helpers in `tests/` (see the
+import rules of the folder it sits in, and may also import packages, runtime built-ins such as
+`bun:test`, and the helpers in `tests/`, whatever its layer. Only specs and other files in
+`tests/` may import `tests/`; app code never does (see the
 [dependency rules](../architecture.md#dependency-rules)).
 
 - **One top-level `describe`** per file, named for the unit under test: a function, a module, a
@@ -72,6 +74,8 @@ they build: `noteFactory`, `categoryFactory`.
 - Name data for what it stands for (`privateNote`, `englishCategory`), not `data` or `item`.
 - Prefer factories to recorded JSON. When a recorded fixture is needed, such as a real engine
   response, import the JSON file.
+- Real-world test material, such as the real notes in the eval set (ENG-2), comes from the owner
+  and is recorded as given. It is never invented.
 
 ## The test database
 

@@ -31,9 +31,12 @@ that also runs in the browser.
 
 ## Code that runs in the browser
 
-`src/lib/`, every feature's `shared/`, the non-Astro files in `src/components/` and the whole of
-`packages/ui` also run in the browser. They must not import `bun`, `bun:*` or `node:*`; lint
-enforces this (see the [dependency rules](../architecture.md#dependency-rules)).
+These run in the browser: `src/lib/`, every feature's `shared/` and client code (`client/`,
+`client.*` and `.svelte` files at the feature root), the non-Astro files in `src/components/`,
+the service worker `src/sw.ts`, and the whole of `packages/ui`. They must not import `bun`,
+`bun:*` or `node:*`; lint enforces this (see the
+[dependency rules](../architecture.md#dependency-rules)). Specs next to them run on Bun, so they may
+import `bun:test`.
 
 ## Node exceptions
 

@@ -42,6 +42,11 @@ use an `<!-- … -->` block, and YAML, TOML and shell scripts use `#`. A shebang
 Markdown and JSON files have no header; the [LICENSE](../../LICENSE) covers them.
 `bun run check:license` fails on a source file without one, and the pre-commit hook runs it.
 
+The copyright line always names `The stockpot authors`, never a person. Code copied from
+elsewhere keeps its original `SPDX-FileCopyrightText` line next to ours, and may be copied only
+when its license is compatible with AGPL-3.0-or-later. Code under AGPL-3.0-only is not: write
+it fresh instead.
+
 ## Imports
 
 - Import app modules through the `#/` alias (`#/server/http`) rather than long relative paths;
