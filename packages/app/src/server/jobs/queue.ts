@@ -100,3 +100,21 @@ export function requeueInterrupted(db: Db): void {
 		.where(eq(jobs.status, 'running'))
 		.run()
 }
+
+/** The run a schedule has planned and not started yet: queued and never attempted. */
+export function plannedRun(db: Db, kind: string): JobRow | undefined {
+	return db
+		.select()
+		.from(jobs)
+		.where(and(eq(jobs.status, 'queued'), eq(jobs.kind, kind), eq(jobs.attempts, 0)))
+		.orderBy(asc(jobs.runAt))
+		.limit(1)
+		.get()
+}
+
+export function replanJob(
+	db: Db,
+	{ id, runAt, payload }: { id: number; runAt: Date; payload: unknown },
+): void {
+	db.update(jobs).set({ runAt, payload }).where(eq(jobs.id, id)).run()
+}

@@ -12,62 +12,17 @@ import {
 	requeueInterrupted,
 	retryJob,
 	type JobRow,
-	type Priority,
 } from './queue'
-
-/** What a handler gets besides its payload. */
-export interface JobContext {
-	id: number
-	/** 1 on the first run; a run that a restart interrupted counts too. */
-	attempt: number
-	/** Aborted when the runner stops. A run that ends early because of it starts again on the next start. */
-	signal: AbortSignal
-}
-
-/**
- * A kind of job and its handler. A feature defines it and the server entry passes it to the runner
- * at startup, because `server/` never imports a feature.
- */
-export interface JobDefinition<Payload> {
-	/** Stored in each row: renaming a kind strands the rows already queued under the old name. */
-	kind: string
-	/** Runs before the job is marked failed, the first one included. Default 5. */
-	maxAttempts?: number
-	/** The payload is stored as JSON, so it holds plain data: no dates, maps or class instances. */
-	run: (payload: Payload, context: JobContext) => Promise<void>
-}
-
-export interface EnqueueOptions {
-	/** Default "batch". */
-	priority?: Priority
-	/** When the job becomes due. Default now. */
-	runAt?: Date
-}
-
-export interface RunnerOptions {
-	db: Db
-	jobs?: readonly JobDefinition<never>[]
-}
-
-export interface Runner {
-	/** Queues a job and returns its id. Request handlers call this and return; they never wait for the job. */
-	enqueue: <Payload>(
-		job: JobDefinition<Payload>,
-		payload: NoInfer<Payload>,
-		options?: EnqueueOptions,
-	) => number
-	/** Requeues the jobs a stop interrupted, then works through the queue. */
-	start: () => void
-	/** Takes no new job, aborts the one in hand and waits for its handler to return. */
-	stop: () => Promise<void>
-	/** Resolves when the worker has finished what it is doing; specs await it after moving the clock. */
-	idle: () => Promise<void>
-}
+import { planDailyRun, toPlan, type Plan } from './schedules'
+import type { JobDefinition, Runner, RunnerOptions } from './types'
 
 /** The runner's state, shared by the functions below. */
 interface Worker {
 	db: Db
 	handlers: Map<string, JobDefinition<never>>
+	/** Each scheduled kind's plan. */
+	plans: Map<string, Plan>
+	timeZone: () => string
 	running: boolean
 	stopping: AbortController
 	/** The one timer, set for the earliest queued run time. */
@@ -141,7 +96,16 @@ async function execute(worker: Worker, job: JobRow) {
 }
 
 function claim(worker: Worker) {
-	return worker.running ? claimNextJob(worker.db, new Date()) : undefined
+	const now = new Date()
+	const job = worker.running ? claimNextJob(worker.db, now) : undefined
+	const plan = job === undefined ? undefined : worker.plans.get(job.kind)
+
+	// Plan the next day's run before this one starts, so a slow or crashing run cannot lose it.
+	if (plan !== undefined) {
+		planDailyRun(worker.db, plan, { timeZone: worker.timeZone(), now })
+	}
+
+	return job
 }
 
 async function drain(worker: Worker) {
@@ -184,6 +148,17 @@ function work(worker: Worker) {
 	})
 }
 
+function planSchedules(worker: Worker) {
+	const now = new Date()
+	const timeZone = worker.timeZone()
+
+	for (const plan of worker.plans.values()) {
+		planDailyRun(worker.db, plan, { timeZone, now })
+	}
+
+	planWake(worker)
+}
+
 function registerJobs(jobs: readonly JobDefinition<never>[]) {
 	const handlers = new Map<string, JobDefinition<never>>()
 
@@ -203,10 +178,17 @@ function registerJobs(jobs: readonly JobDefinition<never>[]) {
  * It sleeps on one timer set for the earliest queued run time and wakes when a job is enqueued, so
  * it never polls.
  */
-export function createRunner({ db, jobs = [] }: RunnerOptions): Runner {
+export function createRunner({
+	db,
+	jobs = [],
+	schedules = [],
+	timeZone = () => Temporal.Now.timeZoneId(),
+}: RunnerOptions): Runner {
 	const worker: Worker = {
 		db,
-		handlers: registerJobs(jobs),
+		handlers: registerJobs([...jobs, ...schedules.map((schedule) => schedule.job)]),
+		plans: new Map(schedules.map((schedule) => [schedule.job.kind, toPlan(schedule)])),
+		timeZone,
 		running: false,
 		stopping: new AbortController(),
 	}
@@ -215,6 +197,10 @@ export function createRunner({ db, jobs = [] }: RunnerOptions): Runner {
 		enqueue(job, payload, { priority = 'batch', runAt = new Date() } = {}) {
 			if (worker.handlers.get(job.kind) !== job) {
 				throw new Error(`The job kind "${job.kind}" is not registered with the runner`)
+			}
+
+			if (worker.plans.has(job.kind)) {
+				throw new Error(`The job kind "${job.kind}" is queued by its schedule`)
 			}
 
 			const id = insertJob(db, { kind: job.kind, payload, priority, runAt })
@@ -232,7 +218,7 @@ export function createRunner({ db, jobs = [] }: RunnerOptions): Runner {
 			worker.running = true
 			worker.stopping = new AbortController()
 			requeueInterrupted(db)
-			planWake(worker)
+			planSchedules(worker)
 		},
 
 		async stop() {
@@ -245,6 +231,10 @@ export function createRunner({ db, jobs = [] }: RunnerOptions): Runner {
 
 		async idle() {
 			await worker.draining
+		},
+
+		refreshSchedules() {
+			planSchedules(worker)
 		},
 	}
 }
