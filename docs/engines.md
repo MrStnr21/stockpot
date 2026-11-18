@@ -62,7 +62,9 @@ Anything else an engine throws is an ordinary error, which the job runner retrie
 
 A format is the shape of a card. A category points to one format, and several categories may share
 it; the owner edits a category's name, icon, colour, format and extra instructions, never the format
-itself. The research feature owns the formats in
+itself. The format ids live in [`src/lib/format-ids.ts`](../packages/app/src/lib/format-ids.ts), so
+the categories feature can check a category's format without importing another feature. The research
+feature maps each id to its schemas in
 [`src/features/research/shared/formats/`](../packages/app/src/features/research/shared/formats/index.ts),
 one module per format, and passes the chosen format's schema with each call, so engines never import
 a feature.
@@ -80,9 +82,11 @@ Format ids are stored with each category, so renaming one needs a migration.
 
 ### Defining a format once
 
-Each format is written once, in Valibot. The same schema validates the engine's answer, and
-[`@valibot/to-json-schema`](https://valibot.dev/guides/json-schema/) derives the JSON Schema (draft-07)
-that the engine hands its provider through its structured-output option. The two cannot drift
+Each format is written once, in Valibot, with the field helpers in
+[`src/lib/json-schema.ts`](../packages/app/src/lib/json-schema.ts). The same schema validates the
+engine's answer, and `deriveJsonSchema` in that file uses
+[`@valibot/to-json-schema`](https://valibot.dev/guides/json-schema/) to derive the JSON Schema
+(draft-07) that the engine hands its provider through its structured-output option. The two cannot drift
 apart, and a field's description travels in the JSON Schema, so it is the field-level prompt.
 
 Every format fits what JSON Schema can express, under these rules:
@@ -101,7 +105,7 @@ Every format fits what JSON Schema can express, under these rules:
 The exact JSON Schema of every format and depth level is pinned in
 [`index.spec.ts.snap`](../packages/app/src/features/research/shared/formats/__snapshots__/index.spec.ts.snap)
 and the suggestion's in
-[`suggestion.spec.ts.snap`](../packages/app/src/features/research/shared/formats/__snapshots__/suggestion.spec.ts.snap);
+[`suggestion.spec.ts.snap`](../packages/app/src/server/engines/__snapshots__/suggestion.spec.ts.snap);
 the specs also check that each format accepts a sample card and rejects broken ones. A change to a
 format shows up there in review.
 
@@ -153,8 +157,11 @@ Levels 2 and 3 are shared by every format except `vocabulary`, whose levels fit 
 
 ## Suggestions
 
-`suggest` answers in this shape, built for the owner's current categories, so a provider with
-structured output cannot name a category that does not exist:
+`suggest` answers in the shape that
+[`src/server/engines/suggestion.ts`](../packages/app/src/server/engines/suggestion.ts) builds for the
+owner's current categories, so a provider with structured output cannot name a category that does not
+exist. It sits with the contract rather than with the card formats: it is not a card, and the capture
+feature builds it.
 
 | Field        | Type                      | Meaning                                                                                                             |
 | ------------ | ------------------------- | ------------------------------------------------------------------------------------------------------------------- |

@@ -4,8 +4,9 @@
 import { faker } from '@faker-js/faker'
 import { Factory } from 'fishery'
 
-import { cardFormat, suggestionFormat } from '#/features/research/shared/formats'
+import { cardFormat } from '#/features/research/shared/formats'
 import type { CardInput, EngineNote, SuggestInput } from '#/server/engines/contract'
+import { suggestionFormat } from '#/server/engines/suggestion'
 
 import { technologyCardFactory } from './cards'
 

@@ -12,56 +12,11 @@
  */
 import * as v from 'valibot'
 
+import { list, text, textOrNull, type List } from '#/lib/json-schema'
 import type { Depth } from '#/server/engines/contract'
 
-type BoundedString = v.SchemaWithPipe<
-	readonly [
-		v.StringSchema<undefined>,
-		v.NonEmptyAction<string, undefined>,
-		v.MaxLengthAction<string, number, undefined>,
-	]
->
-
-type Described<TSchema extends v.GenericSchema> = v.SchemaWithPipe<
-	readonly [TSchema, v.DescriptionAction<v.InferOutput<TSchema>, string>]
->
-
-type List<TItem extends v.GenericSchema> = v.SchemaWithPipe<
-	readonly [
-		v.ArraySchema<TItem, undefined>,
-		v.MinLengthAction<v.InferOutput<TItem>[], number, undefined>,
-		v.MaxLengthAction<v.InferOutput<TItem>[], number, undefined>,
-		v.DescriptionAction<v.InferOutput<TItem>[], string>,
-	]
->
-
-function boundedString(maxLength: number): BoundedString {
-	return v.pipe(v.string(), v.nonEmpty(), v.maxLength(maxLength))
-}
-
-/** A string the engine must fill, capped so that a card stays short enough for a phone. */
-export function text(maxLength: number, description: string): Described<BoundedString> {
-	return v.pipe(boundedString(maxLength), v.description(description))
-}
-
-/** Like `text`, but `null` when there is nothing worth saying. */
-export function textOrNull(
-	maxLength: number,
-	description: string,
-): Described<v.NullableSchema<BoundedString, undefined>> {
-	const nullable = v.nullable(boundedString(maxLength))
-
-	return v.pipe(nullable, v.description(description))
-}
-
-/** A list of `item`, from `min` to `max` long. */
-export function list<TItem extends v.GenericSchema>(
-	item: TItem,
-	{ min, max }: { min: number; max: number },
-	description: string,
-): List<TItem> {
-	return v.pipe(v.array(item), v.minLength(min), v.maxLength(max), v.description(description))
-}
+// The field helpers live in lib/ because the suggestion schema in server/engines uses them too.
+export { list, text, textOrNull } from '#/lib/json-schema'
 
 /*
  * HTTP(S) only, also in the JSON Schema, so a provider never offers another scheme. JSON Schema

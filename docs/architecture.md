@@ -70,7 +70,8 @@ src/
 │   ├── http.ts         route helpers, JSON errors, body limits
 │   ├── config.ts       the validated environment
 │   └── metrics.ts      Prometheus metrics, next to health and logs
-├── lib/            Isomorphic utilities: term normalization, dates and time zones
+├── lib/            Isomorphic utilities: term normalization, dates and time zones, format ids,
+│                   JSON Schema helpers
 ├── middleware.ts   Resolves the owner or device for every request
 └── sw.ts           The service worker: offline shell and push handling, browser code only
 ```
@@ -149,7 +150,8 @@ in `src/server/engines/`:
 - **The contract** (`contract.ts`, ENG-1) has three tasks: `suggest` proposes categories for a note
   while it is typed, `explain` writes a card in a category's format, and `research` writes a longer
   report for an idea. A failure is one of four error kinds: `rate_limited` (with the time the limit
-  resets), `auth`, `timeout` and `invalid` (output that does not match the schema).
+  resets), `auth`, `timeout` and `invalid` (output that does not match the schema). The answer
+  to `suggest` has its schema next to it, in `suggestion.ts`, because it is not a card.
 - **Concrete engines** implement the contract: the agent command engine (`agent-cli.ts`), Gemini
   (`gemini.ts`) and any OpenAI-compatible endpoint (`openai-compatible.ts`). Provider SDKs and
   command-line details stay inside these files.
@@ -159,9 +161,11 @@ in `src/server/engines/`:
 
 Everything outside `src/server/engines/` calls the router with contract types and never imports a
 concrete engine or a provider SDK. The research feature owns the card formats and passes the format's
-schema with each call, so engines stay free of feature imports. Lint does not tell one `server/`
-module from another, so review checks this boundary. The formats, prompts, privacy rule and
-routing table are recorded with the contract on the [engines page](engines.md).
+schema with each call, so engines stay free of feature imports. The format ids and the helpers that
+turn a Valibot schema into JSON Schema sit in `src/lib/`, where categories, research and the engines
+can all reach them. Lint does not tell one `server/` module from another, so review checks this
+boundary. The formats, prompts, privacy rule and routing table are recorded with the contract on the
+[engines page](engines.md).
 
 ## One process and the job runner
 

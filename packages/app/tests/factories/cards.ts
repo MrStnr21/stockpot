@@ -8,7 +8,8 @@
 import { faker } from '@faker-js/faker'
 import { Factory } from 'fishery'
 
-import type { Card, FormatId, Source } from '#/features/research/shared/formats'
+import type { Card, Source } from '#/features/research/shared/formats'
+import type { FormatId } from '#/lib/format-ids'
 import type { Depth } from '#/server/engines/contract'
 
 export const sourceFactory = Factory.define<Source>(() => ({

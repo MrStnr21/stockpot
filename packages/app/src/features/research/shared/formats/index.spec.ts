@@ -6,7 +6,9 @@ import type { JsonSchema } from '@valibot/to-json-schema'
 import { cardFactories } from '#tests/factories/cards'
 import * as v from 'valibot'
 
-import { cardFormat, depths, formatIds, formats, isFormatId } from './index'
+import { formatIds } from '#/lib/format-ids'
+
+import { cardFormat, depths, formats } from './index'
 
 const cases = formatIds.flatMap((id) => depths.map((depth) => [id, depth] as const))
 
@@ -65,16 +67,6 @@ describe('formats', () => {
 			expect(cardFormat('concept', 2).instructions).toBe(
 				`${formats.concept.instructions}\n\n${formats.concept.levels[2].instructions}`,
 			)
-		})
-	})
-
-	describe('isFormatId', () => {
-		it.each(['vocabulary', 'brief'])('accepts %s', (id) => {
-			expect(isFormatId(id)).toBe(true)
-		})
-
-		it.each(['Technology', 'toString', ''])('rejects %p', (id) => {
-			expect(isFormatId(id)).toBe(false)
 		})
 	})
 })
