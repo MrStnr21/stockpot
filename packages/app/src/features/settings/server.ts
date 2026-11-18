@@ -4,7 +4,7 @@
 /*
  * Runtime settings the owner changes in the app, one JSON value per section in the `settings` table.
  * A stored section is read as a patch over the defaults, so a missing row, or a field added after the
- * row was written, reads as its default.
+ * row was written, reads as its default. The engine sections are defined in src/server/engines/.
  *
  * Engine keys and the agent command never leave the server: everything sent to a client goes through
  * `toPublicSettings`, which shows each one only as "set" or "not set". They are stored as plain text.
@@ -17,14 +17,17 @@ import * as v from 'valibot'
 
 import type { Db } from '#/server/db/client'
 import { settings as settingsTable } from '#/server/db/schema/settings'
-import type { Tier } from '#/server/engines/contract'
-
-/** The engines in docs/engines.md, by the id the router and each card record. */
-export const engineIds = ['agent-command', 'gemini', 'openai-compatible'] as const
-
-export type EngineId = (typeof engineIds)[number]
-
-const tiers = ['fast', 'standard', 'deep'] as const satisfies readonly Tier[]
+import {
+	applyEnginesPatch,
+	defaultEngines,
+	defaultRouting,
+	enginesPatchSchema,
+	enginesSchema,
+	routingPatchSchema,
+	routingSchema,
+	toPublicEngines,
+	type PublicEngines,
+} from '#/server/engines/settings'
 
 function isTimeZone(value: string) {
 	try {
@@ -33,15 +36,6 @@ function isTimeZone(value: string) {
 		return false
 	}
 }
-
-function textOrNull(maxLength: number) {
-	return v.nullable(v.pipe(v.string(), v.trim(), v.nonEmpty(), v.maxLength(maxLength)))
-}
-
-/** An API key or the agent command: write-only, shown to clients as "set" or "not set". */
-const secret = textOrNull(4096)
-
-const modelId = textOrNull(200)
 
 const clockTime = v.pipe(
 	v.string(),
@@ -60,21 +54,6 @@ const languageCode = v.pipe(
 	v.regex(/^[a-z]{2}$/u, 'Use a two-letter ISO 639-1 code, such as en'),
 )
 
-const baseUrl = v.nullable(
-	v.pipe(v.string(), v.url(), v.regex(/^https?:\/\//u, 'Use an http or https URL')),
-)
-
-const engineId = v.picklist(engineIds)
-
-const categoryId = v.pipe(v.string(), v.regex(/^[1-9]\d*$/u, 'Use a category id'))
-
-const categoryRoute = v.object({ engine: engineId, tier: v.picklist(tiers) })
-
-const fallbackOrder = v.pipe(
-	v.array(engineId),
-	v.check((ids) => new Set(ids).size === ids.length, 'List each engine once'),
-)
-
 const digestSchema = v.object({
 	/** When the morning digest arrives, as HH:MM in `timeZone`. */
 	time: clockTime,
@@ -82,31 +61,6 @@ const digestSchema = v.object({
 	limit: digestLimit,
 	/** The IANA time zone the daily schedules fire in. */
 	timeZone,
-})
-
-/** The model ID behind each tier; model IDs change often, so they live here and never in code. */
-const modelsSchema = v.object({ fast: modelId, standard: modelId, deep: modelId })
-
-const agentCommandSchema = v.object({
-	/** The command line that runs the owner's agent; no vendor default ships (D3). */
-	command: secret,
-})
-
-const geminiSchema = v.object({ apiKey: secret, models: modelsSchema })
-
-const openAiCompatibleSchema = v.object({ baseUrl, apiKey: secret, models: modelsSchema })
-
-const enginesSchema = v.object({
-	'agent-command': agentCommandSchema,
-	gemini: geminiSchema,
-	'openai-compatible': openAiCompatibleSchema,
-})
-
-const routingSchema = v.object({
-	/** Per-category overrides of the routing table in docs/engines.md, keyed by category id. */
-	categories: v.record(categoryId, categoryRoute),
-	/** The engines to try in turn on `rate_limited` or `auth`; unconfigured ones are skipped. */
-	fallbackOrder,
 })
 
 const settingsSchema = v.object({
@@ -118,21 +72,6 @@ const settingsSchema = v.object({
 
 export type Settings = v.InferOutput<typeof settingsSchema>
 
-const modelsPatch = v.partial(modelsSchema)
-
-// A patch may name only some of an engine's models.
-const geminiPatch = v.partial(v.object({ ...geminiSchema.entries, models: modelsPatch }))
-
-const openAiCompatiblePatch = v.partial(
-	v.object({ ...openAiCompatibleSchema.entries, models: modelsPatch }),
-)
-
-const enginesPatch = v.object({
-	'agent-command': v.optional(v.partial(agentCommandSchema)),
-	gemini: v.optional(geminiPatch),
-	'openai-compatible': v.optional(openAiCompatiblePatch),
-})
-
 /**
  * A change to settings, and the shape a stored section is read in. A field left out keeps its value;
  * `null` clears a key or a model. `routing.categories` and `routing.fallbackOrder` are replaced whole.
@@ -141,8 +80,8 @@ export const settingsPatchSchema = v.partial(
 	v.object({
 		digest: v.partial(digestSchema),
 		cardLanguage: languageCode,
-		engines: enginesPatch,
-		routing: v.partial(routingSchema),
+		engines: enginesPatchSchema,
+		routing: routingPatchSchema,
 	}),
 )
 
@@ -151,8 +90,6 @@ export type SettingsPatch = v.InferOutput<typeof settingsPatchSchema>
 type SectionKey = keyof Settings
 
 const sectionKeys: readonly SectionKey[] = ['digest', 'cardLanguage', 'engines', 'routing']
-
-const noModels = { fast: null, standard: null, deep: null }
 
 /** The settings of a new instance. The time zone defaults to the server's own. */
 export function defaultSettings(): Settings {
@@ -163,38 +100,16 @@ export function defaultSettings(): Settings {
 			timeZone: new Intl.DateTimeFormat().resolvedOptions().timeZone,
 		},
 		cardLanguage: 'en',
-		engines: {
-			'agent-command': { command: null },
-			gemini: { apiKey: null, models: noModels },
-			'openai-compatible': { baseUrl: null, apiKey: null, models: noModels },
-		},
-		routing: { categories: {}, fallbackOrder: ['gemini', 'openai-compatible'] },
+		engines: defaultEngines(),
+		routing: defaultRouting(),
 	}
 }
 
-type Models = v.InferOutput<typeof modelsSchema>
-
-function mergeEngine<TEngine extends { models: Models }>(
-	engine: TEngine,
-	patch: (Partial<Omit<TEngine, 'models'>> & { models?: Partial<Models> }) | undefined,
-): TEngine {
-	return { ...engine, ...patch, models: { ...engine.models, ...patch?.models } }
-}
-
 function applyPatch(settings: Settings, patch: SettingsPatch): Settings {
-	const engines = patch.engines ?? {}
-
 	return {
 		digest: { ...settings.digest, ...patch.digest },
 		cardLanguage: patch.cardLanguage ?? settings.cardLanguage,
-		engines: {
-			'agent-command': { ...settings.engines['agent-command'], ...engines['agent-command'] },
-			gemini: mergeEngine(settings.engines.gemini, engines.gemini),
-			'openai-compatible': mergeEngine(
-				settings.engines['openai-compatible'],
-				engines['openai-compatible'],
-			),
-		},
+		engines: applyEnginesPatch(settings.engines, patch.engines ?? {}),
 		routing: { ...settings.routing, ...patch.routing },
 	}
 }
@@ -247,49 +162,20 @@ export async function readTimeZone(db: Db): Promise<string> {
 	return digest.timeZone
 }
 
-export type SecretState = 'set' | 'not set'
-
 /** Settings as they may leave the server: every key and the agent command reduced to its state. */
 export interface PublicSettings {
 	digest: Settings['digest']
 	cardLanguage: string
-	engines: {
-		'agent-command': { command: SecretState }
-		gemini: { apiKey: SecretState; models: Models }
-		'openai-compatible': { baseUrl: string | null; apiKey: SecretState; models: Models }
-	}
+	engines: PublicEngines
 	routing: Settings['routing']
 }
 
-function stateOf(value: string | null): SecretState {
-	return value === null ? 'not set' : 'set'
-}
-
-/**
- * The one serializer for settings sent to a client. Each engine is rebuilt field by field, so a
- * field added to an engine later stays on the server until it is added here.
- */
+/** The one serializer for settings sent to a client. */
 export function toPublicSettings({
 	digest,
 	cardLanguage,
 	engines,
 	routing,
 }: Settings): PublicSettings {
-	const { gemini } = engines
-	const openAiCompatible = engines['openai-compatible']
-
-	return {
-		digest,
-		cardLanguage,
-		engines: {
-			'agent-command': { command: stateOf(engines['agent-command'].command) },
-			gemini: { apiKey: stateOf(gemini.apiKey), models: gemini.models },
-			'openai-compatible': {
-				baseUrl: openAiCompatible.baseUrl,
-				apiKey: stateOf(openAiCompatible.apiKey),
-				models: openAiCompatible.models,
-			},
-		},
-		routing,
-	}
+	return { digest, cardLanguage, engines: toPublicEngines(engines), routing }
 }
