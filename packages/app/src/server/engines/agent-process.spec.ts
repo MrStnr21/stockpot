@@ -166,6 +166,25 @@ describe('agent-process', () => {
 			})
 		})
 
+		it('answers when a child the script left behind still holds stdout', async () => {
+			const exit = await run('sleep 30 & printf done')
+
+			expect(exit).toMatchObject({ exitCode: 0, stdout: 'done' })
+		})
+
+		describe('with a child the script detached from its output', () => {
+			let child: number
+
+			beforeEach(async () => {
+				await run('sleep 30 >/dev/null 2>&1 & echo $! > pid')
+				child = await pidIn(cwd)
+			})
+
+			it('stops the child when the script exits', async () => {
+				expect(await isRunning(child)).toBe(false)
+			})
+		})
+
 		describe('with a process that prints without end', () => {
 			let error: Error
 

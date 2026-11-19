@@ -202,22 +202,29 @@ export async function runProcess({
 		return text ?? ''
 	}
 
-	const output = Promise.all([readStdout(), readTail(agent.stderr, stderrTailChars), agent.exited])
+	/* Once the process exits, on its own or after a stop, whatever it left in its group goes: a child
+	 * that holds stdout open would keep the answer from being read, and nothing outlives a run. */
+	async function exitAndClearGroup() {
+		const exitCode = await agent.exited
+
+		signalGroup(agent.pid, 'SIGKILL')
+
+		return exitCode
+	}
+
+	const exited = exitAndClearGroup()
+	const stderr = readTail(agent.stderr, stderrTailChars)
+	const finished = Promise.all([exited, readStdout(), stderr])
 
 	try {
-		const [stdout, stderr, exitCode] = await Promise.race([output, stopped])
+		const [exitCode, stdoutText, stderrText] = await Promise.race([finished, stopped])
 
-		return { exitCode, stdout, stderr }
+		return { exitCode, stdout: stdoutText, stderr: stderrText }
 	} finally {
 		clearTimeout(timeout)
 		signal?.removeEventListener('abort', onAbort)
 		// After a stop, the signals keep going until the process is gone, so the next run starts clean.
-		await agent.exited
-
-		// Whatever the stopped process left behind in its group goes with it.
-		if (escalations.length > 0) {
-			signalGroup(agent.pid, 'SIGKILL')
-		}
+		await exited
 
 		for (const escalation of escalations) {
 			clearTimeout(escalation)

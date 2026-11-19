@@ -312,8 +312,9 @@ The schema is the derived draft-07 schema, as it is: stockpot validates the answ
   without running.
 - **Timeout and abort.** The timeout counts from the start of the run, not the wait. On the timeout
   or an abort, the engine sends SIGINT to the run's process group, then SIGTERM after 5 seconds and
-  SIGKILL after 5 more, so a wrapper script and the agent it started stop together. Once the
-  command has exited, anything left in its group is killed.
+  SIGKILL after 5 more, so a wrapper script and the agent it started stop together. Whenever the
+  command exits, on its own or after a signal, anything left in its group is killed, so a child that
+  holds stdout open cannot delay the answer and nothing outlives the run.
 - **One `engine_runs` row** per run, with its outcome, its duration and the model and usage the
   agent reported.
 
