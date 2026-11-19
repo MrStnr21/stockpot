@@ -21,6 +21,6 @@ export default defineConfig({
 		stdout: 'pipe',
 		stderr: 'pipe',
 		timeout: 30_000,
-		env: { HOST: '127.0.0.1', PORT: port },
+		env: { HOST: '127.0.0.1', PORT: port, STOCKPOT_PUBLIC_ORIGIN: baseURL },
 	},
 })
