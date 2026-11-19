@@ -97,26 +97,41 @@ export function createRunner({
 /** The runner this process started, if any (D2: one per process). */
 interface ProcessRunner {
 	runner?: Runner
+	/** Set while that runner stops; a start waits for it. */
+	stopping?: Promise<void>
 }
 
 const thisProcess: ProcessRunner = {}
 
 /** Starts the one runner of this process. Nothing calls it yet: the README says why. */
-export function startRunner(options: RunnerOptions): Runner {
+export async function startRunner(options: RunnerOptions): Promise<Runner> {
+	await thisProcess.stopping
+
 	if (thisProcess.runner !== undefined) {
 		throw new Error('The job runner has already started')
 	}
 
-	thisProcess.runner = createRunner(options)
-	thisProcess.runner.start()
+	const runner = createRunner(options)
 
-	return thisProcess.runner
+	runner.start()
+	thisProcess.runner = runner
+
+	return runner
 }
 
-/** Stops the runner on shutdown and waits for the job in hand. */
+/**
+ * Stops the runner on shutdown and waits for the job in hand. The runner counts as started until it
+ * has stopped, so a new runner never requeues a job the old one is still running.
+ */
 export async function stopRunner(): Promise<void> {
 	const { runner } = thisProcess
 
-	delete thisProcess.runner
-	await runner?.stop()
+	if (runner !== undefined && thisProcess.stopping === undefined) {
+		thisProcess.stopping = runner.stop().finally(() => {
+			delete thisProcess.runner
+			delete thisProcess.stopping
+		})
+	}
+
+	await thisProcess.stopping
 }
