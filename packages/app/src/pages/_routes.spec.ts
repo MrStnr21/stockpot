@@ -9,7 +9,7 @@ import { describe, expect, it } from 'bun:test'
 import { routeProblems } from '#tests/setup/routes'
 
 describe('API routes', () => {
-	it('declare their access with route.public or route.authorized', async () => {
+	it('declare their access with route.public, route.authorized or route.session', async () => {
 		expect(await routeProblems(import.meta.dir)).toEqual([])
 	})
 })

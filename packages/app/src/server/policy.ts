@@ -4,7 +4,7 @@
 /*
  * Access decisions, made in one place (docs/principles.md, parallel-work rule 4): who is asking, what a
  * route lets through, and which requests come from another site. Routes declare their access with
- * `route` from ./http, pages read `Astro.locals.owner`, and nothing else reads cookies or tokens.
+ * `route` from ./http, pages read `Astro.locals.owner`, and nothing but ./auth reads cookies or tokens.
  */
 
 /** The person the instance belongs to (D5), and how the request signed them in. */
@@ -14,7 +14,8 @@ export interface Owner {
 	readonly via: 'session' | 'device'
 }
 
-export type Access = 'public' | 'authorized'
+/** Anyone; the owner signed in either way; or only the owner signed in with a web session. */
+export type Access = 'public' | 'authorized' | 'session'
 
 /** Cookie attributes: the subset of Astro's cookie options that sessions use. */
 export interface CookieOptions {
@@ -45,9 +46,16 @@ export interface ResolverContext {
  */
 export type OwnerResolver = (context: ResolverContext) => Promise<Owner | null | undefined>
 
-/** Anything but an owner with an id, `undefined` and `{}` included, counts as signed out. */
+/**
+ * Anything but an owner with an id, `undefined` and `{}` included, counts as signed out. `session`
+ * also refuses a device token, so a stolen one cannot mint tokens or revoke the owner's devices.
+ */
 export function isAllowed(access: Access, owner: Owner | null | undefined): boolean {
-	return access === 'public' || Number.isInteger(owner?.id)
+	if (access === 'public') {
+		return true
+	}
+
+	return Number.isInteger(owner?.id) && (access === 'authorized' || owner?.via === 'session')
 }
 
 const safeMethods = new Set(['GET', 'HEAD', 'OPTIONS'])

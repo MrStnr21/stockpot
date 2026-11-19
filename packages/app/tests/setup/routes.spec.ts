@@ -52,7 +52,7 @@ describe('routeProblems', () => {
 
 	it('reports bare handlers, ALL and specs Astro would serve, and skips what it does not', async () => {
 		expect(await routeProblems(pagesFolder)).toEqual([
-			'.well-known/security.ts: GET has no route.public or route.authorized',
+			'.well-known/security.ts: GET has no route.public, route.authorized or route.session',
 			'api/boom.spec.ts: a spec in src/pages must start with _, or Astro serves it as a route',
 			'api/everything.ts: ALL is not allowed; export one handler per method',
 		])

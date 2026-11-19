@@ -2,8 +2,8 @@
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
 /*
- * HTTP conventions for API routes: every route declares its access with `route.public` or
- * `route.authorized`, every error is JSON (`{ error: { code, message, issues? } }`), and request
+ * HTTP conventions for API routes: every route declares its access with `route.public`,
+ * `route.authorized` or `route.session`, every error is JSON (`{ error: { code, message, issues? } }`), and request
  * bodies are read through `readJson`, which caps their size and validates them with Valibot.
  */
 import type { APIContext } from 'astro'
@@ -62,6 +62,11 @@ type Route<TContext> = (context: TContext) => Promise<Response>
 
 const unauthorized = { code: 'unauthorized', message: 'Sign in to do this.' }
 
+const sessionRequired = {
+	code: 'session_required',
+	message: 'Sign in on the web to do this; a device token cannot.',
+}
+
 // Handlers made by `route`, so the route check can tell a declared route from a bare one.
 const declaredRoutes = new Set<unknown>()
 
@@ -80,7 +85,10 @@ function declare<TContext extends RouteContext>(
 		}
 
 		if (!isAllowed(access, owner)) {
-			return jsonError(401, unauthorized)
+			// Signed in, but with a device token on a route that takes a session only.
+			return isAllowed('authorized', owner)
+				? jsonError(403, sessionRequired)
+				: jsonError(401, unauthorized)
 		}
 
 		try {
@@ -100,6 +108,18 @@ function declare<TContext extends RouteContext>(
 	return declared
 }
 
+/** A handler that receives the owner `declare` has let through. */
+function withOwner<TContext>(handler: (context: TContext, owner: Owner) => Reply) {
+	return async (context: TContext, owner: Owner | null) => {
+		// `declare` has answered 401 already; this narrows the type for the handler.
+		if (owner === null) {
+			throw new HttpError(401, unauthorized)
+		}
+
+		return handler(context, owner)
+	}
+}
+
 export const route = {
 	/** A route anyone may call, signed in or not. */
 	public<TContext extends RouteContext = APIContext>(
@@ -111,14 +131,16 @@ export const route = {
 	authorized<TContext extends RouteContext = APIContext>(
 		handler: (context: TContext, owner: Owner) => Reply,
 	): Route<TContext> {
-		return declare<TContext>('authorized', async (context, owner) => {
-			// `declare` has answered 401 already; this narrows the type for the handler.
-			if (owner === null) {
-				throw new HttpError(401, unauthorized)
-			}
-
-			return handler(context, owner)
-		})
+		return declare<TContext>('authorized', withOwner(handler))
+	},
+	/**
+	 * A route for the owner signed in on the web, such as managing devices: a device token gets 403
+	 * and anyone else 401 before the handler runs.
+	 */
+	session<TContext extends RouteContext = APIContext>(
+		handler: (context: TContext, owner: Owner) => Reply,
+	): Route<TContext> {
+		return declare<TContext>('session', withOwner(handler))
 	},
 }
 
@@ -142,7 +164,7 @@ export const routeModuleSchema = v.object({
 
 export type RouteModule = v.InferOutput<typeof routeModuleSchema>
 
-/** The HTTP methods a route module exports without `route.public` or `route.authorized`. */
+/** The HTTP methods a route module exports without a `route` declaration. */
 export function undeclaredHandlers(module: RouteModule): HttpMethod[] {
 	return httpMethods.filter(
 		(method) => module[method] !== undefined && !declaredRoutes.has(module[method]),
