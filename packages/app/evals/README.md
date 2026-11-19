@@ -85,6 +85,31 @@ request body and forwards it, and the agent command runs behind `record-agent.ts
 the arguments, stdin and the files they name, then runs the agent. Each run records its
 `engine_runs` rows in an in-memory database, so nothing is written to an instance.
 
+### Running on a free Gemini key
+
+The Gemini defaults do not suit a free key, so override them for the run:
+
+```sh
+bun --env-file ~/.config/stockpot/dev.env run eval -- --engine gemini \
+  --model fast=gemini-2.5-flash-lite --model standard=gemini-2.5-flash \
+  --model deep=gemini-2.5-flash --suggest-timeout 10000
+```
+
+- **Every tier on Gemini 2.5.** On the free tier, Google Search works only on Gemini 2.5 models:
+  the default `fast` model, a Gemini 3 model, answers a search with 429 (see
+  [What the real calls showed](../../../docs/engines.md#what-the-real-calls-showed)). Every tier's
+  cards search, `fast` included: it writes the vocabulary cards.
+- **`fast=gemini-2.5-flash-lite`**, the quickest Gemini 2.5 model for suggestions, which the engine
+  sends with thinking turned off (`thinkingBudget: 0`).
+- **`deep=gemini-2.5-flash`** rather than the default `gemini-2.5-pro`, whose free quota is smaller
+  than Flash's, so that the idea reports do not stop the run on a limit.
+- **`--suggest-timeout 10000`**, because the product's 3 s suggestion timeout cuts off most
+  free-tier answers: of 20 suggestions measured on the free tier, 7 answered within 3 s, and the
+  answers had a p95 of 19 s (see
+  [Suggestion latency](../../../docs/engines.md#suggestion-latency)). A longer timeout lets more of
+  them answer, so the report measures their content as well as their speed. The header records the
+  timeout, so read the suggestion latency against the budget with it in mind.
+
 ## Notes
 
 Each line of `notes.jsonl` is one note:
