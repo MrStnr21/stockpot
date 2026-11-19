@@ -35,6 +35,20 @@ describe('engine settings', () => {
 		})
 	})
 
+	describe("Gemini's limits", () => {
+		it.each([0, 1])('refuse %d requests, which no card fits', (perMinute) => {
+			const patch = { gemini: { limits: { fast: { perMinute, perDay: null } } } }
+
+			expect(v.safeParse(enginesPatchSchema, patch).success).toBe(false)
+		})
+
+		it('take two requests and no limit', () => {
+			const patch = { gemini: { limits: { deep: { perMinute: 2, perDay: null } } } }
+
+			expect(v.safeParse(enginesPatchSchema, patch).success).toBe(true)
+		})
+	})
+
 	describe('configuredEngines', () => {
 		describe('on a new instance', () => {
 			it('finds none', () => {

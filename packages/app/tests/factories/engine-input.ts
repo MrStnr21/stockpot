@@ -31,6 +31,19 @@ export const cardInputFactory = Factory.define<CardInput<'explain'>>(() => ({
 	output: cardFormat('technology', 2),
 }))
 
+/**
+ * A first-level technology card, the kind the recorded Gemini responses answer. The format is spread
+ * over the factory's rather than passed to `build`, which would merge the two schemas.
+ */
+export function firstCardInput(): CardInput<'explain'> {
+	return {
+		...cardInputFactory.build(),
+		depth: 1,
+		previous: [],
+		output: cardFormat('technology', 1),
+	}
+}
+
 export const suggestInputFactory = Factory.define<SuggestInput>(() => ({
 	task: 'suggest',
 	note: engineNoteFactory.build(),

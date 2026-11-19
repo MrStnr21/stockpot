@@ -17,6 +17,8 @@ export interface RunReport {
 	outputTokens: number | null
 	searches: number | null
 	costUsd: number | null
+	/** The Search Suggestions HTML a grounded call returned; it goes to the result, not the row. */
+	searchSuggestions: string | null
 }
 
 export interface RunRecord {
@@ -46,6 +48,7 @@ export async function recordRun<TOutput>(
 		outputTokens: null,
 		searches: null,
 		costUsd: null,
+		searchSuggestions: null,
 	}
 
 	let outcome: Outcome = 'error'
@@ -55,7 +58,15 @@ export async function recordRun<TOutput>(
 
 		outcome = 'ok'
 
-		return { output, engine, model: report.model, elapsedMs: Date.now() - startedAt.getTime() }
+		const { model: reported, searchSuggestions } = report
+
+		return {
+			output,
+			engine,
+			model: reported,
+			searchSuggestions,
+			elapsedMs: Date.now() - startedAt.getTime(),
+		}
 	} catch (error) {
 		if (error instanceof EngineError) {
 			outcome = error.kind
@@ -67,8 +78,11 @@ export async function recordRun<TOutput>(
 
 		// The row is bookkeeping: a database error must not replace the call's own answer or error.
 		try {
+			const { inputTokens, outputTokens, searches, costUsd } = report
+			const usage = { model: report.model, inputTokens, outputTokens, searches, costUsd }
+
 			db.insert(engineRuns)
-				.values({ ...report, jobId, engine, task, outcome, startedAt, durationMs })
+				.values({ ...usage, jobId, engine, task, outcome, startedAt, durationMs })
 				.run()
 		} catch (error) {
 			// oxlint-disable-next-line no-console -- The server has no logger yet, and a lost run must not pass silently.

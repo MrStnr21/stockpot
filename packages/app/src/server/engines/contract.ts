@@ -112,6 +112,11 @@ export interface EngineResult<TOutput> {
 	readonly engine: string
 	/** The model ID the provider reported, when it reports one. */
 	readonly model: string | null
+	/**
+	 * The Search Suggestions HTML a call grounded in Google Search returned. Google's terms require
+	 * showing it with the answer, unmodified, to the owner who asked (docs/engines.md).
+	 */
+	readonly searchSuggestions: string | null
 	readonly elapsedMs: number
 }
 
