@@ -120,7 +120,15 @@ export function mergeLocal(
 	notes: readonly EvalNote[],
 	local: readonly (EvalNote | LocalAddition)[],
 ): EvalNote[] {
-	const byId = new Map(notes.map((note) => [note.id, note]))
+	const byId = new Map<string, EvalNote>()
+
+	for (const note of notes) {
+		if (byId.has(note.id)) {
+			throw new Error(`The note "${note.id}" is listed twice`)
+		}
+
+		byId.set(note.id, note)
+	}
 
 	for (const line of local) {
 		const existing = byId.get(line.id)
@@ -134,6 +142,11 @@ export function mergeLocal(
 		} else {
 			if (existing === undefined) {
 				throw new Error(`The local addition "${line.id}" names no public note`)
+			}
+
+			// Details kept out of the repository belong to a private note, or they would reach an engine.
+			if (!existing.private) {
+				throw new Error(`The local addition "${line.id}" is for a note that is not private`)
 			}
 
 			byId.set(line.id, {

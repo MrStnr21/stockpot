@@ -74,6 +74,16 @@ describe('eval notes', () => {
 		it('rejects a whole note listed twice', () => {
 			expect(() => mergeLocal(notes, notes)).toThrow('listed twice')
 		})
+
+		it('rejects an id listed twice in the public notes', () => {
+			expect(() => mergeLocal([...notes, ...notes], [])).toThrow('listed twice')
+		})
+
+		it('refuses private details for a note that is not private', () => {
+			const publicNote = parseNotes(noteLine({ id: 'open' }), 'notes.jsonl')
+
+			expect(() => mergeLocal(publicNote, [{ id: 'open', context: 'x' }])).toThrow('not private')
+		})
 	})
 
 	describe('loadNotes', () => {

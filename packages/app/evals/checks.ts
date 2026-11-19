@@ -120,11 +120,19 @@ export function checkUncertain(note: EvalNote, card: JsonValue): CheckResult | n
 	return sources.length === 0 ? pass('uncertain') : fail('uncertain', `${sources.length} sources`)
 }
 
+/** Lowercase, with straight apostrophes and е for ё, so a phrase matches however it is typed. */
+function normalizeForMatch(text: string): string {
+	return text
+		.toLowerCase()
+		.replaceAll(/[\u2018\u2019\u02BC]/gu, "'")
+		.replaceAll('ё', 'е')
+}
+
 /** No text in the answer uses a filler phrase from the rubric, in any letter case. */
 export function checkFiller(card: JsonValue, phrases: readonly string[]): CheckResult {
 	// The JSON text holds every value at any depth; the keys never match a phrase.
-	const text = JSON.stringify(card).toLowerCase()
-	const found = phrases.filter((phrase) => text.includes(phrase.toLowerCase()))
+	const text = normalizeForMatch(JSON.stringify(card))
+	const found = phrases.filter((phrase) => text.includes(normalizeForMatch(phrase)))
 
 	return found.length === 0 ? pass('filler') : fail('filler', found.map((p) => `"${p}"`).join(', '))
 }

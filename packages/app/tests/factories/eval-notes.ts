@@ -22,11 +22,12 @@ export const evalNoteFactory = Factory.define<EvalNote>(({ sequence }) => ({
 	tests: faker.lorem.sentence(),
 }))
 
-/** A private note with context that must stay on the instance. */
-export const privateEvalNoteFactory = evalNoteFactory.params({
+/** A private note with its own context, which must stay on the instance. */
+export const privateEvalNoteFactory = Factory.define<EvalNote>(() => ({
+	...evalNoteFactory.build(),
 	private: true,
 	context: faker.lorem.sentence(),
-})
+}))
 
 /** A note composed to be unknowable: its card must be uncertain. */
 export const unknowableEvalNoteFactory = evalNoteFactory.params({

@@ -4,6 +4,7 @@
 import { file } from 'bun'
 import { describe, expect, it } from 'bun:test'
 import { join } from 'node:path'
+import { evalNoteFactory } from '#tests/factories/eval-notes'
 
 import { cardFormat } from '#/features/research/shared/formats'
 
@@ -19,32 +20,15 @@ import {
 	countSentences,
 	parseFillerPhrases,
 } from './checks'
-import { parseNotes, type EvalNote } from './notes'
+import type { EvalNote } from './notes'
 
 function evalNote(
 	overrides: Partial<EvalNote> = {},
 	expected: Partial<EvalNote['expected']> = {},
 ): EvalNote {
-	const line = JSON.stringify({
-		id: 'note',
-		text: 'Note',
-		context: null,
-		url: null,
-		private: false,
-		language: 'en',
-		source: 'composed',
-		tests: 'A test.',
-		...overrides,
-		expected: { format: 'technology', ...expected },
-	})
+	const note = evalNoteFactory.build(overrides)
 
-	const note = parseNotes(line, 'test.jsonl').at(0)
-
-	if (note === undefined) {
-		throw new Error('The test note did not parse')
-	}
-
-	return note
+	return { ...note, expected: { ...note.expected, ...expected } }
 }
 
 const briefCard = {
@@ -125,6 +109,14 @@ describe('eval checks', () => {
 			const card = { ...briefCard, explanation: 'It Is Important To Note that it runs.' }
 
 			expect(checkFiller(card, ['it is important to note'])).toMatchObject({ passed: false })
+		})
+
+		it.each([
+			['It’s worth noting that it runs.', "it's worth noting"],
+			['Стоит отметить, что всё работает.', 'стоит отметить'],
+			['Давайте разберемся.', 'давайте разберёмся'],
+		])('matches %p despite apostrophes and ё', (explanation, phrase) => {
+			expect(checkFiller({ ...briefCard, explanation }, [phrase])).toMatchObject({ passed: false })
 		})
 
 		it('passes a card without filler', () => {
