@@ -4,11 +4,12 @@
 /*
  * The engines the eval can run, by id. The server reads engine settings from the database; the eval
  * reads them from the environment instead, so keys stay outside the repository and no instance is
- * needed. Gemini joins with one entry when ENG-4 adds its engine.
+ * needed.
  *
  * Each entry also records what the engine sends, through a setting the engine already takes, so the
- * `private` check can test the payload rather than our own input: the OpenAI-compatible base URL
- * points at a recording proxy on this machine, and the agent command runs behind record-agent.ts.
+ * `private` check can test the payload rather than our own input: Gemini's `fetch` records each
+ * request body, the OpenAI-compatible base URL points at a recording proxy on this machine, and the
+ * agent command runs behind record-agent.ts.
  */
 import { $, file, Glob, serve } from 'bun'
 import { tmpdir } from 'node:os'
@@ -18,8 +19,9 @@ import * as v from 'valibot'
 import type { Db } from '#/server/db/client'
 import { createAgentCommandEngine } from '#/server/engines/agent-cli'
 import type { Engine } from '#/server/engines/contract'
+import { createGeminiEngine } from '#/server/engines/gemini'
 import { createOpenAiCompatibleEngine } from '#/server/engines/openai-compatible'
-import { enginesSchema } from '#/server/engines/settings'
+import { defaultEngines, enginesSchema } from '#/server/engines/settings'
 
 export type EvalEnv = Readonly<Record<string, string | undefined>>
 
@@ -27,6 +29,8 @@ export interface EngineContext {
 	readonly env: EvalEnv
 	/** Where the engine records its `engine_runs` rows: an in-memory database for the run. */
 	readonly db: Db
+	/** Sends an HTTP engine's requests that use `fetch`; specs answer from recorded responses. */
+	readonly fetch?: typeof fetch
 }
 
 function optional(env: EvalEnv, name: string): string | null {
@@ -58,6 +62,51 @@ export interface EvalEngine {
 }
 
 const openAiCompatibleSettings = enginesSchema.entries['openai-compatible']
+
+const geminiSettings = enginesSchema.entries.gemini
+
+async function closeNothing(): Promise<void> {
+	// The engine holds nothing open.
+}
+
+interface RecordingFetch {
+	readonly fetch: typeof fetch
+	readonly outgoing: Outgoing
+}
+
+/** A `fetch` that records each request body, then sends the request with `send`. */
+function recordingFetch(send: typeof fetch): RecordingFetch {
+	const bodies: string[] = []
+
+	async function recordAndSend(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+		const request = new Request(input, init)
+
+		bodies.push(await request.clone().text())
+
+		return send(request)
+	}
+
+	return {
+		fetch: Object.assign(recordAndSend, { preconnect: send.preconnect }),
+		outgoing: { take: async () => bodies.splice(0) },
+	}
+}
+
+async function gemini({ env, db, fetch: send = fetch }: EngineContext): Promise<EvalEngine> {
+	// The tier models and limits are the defaults from engine settings; only the key is the owner's.
+	const settings = v.parse(geminiSettings, {
+		...defaultEngines().gemini,
+		apiKey: required(env, 'GEMINI_API_KEY'),
+	})
+
+	const recorder = recordingFetch(send)
+
+	return {
+		engine: createGeminiEngine({ db, settings: () => settings, fetch: recorder.fetch }),
+		outgoing: recorder.outgoing,
+		close: closeNothing,
+	}
+}
 
 // Headers that described the upstream body as sent; fetch has already decoded it.
 const hopHeaders = ['content-encoding', 'content-length', 'transfer-encoding', 'host']
@@ -164,6 +213,7 @@ async function openAiCompatible({ env, db }: EngineContext): Promise<EvalEngine>
 
 export const evalEngines = {
 	'agent-command': agentCommand,
+	gemini,
 	'openai-compatible': openAiCompatible,
 } as const
 

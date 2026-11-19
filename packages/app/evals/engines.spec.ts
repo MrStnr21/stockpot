@@ -6,6 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createTestDb } from '#tests/setup/db'
+import { fakeGeminiFetch, suggestionSaying, type SentRequest } from '#tests/setup/gemini'
 
 import { redactPrivate } from '#/server/engines/contract'
 import { suggestionFormat } from '#/server/engines/suggestion'
@@ -118,6 +119,33 @@ describe('eval engines', () => {
 			expect(result.output).toEqual(answer)
 			expect(payloads).toEqual(received)
 			expect(payloads?.at(0)).toContain('ferritin')
+		})
+	})
+
+	describe('the Gemini engine', () => {
+		const sent: SentRequest[] = []
+		let evalEngine: EvalEngine
+
+		beforeAll(async () => {
+			const { db } = await createTestDb()
+			const fetch = fakeGeminiFetch(() => suggestionSaying(JSON.stringify(answer)), sent)
+			const env = { GEMINI_API_KEY: 'test-key' }
+
+			evalEngine = await createEvalEngine('gemini', { env, db, fetch })
+		})
+
+		afterAll(async () => {
+			await evalEngine.close()
+		})
+
+		it('records the request body the SDK sends', async () => {
+			const result = await evalEngine.engine.suggest(privateSuggestion(), options)
+			const payloads = await evalEngine.outgoing?.take()
+
+			expect(result.output).toEqual(answer)
+			expect(payloads).toEqual(sent.map(({ text }) => text))
+			expect(payloads?.at(0)).toContain('ferritin')
+			expect(payloads?.at(0)).not.toContain('a lab report')
 		})
 	})
 })
