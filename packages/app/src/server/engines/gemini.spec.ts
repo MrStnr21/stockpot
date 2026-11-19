@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
-import { sleep } from 'bun'
-import { afterEach, beforeEach, describe, expect, it, setSystemTime } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, it, jest, setSystemTime } from 'bun:test'
 import { firstCardInput } from '#tests/factories/engine-input'
 import badKey from '#tests/recordings/gemini/bad-key.json'
 import explainCard from '#tests/recordings/gemini/explain-card.json'
@@ -13,6 +12,7 @@ import unavailable from '#tests/recordings/gemini/unavailable.json'
 import { createTestDb, type TestDb } from '#tests/setup/db'
 import { errorOf } from '#tests/setup/engines'
 import {
+	arriving,
 	fakeGeminiFetch,
 	hang,
 	recorded,
@@ -69,6 +69,7 @@ describe('gemini', () => {
 		})
 
 		afterEach(() => {
+			jest.useRealTimers()
 			setSystemTime()
 		})
 
@@ -181,17 +182,27 @@ describe('gemini', () => {
 			})
 
 			it('ends a card whose second request hangs at the one deadline of the call', async () => {
-				const facts = recorded(explainFacts)
+				const factsAnswered = Promise.withResolvers<null>()
+				const card = arriving(hang)
 
-				// The facts take 40 of the 60 ms, so a deadline per request would end the card near 100 ms.
-				answers = [async (request) => sleep(40).then(async () => facts(request)), hang]
+				const facts = arriving(async (request) =>
+					factsAnswered.promise.then(async () => recorded(explainFacts)(request)),
+				)
 
-				const call = engine.explain(cardInput, { tier: 'standard', timeoutMs: 60 })
+				answers = [facts.answer, card.answer]
+				jest.useFakeTimers()
 
-				expect(await errorOf(call)).toMatchObject({ failure: { kind: 'timeout', afterMs: 60 } })
-				expect(sent).toHaveLength(2)
+				const call = errorOf(engine.explain(cardInput, { tier: 'standard', timeoutMs: 60 }))
+
+				// The facts take 40 of the 60 ms; a deadline per request would leave the card 60 ms more.
+				await facts.arrived
+				jest.advanceTimersByTime(40)
+				factsAnswered.resolve(null)
+				await card.arrived
+				jest.advanceTimersByTime(20)
+
+				expect(await call).toMatchObject({ failure: { kind: 'timeout', afterMs: 60 } })
 				expect(runRows()).toMatchObject([{ task: 'explain', outcome: 'timeout' }])
-				expect(runRows()[0]?.durationMs).toBeLessThan(95)
 			})
 
 			it('stops at the timeout', async () => {

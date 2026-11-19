@@ -57,6 +57,26 @@ export async function hang(request: Request): Promise<Response> {
 	return promise
 }
 
+/** An answer, and a promise that settles when its request arrives. */
+export interface Arriving {
+	readonly answer: Answer
+	readonly arrived: Promise<null>
+}
+
+/** Wraps `answer` to tell when its request arrives, so a spec can move fake time in between. */
+export function arriving(answer: Answer): Arriving {
+	const { promise, resolve } = Promise.withResolvers<null>()
+
+	return {
+		answer: async (request) => {
+			resolve(null)
+
+			return answer(request)
+		},
+		arrived: promise,
+	}
+}
+
 /** A `fetch` for the engine's SDK that records each request in `sent` and answers with `next()`. */
 export function fakeGeminiFetch(next: () => Answer | undefined, sent: SentRequest[]): typeof fetch {
 	async function fakeFetch(input: RequestInfo | URL, init?: RequestInit) {
