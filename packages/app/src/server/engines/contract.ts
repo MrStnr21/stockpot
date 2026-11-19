@@ -92,6 +92,8 @@ export interface RunOptions {
 	/** The engine stops the call and fails with `timeout` after this long. */
 	readonly timeoutMs: number
 	readonly signal?: AbortSignal
+	/** The job the call runs in, recorded with its `engine_runs` row; a suggestion runs outside any job. */
+	readonly jobId?: number
 }
 
 /*
@@ -172,9 +174,25 @@ function describeIssue(issue: v.BaseIssue<unknown>): string {
 	return path === null ? issue.message : `${path}: ${issue.message}`
 }
 
+/** Parses the JSON text a provider returned, failing with `invalid` when it is not JSON. */
+export function parseJsonText(text: string): JsonValue {
+	try {
+		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- SAFETY: JSON.parse returns only JSON values.
+		return JSON.parse(text) as JsonValue
+	} catch (error) {
+		throw new EngineError(
+			{ kind: 'invalid', issues: ['The answer is not JSON'] },
+			'The answer is not JSON',
+			{
+				cause: error,
+			},
+		)
+	}
+}
+
 /**
  * Checks an answer against the call's format, failing with `invalid` when it does not match. Each
- * engine first parses the provider's JSON text itself and maps a parse failure to `invalid` too.
+ * engine first parses the provider's JSON text itself, with `parseJsonText` or its own reading.
  */
 export function parseOutput<TSchema extends v.GenericSchema>(
 	output: OutputFormat<TSchema>,
