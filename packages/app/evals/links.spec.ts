@@ -32,6 +32,20 @@ function respond(routes: Record<string, Response | Error>): Fetch {
 	}
 }
 
+function routeRequest(request: Request): Response {
+	const { pathname } = new URL(request.url)
+
+	if (pathname === '/head-refused' && request.method === 'HEAD') {
+		return new Response(null, { status: 405 })
+	}
+
+	if (pathname === '/moved') {
+		return new Response(null, { status: 302, headers: { location: '/ok' } })
+	}
+
+	return new Response(null, { status: pathname === '/gone' ? 404 : 200 })
+}
+
 describe('the link check', () => {
 	describe('against a server on this machine', () => {
 		let hits = 0
@@ -164,6 +178,28 @@ describe('the link check', () => {
 				detail:
 					'https://example.com/gone: status 404; https://example.com/down: The operation timed out.',
 			})
+		})
+	})
+
+	describe('the requests it makes', () => {
+		const server = serve({ hostname: '127.0.0.1', port: 0, fetch: routeRequest })
+
+		afterAll(async () => {
+			await server.stop(true)
+		})
+
+		// The name resolves to a public address for the check, as a public site would.
+		it.each([
+			['/ok', true],
+			['/head-refused', true],
+			['/moved', true],
+			['/gone', false],
+		])('opens %p: %p', async (path, passed) => {
+			const link = `http://localhost:${server.port}${path}`
+
+			const result = await checkLinks([link], { lookup: publicLookup })
+
+			expect(result?.passed).toBe(passed)
 		})
 	})
 })

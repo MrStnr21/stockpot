@@ -7,55 +7,68 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { briefCardFactory } from '#tests/factories/cards'
 import { evalNoteFactory } from '#tests/factories/eval-notes'
-import type * as v from 'valibot'
+import { fakeEngine, type Reply } from '#tests/setup/fake-engine'
 
-import {
-	parseOutput,
-	type Engine,
-	type EngineInput,
-	type EngineResult,
-	type OutputFormat,
-	type Redacted,
-} from '#/server/engines/contract'
+import { EngineError, type EngineInput, type Redacted } from '#/server/engines/contract'
 
 import type { EvalEngine } from './engines'
 import type { EvalReport } from './report'
 import { main, parseArgs } from './run'
 
-async function answerBrief<TSchema extends v.GenericSchema>(
-	input: Redacted<EngineInput & { readonly output: OutputFormat<TSchema> }>,
-): Promise<EngineResult<v.InferOutput<TSchema>>> {
+function briefAnswer(input: Redacted<EngineInput>): Reply {
 	const answer =
 		input.task === 'suggest'
 			? { categories: ['brief'], senses: [], language: 'en' }
 			: briefCardFactory.build({ sources: [], uncertain: true })
 
-	return { output: parseOutput(input.output, answer), engine: 'fake', model: null, elapsedMs: 0 }
-}
-
-/** An engine that suggests Other and writes an uncertain brief card for every note, at once. */
-function briefEngine(): Engine {
-	return { id: 'fake', suggest: answerBrief, explain: answerBrief, research: answerBrief }
+	return { delayMs: 0, answer }
 }
 
 async function closeNothing(): Promise<void> {
 	// The fake engine holds nothing open.
 }
 
-async function briefEvalEngine(): Promise<EvalEngine> {
-	return { engine: briefEngine(), outgoing: null, close: closeNothing }
+/** An engine that suggests Other and writes an uncertain brief card, until `failAfter` calls. */
+function briefEvalEngine(failAfter = Number.POSITIVE_INFINITY): () => Promise<EvalEngine> {
+	return async () => {
+		let made = 0
+
+		function reply(input: Redacted<EngineInput>): Reply {
+			made += 1
+
+			return made > failAfter ? { delayMs: 0, answer: rejected } : briefAnswer(input)
+		}
+
+		return {
+			engine: fakeEngine({ clock: { ms: 0 }, received: [], reply }),
+			outgoing: null,
+			close: closeNothing,
+		}
+	}
 }
+
+const rejected = new EngineError({ kind: 'auth' }, 'Rejected')
 
 function lines(notes: readonly object[]): string {
 	return notes.map((note) => `${JSON.stringify(note)}\n`).join('')
 }
 
-async function runOn(notesFolder: string, out: string): Promise<EvalReport> {
-	const args = ['--engine', 'agent-command', '--notes', join(notesFolder, 'notes.jsonl')]
+interface RunOnOptions {
+	readonly extra?: readonly string[]
+	readonly failAfter?: number
+}
 
-	await main([...args, '--out', out], { env: {}, createEngine: briefEvalEngine, now: () => 0 })
+async function runOn(
+	notesFolder: string,
+	out: string | null,
+	{ extra = [], failAfter = Number.POSITIVE_INFINITY }: RunOnOptions = {},
+): Promise<{ folder: string; report: EvalReport }> {
+	const notes = ['--notes', join(notesFolder, 'notes.jsonl'), ...extra]
+	const args = ['--engine', 'agent-command', ...notes, ...(out === null ? [] : ['--out', out])]
+	const createEngine = briefEvalEngine(failAfter)
+	const folder = await main(args, { env: {}, createEngine, now: () => 0 })
 
-	return readReport(out)
+	return { folder, report: await readReport(folder) }
 }
 
 async function readReport(folder: string): Promise<EvalReport> {
@@ -100,7 +113,7 @@ describe('the eval command', () => {
 		})
 
 		it('includes the local notes when they are present', async () => {
-			const report = await runOn(join(folder, 'with-local'), join(folder, 'out-local'))
+			const { report } = await runOn(join(folder, 'with-local'), join(folder, 'out-local'))
 
 			expect(report.notes.map(({ id }) => id)).toEqual([
 				...publicNotes.map(({ id }) => id),
@@ -109,14 +122,46 @@ describe('the eval command', () => {
 		})
 
 		it('runs the public notes alone when there are no local ones', async () => {
-			const report = await runOn(join(folder, 'public-only'), join(folder, 'out-public'))
+			const { report } = await runOn(join(folder, 'public-only'), join(folder, 'out-public'))
 
 			expect(report.notes.map(({ id }) => id)).toEqual(publicNotes.map(({ id }) => id))
 		})
 
+		it('stops after --limit engine calls, sampling local notes first', async () => {
+			const { report } = await runOn(join(folder, 'with-local'), join(folder, 'out-limit'), {
+				extra: ['--limit', '3'],
+			})
+
+			expect(report.calls.map(({ noteId, task }) => `${noteId} ${task}`)).toEqual([
+				'local-note suggest',
+				'local-note explain',
+				`${publicNotes.at(0)?.id} suggest`,
+			])
+		})
+
+		it('writes to a dated folder under evals/local/reports without --out', async () => {
+			const { folder: written, report } = await runOn(join(folder, 'public-only'), null)
+
+			await $`rm -rf ${written}`
+
+			expect(written.startsWith(join(import.meta.dir, 'local', 'reports'))).toBe(true)
+			expect(written.endsWith(`-agent-command`)).toBe(true)
+			expect(report.notes.length).toBe(2)
+		})
+
+		it('keeps the calls made before the engine failed, and says why it stopped', async () => {
+			const out = join(folder, 'out-failed')
+			const { report } = await runOn(join(folder, 'public-only'), out, { failAfter: 2 })
+			const saved = await file(join(out, 'calls.jsonl')).text()
+
+			expect(report.stopped).toBe('the engine rejected its key or login (auth)')
+			expect(saved.trim().split('\n').length).toBe(3)
+			expect(await file(join(out, 'report.md')).text()).toContain('**Stopped early:**')
+		})
+
 		it('writes the report, its pass rates and the score sheet', async () => {
 			const out = join(folder, 'out-files')
-			const report = await runOn(join(folder, 'public-only'), out)
+			const { report } = await runOn(join(folder, 'public-only'), out)
 			const markdown = await file(join(out, 'report.md')).text()
 			const sheet = await file(join(out, 'score-sheet.md')).text()
 
