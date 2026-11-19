@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
-import { join } from 'node:path'
+import { $ } from 'bun'
+import { dirname, join } from 'node:path'
 import node from '@astrojs/node'
 import svelte from '@astrojs/svelte'
 import tailwindcss from '@tailwindcss/vite'
@@ -68,6 +69,58 @@ function boot(): AstroIntegration {
 	}
 }
 
+/*
+ * Copies the SQL migrations next to the server chunk that holds src/server/db/instance.ts, which
+ * looks for them in its own folder: the source folder in dev and specs, the chunk's folder in the
+ * build. When no chunk holds that module, the server build fails instead of a server that cannot
+ * migrate its database.
+ */
+function migrations(): AstroIntegration {
+	const instanceModule = join(import.meta.dirname, 'src/server/db/instance.ts')
+	const migrationsFolder = join(import.meta.dirname, 'src/server/db/migrations')
+
+	return {
+		name: 'stockpot:migrations',
+		hooks: {
+			'astro:config:setup': ({ command, updateConfig }) => {
+				if (command !== 'build') {
+					return
+				}
+
+				updateConfig({
+					vite: {
+						plugins: [
+							{
+								name: 'stockpot:migrations',
+								applyToEnvironment: (environment) => environment.name === 'ssr',
+								async writeBundle(options, bundle) {
+									const folders = Object.values(bundle).flatMap((output) =>
+										output.type === 'chunk' && output.moduleIds.includes(instanceModule)
+											? [join(options.dir ?? '', dirname(output.fileName), 'migrations')]
+											: [],
+									)
+
+									if (folders.length === 0) {
+										this.error(
+											'stockpot:migrations found no server chunk with src/server/db/instance.ts, so the server could not find its migrations.',
+										)
+									}
+
+									await Promise.all(
+										folders.map(
+											async (folder) => $`rm -rf ${folder} && cp -R ${migrationsFolder} ${folder}`,
+										),
+									)
+								},
+							},
+						],
+					},
+				})
+			},
+		},
+	}
+}
+
 export default defineConfig({
 	output: 'server',
 	// The backstop for every body; API routes read theirs through readJson with a tighter limit.
@@ -80,7 +133,7 @@ export default defineConfig({
 		 * own form posts. The middleware compares with STOCKPOT_PUBLIC_ORIGIN, read at runtime. */
 		checkOrigin: false,
 	},
-	integrations: [svelte(), boot()],
+	integrations: [svelte(), boot(), migrations()],
 	vite: {
 		plugins: [tailwindcss()],
 		// The UI package ships Svelte and TypeScript source, so the server build compiles it instead of externalizing it.

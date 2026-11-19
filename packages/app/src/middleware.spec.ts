@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
 import { afterEach, beforeEach, describe, expect, it, mock, spyOn, type Mock } from 'bun:test'
+import { createCookieJar } from '#tests/setup/cookies'
 
 import { route, type RouteContext } from '#/server/http'
 import type { Owner, OwnerResolver } from '#/server/policy'
@@ -43,7 +44,7 @@ describe('middleware', () => {
 	async function run(request: Request) {
 		const middleware = createMiddleware({ resolveOwner, publicOrigin })
 
-		return middleware({ request, locals, isPrerendered: false }, next)
+		return middleware({ request, locals, cookies: createCookieJar(), isPrerendered: false }, next)
 	}
 
 	describe('with a cross-site form post', () => {
@@ -92,7 +93,12 @@ describe('middleware', () => {
 		beforeEach(async () => {
 			locals = {}
 			await createMiddleware({ resolveOwner, publicOrigin })(
-				{ request: new Request(publicOrigin), locals, isPrerendered: true },
+				{
+					request: new Request(publicOrigin),
+					locals,
+					cookies: createCookieJar(),
+					isPrerendered: true,
+				},
 				next,
 			)
 		})

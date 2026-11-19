@@ -1,9 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
+import { instanceAuth } from '#/server/auth'
 import { config } from '#/server/config'
 import { jsonError, type RouteContext } from '#/server/http'
-import { isCrossSite, resolveNobody, type OwnerResolver } from '#/server/policy'
+import {
+	isCrossSite,
+	type CookieJar,
+	type OwnerResolver,
+	type ResolverContext,
+} from '#/server/policy'
 
 export interface MiddlewareOptions {
 	readonly resolveOwner: OwnerResolver
@@ -13,7 +19,7 @@ export interface MiddlewareOptions {
 type Next = () => Promise<Response>
 
 type Middleware = (
-	context: RouteContext & { readonly isPrerendered: boolean },
+	context: RouteContext & { readonly isPrerendered: boolean; readonly cookies: CookieJar },
 	next: Next,
 ) => Promise<Response>
 
@@ -65,7 +71,7 @@ export function createMiddleware({ resolveOwner, publicOrigin }: MiddlewareOptio
 		const api = isApi(context.request)
 
 		try {
-			context.locals.owner = (await resolveOwner(context.request)) ?? null
+			context.locals.owner = (await resolveOwner(context)) ?? null
 
 			const response = await next()
 
@@ -83,8 +89,13 @@ export function createMiddleware({ resolveOwner, publicOrigin }: MiddlewareOptio
 	}
 }
 
-// SRV-4 replaces `resolveNobody` with the session resolver in src/server/auth/.
+async function resolveInstanceOwner(context: ResolverContext) {
+	const auth = await instanceAuth()
+
+	return auth.resolveOwner(context)
+}
+
 export const onRequest = createMiddleware({
-	resolveOwner: resolveNobody,
+	resolveOwner: resolveInstanceOwner,
 	publicOrigin: config.publicOrigin,
 })
