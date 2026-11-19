@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
-import { $ } from 'bun'
+import { $, file } from 'bun'
 import { afterEach, beforeEach, describe, expect, it, jest } from 'bun:test'
 import { join } from 'node:path'
 
@@ -40,6 +40,18 @@ async function pidIn(directory: string): Promise<number> {
 	}
 
 	return Number(pid)
+}
+
+/** Waits until a file holds `expected`, polling as `pidIn` does. */
+async function untilFileHolds(path: string, expected: string): Promise<void> {
+	let text = ''
+
+	while (text !== expected) {
+		// oxlint-disable-next-line no-await-in-loop -- Each check waits for the one before it.
+		const read = await $`cat ${path}`.nothrow().quiet()
+
+		text = read.exitCode === 0 ? read.text() : ''
+	}
 }
 
 async function isRunning(pid: number) {
@@ -127,22 +139,29 @@ describe('agent-process', () => {
 			})
 		})
 
-		describe('with a process that ignores SIGINT', () => {
+		describe('with a process that traps the signals', () => {
 			let pid: number
 			let error: Error
+			let signals: string
 
 			beforeEach(async () => {
 				jest.useFakeTimers()
+				signals = join(cwd, 'signals')
 
-				const running = run(`trap '' INT; ${hang}`, { timeoutMs: 3000 })
+				const trapping = `trap 'echo INT >> signals' INT; trap 'echo TERM >> signals' TERM; echo $$ > pid; while :; do sleep 1; done`
+				const running = run(trapping, { timeoutMs: 3000 })
 
 				pid = await pidIn(cwd)
 				jest.advanceTimersByTime(3000)
+				await untilFileHolds(signals, 'INT\n')
+				jest.advanceTimersByTime(100)
+				await untilFileHolds(signals, 'INT\nTERM\n')
 				jest.advanceTimersByTime(100)
 				error = await errorOf(running)
 			})
 
-			it('stops it with SIGTERM after the grace period', async () => {
+			it('sends SIGINT, then SIGTERM, then SIGKILL a grace period apart', async () => {
+				expect(await file(signals).text()).toBe('INT\nTERM\n')
 				expect(error).toMatchObject({ failure: { kind: 'timeout' } })
 				expect(await isRunning(pid)).toBe(false)
 			})

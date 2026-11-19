@@ -3,7 +3,7 @@
 
 import { $, file, write } from 'bun'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, jest } from 'bun:test'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { suggestInputFactory } from '#tests/factories/engine-input'
 import { jobRowFactory } from '#tests/factories/jobs'
 import { createTestDb, type TestDb } from '#tests/setup/db'
@@ -41,8 +41,8 @@ ${printAnswer}`,
 	'limit.sh': `printf '%s' '{"error":{"kind":"rate_limited","resets_at":"2026-11-19T15:00:00Z"}}'; exit 1`,
 	'limit-no-reset.sh': `printf '%s' '{"error":{"kind":"rate_limited"}}'; exit 1`,
 	'login.sh': `printf '%s' '{"error":{"kind":"auth"}}'; exit 1`,
-	'crash.sh': `echo 'out of memory' >&2; exit 3`,
-	'hang.sh': `echo $$ > "$1/pid"; exec sleep 30`,
+	'crash.sh': `pwd > "$1/cwd"; echo 'out of memory' >&2; exit 3`,
+	'hang.sh': `pwd > "$1/cwd"; echo $$ > "$1/pid"; exec sleep 30`,
 	'slow.sh': `echo start >> "$1/log"; sleep 0.1; echo end >> "$1/log"; ${printAnswer}`,
 }
 
@@ -95,6 +95,26 @@ describe('agent-cli', () => {
 			return db.select().from(engineRuns).all()
 		}
 
+		/** Whether the run's temporary directory, the parent of its working directory, is still there. */
+		async function isRunDirectoryLeft() {
+			const cwd = await file(join(out, 'cwd')).text()
+			const probe = await $`test -e ${dirname(cwd.trim())}`.nothrow()
+
+			return probe.exitCode === 0
+		}
+
+		/** Waits for the fake agent to write its pid, polling with a process as timers may be fake. */
+		async function untilStarted() {
+			let pid = ''
+
+			while (pid === '') {
+				// oxlint-disable-next-line no-await-in-loop -- Each check waits for the one before it.
+				const read = await $`cat ${join(out, 'pid')}`.nothrow().quiet()
+
+				pid = read.exitCode === 0 ? read.text().trim() : ''
+			}
+		}
+
 		beforeAll(async () => {
 			agents = await temporaryDirectory()
 
@@ -140,11 +160,8 @@ describe('agent-cli', () => {
 			})
 
 			it('runs in an empty working directory and removes it afterwards', async () => {
-				const cwd = await file(join(out, 'cwd')).text()
-				const left = await $`test -e ${cwd.trim()}`.nothrow()
-
 				expect(await file(join(out, 'listing')).text()).toBe('')
-				expect(left.exitCode).not.toBe(0)
+				expect(await isRunDirectoryLeft()).toBe(false)
 			})
 		})
 
@@ -203,6 +220,7 @@ describe('agent-cli', () => {
 			expect(error).not.toBeInstanceOf(EngineError)
 			expect(error.message).toBe('The agent command exited with status 3: out of memory')
 			expect(runRows()).toMatchObject([{ outcome: 'error' }])
+			expect(await isRunDirectoryLeft()).toBe(false)
 		})
 
 		describe('with an agent that hangs', () => {
@@ -212,22 +230,36 @@ describe('agent-cli', () => {
 				jest.useFakeTimers()
 
 				const call = engineWith('hang.sh').suggest(input, { tier: 'fast', timeoutMs: 3000 })
-				let pid = ''
 
-				while (pid === '') {
-					// oxlint-disable-next-line no-await-in-loop -- Polls with a process, as timers are fake.
-					const read = await $`cat ${join(out, 'pid')}`.nothrow().quiet()
-
-					pid = read.exitCode === 0 ? read.text().trim() : ''
-				}
-
+				await untilStarted()
 				jest.advanceTimersByTime(3000)
 				error = await errorOf(call)
 			})
 
-			it('fails with timeout and records it', () => {
+			it('fails with timeout, records it and removes the run directory', async () => {
 				expect(error).toMatchObject({ failure: { kind: 'timeout', afterMs: 3000 } })
 				expect(runRows()).toMatchObject([{ outcome: 'timeout', durationMs: 3000 }])
+				expect(await isRunDirectoryLeft()).toBe(false)
+			})
+		})
+
+		describe('when the call is aborted', () => {
+			const reason = new Error('The runner stopped')
+			let error: Error
+
+			beforeEach(async () => {
+				const controller = new AbortController()
+				const call = engineWith('hang.sh').suggest(input, { ...options, signal: controller.signal })
+
+				await untilStarted()
+				controller.abort(reason)
+				error = await errorOf(call)
+			})
+
+			it('fails with the reason, records it and removes the run directory', async () => {
+				expect(error).toBe(reason)
+				expect(runRows()).toMatchObject([{ outcome: 'error' }])
+				expect(await isRunDirectoryLeft()).toBe(false)
 			})
 		})
 
