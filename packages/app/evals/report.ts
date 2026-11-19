@@ -39,8 +39,9 @@ export interface GroupStats {
 	/** Calls that answered and passed every check that applied. */
 	readonly passed: number
 	readonly passRate: number
-	readonly p50Ms: number
-	readonly p95Ms: number
+	/** Latency of the calls that answered; `null` when none did. Errors would skew it either way. */
+	readonly p50Ms: number | null
+	readonly p95Ms: number | null
 }
 
 export interface CheckStats {
@@ -65,11 +66,11 @@ export interface EvalReport {
 }
 
 /** The nearest-rank percentile: the smallest value that `p` percent of the values do not exceed. */
-export function percentile(values: readonly number[], p: number): number {
+export function percentile(values: readonly number[], p: number): number | null {
 	const sorted = values.toSorted((a, b) => a - b)
 	const rank = Math.max(1, Math.ceil((p / 100) * sorted.length))
 
-	return sorted.at(rank - 1) ?? 0
+	return sorted.at(rank - 1) ?? null
 }
 
 function hasPassed(call: CallRecord): boolean {
@@ -78,11 +79,12 @@ function hasPassed(call: CallRecord): boolean {
 
 function groupStats(calls: readonly CallRecord[]): GroupStats {
 	const passed = calls.filter((call) => hasPassed(call)).length
-	const durations = calls.map(({ elapsedMs }) => elapsedMs)
+	const answered = calls.filter(({ error }) => error === null)
+	const durations = answered.map(({ elapsedMs }) => elapsedMs)
 
 	return {
 		calls: calls.length,
-		errors: calls.filter(({ error }) => error !== null).length,
+		errors: calls.length - answered.length,
 		passed,
 		passRate: calls.length === 0 ? 0 : passed / calls.length,
 		p50Ms: percentile(durations, 50),
@@ -126,7 +128,11 @@ function percent(rate: number): string {
 }
 
 /** A duration short enough to read: milliseconds, seconds or minutes. */
-export function formatDuration(ms: number): string {
+export function formatDuration(ms: number | null): string {
+	if (ms === null) {
+		return '—'
+	}
+
 	if (ms < 1000) {
 		return `${Math.round(ms)} ms`
 	}
@@ -168,8 +174,9 @@ export function renderMarkdown(report: EvalReport): string {
 	const formatRows = Object.entries(byFormat).map(([format, stats]) => [
 		format,
 		String(stats.calls),
-		String(stats.errors),
 		percent(stats.passRate),
+		String(stats.calls - stats.errors),
+		String(stats.errors),
 		formatDuration(stats.p50Ms),
 		formatDuration(stats.p95Ms),
 	])
@@ -188,7 +195,8 @@ export function renderMarkdown(report: EvalReport): string {
 		`# Eval report: ${report.engine}`,
 		`Started ${report.startedAt}, card language \`${report.language}\`, ${report.notes.length} notes (${owner} from the owner, ${report.notes.length - owner} composed, ${privateNotes} private). Compare the numbers with the thresholds in evals/rubric.md.`,
 		'## By format',
-		table(['Format', 'Calls', 'Errors', 'Pass rate', 'p50', 'p95'], formatRows),
+		'Latency counts only the calls that answered; the calls that failed are in Errors.',
+		table(['Format', 'Calls', 'Pass rate', 'Answered', 'Errors', 'p50', 'p95'], formatRows),
 		'## By check',
 		table(['Check', 'Applied', 'Passed', 'Failed', 'Pass rate'], checkRows),
 		'## Failures',

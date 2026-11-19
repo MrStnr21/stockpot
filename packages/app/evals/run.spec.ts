@@ -116,7 +116,7 @@ describe('the eval command', () => {
 				brief: { calls: 2, passRate: 1, p95Ms: 0 },
 			})
 
-			expect(markdown).toContain('| brief | 2 | 0 | 100% |')
+			expect(markdown).toContain('| brief | 2 | 100% | 2 | 0 |')
 			expect(sheet).toContain('| Note | Source | Text |')
 		})
 	})

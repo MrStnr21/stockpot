@@ -59,15 +59,15 @@ describe('the eval report', () => {
 			expect(percentile([1000, 300, 200, 400], p)).toBe(expected)
 		})
 
-		it('is zero without values', () => {
-			expect(percentile([], 95)).toBe(0)
+		it('is null without values', () => {
+			expect(percentile([], 95)).toBeNull()
 		})
 	})
 
 	describe('summarize', () => {
-		it('counts pass rate, errors and latency per format', () => {
+		it('counts pass rate and errors per format, and latency of the answered calls', () => {
 			expect(report.summary.byFormat).toEqual({
-				suggestion: { calls: 2, errors: 1, passed: 1, passRate: 0.5, p50Ms: 300, p95Ms: 900 },
+				suggestion: { calls: 2, errors: 1, passed: 1, passRate: 0.5, p50Ms: 300, p95Ms: 300 },
 				technology: { calls: 2, errors: 0, passed: 1, passRate: 0.5, p50Ms: 10_000, p95Ms: 30_000 },
 			})
 		})
@@ -85,6 +85,7 @@ describe('the eval report', () => {
 			[850, '850 ms'],
 			[12_340, '12.3 s'],
 			[252_000, '4.2 min'],
+			[null, '—'],
 		])('writes %p ms as %p', (ms, text) => {
 			expect(formatDuration(ms)).toBe(text)
 		})
@@ -94,7 +95,8 @@ describe('the eval report', () => {
 		const markdown = renderMarkdown(report)
 
 		it('has a row per format with its pass rate and latency', () => {
-			expect(markdown).toContain('| technology | 2 | 0 | 50% | 10.0 s | 30.0 s |')
+			expect(markdown).toContain('| technology | 2 | 50% | 2 | 0 | 10.0 s | 30.0 s |')
+			expect(markdown).toContain('| suggestion | 2 | 50% | 1 | 1 | 300 ms | 300 ms |')
 		})
 
 		it('lists every failure and error', () => {
