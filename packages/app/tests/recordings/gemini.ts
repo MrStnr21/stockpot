@@ -169,11 +169,22 @@ if (mode === 'latency') {
 	const lines: string[] = []
 
 	for (const term of terms) {
-		// oxlint-disable-next-line no-await-in-loop -- Latency is measured one call at a time.
-		const result = await engine.suggest(suggestInput(term), { tier: 'fast', timeoutMs: 30_000 })
+		const started = performance.now()
 
-		times.push(result.elapsedMs)
-		lines.push(`${term}: ${result.elapsedMs} ms from ${result.model}`)
+		try {
+			// oxlint-disable-next-line no-await-in-loop -- Latency is measured one call at a time.
+			const result = await engine.suggest(suggestInput(term), { tier: 'fast', timeoutMs: 30_000 })
+
+			times.push(result.elapsedMs)
+			lines.push(`${term}: ${result.elapsedMs} ms from ${result.model}`)
+		} catch (error) {
+			// A failed run is reported, not retried: every run costs a request.
+			const elapsed = Math.round(performance.now() - started)
+
+			lines.push(
+				`${term}: failed after ${elapsed} ms: ${error instanceof Error ? error.message : ''}`,
+			)
+		}
 	}
 
 	const sorted = times.toSorted((a, b) => a - b)
@@ -182,5 +193,7 @@ if (mode === 'latency') {
 	const [p50, p95] = [0.5, 0.95].map((share) => sorted[Math.ceil(share * sorted.length) - 1])
 
 	await say(lines.join('\n'))
-	await say(`p50 ${p50} ms, p95 ${p95} ms, max ${sorted.at(-1)} ms`)
+	await say(
+		`${times.length} of ${terms.length} ok: p50 ${p50} ms, p95 ${p95} ms, max ${sorted.at(-1)} ms`,
+	)
 }

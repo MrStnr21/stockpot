@@ -3,7 +3,7 @@
 How stockpot talks to language models: the contract every engine implements, the card formats and
 depth levels an engine must answer in, the suggestion schema, how a prompt is put together, which
 links a card may carry, what leaves the instance for a private note, which engine runs which task,
-and what the agent command and the OpenAI-compatible engine do. The [architecture](architecture.md#the-engine-contract-boundary) explains where these pieces
+and what the agent command, Gemini and the OpenAI-compatible engine do. The [architecture](architecture.md#the-engine-contract-boundary) explains where these pieces
 live; this page records what they are. Paths are relative to `packages/app/`.
 
 ## The contract
@@ -41,7 +41,8 @@ map to a model ID for each engine), the timeout and an abort signal.
 ### Output
 
 An engine returns the validated answer with the id of the engine that wrote it, the model ID the
-provider reported and the time the call took. It validates the answer with `parseOutput`, which
+provider reported, the time the call took and, for a call grounded in Google Search, the Search
+Suggestions to show with the answer (see [Search grounding terms](#search-grounding-terms)). It validates the answer with `parseOutput`, which
 checks it against the format's Valibot schema: the Valibot schema is the source of truth, whatever
 the provider was told. The provider returns JSON text, which each engine parses itself; a parse
 failure is `invalid` too.
@@ -121,17 +122,15 @@ side. Whatever a provider drops or ignores, an answer that breaks the format fai
   engine strips those keywords everywhere in the schema, recursing into `properties`, `$defs`, `items`, `additionalProperties`, `anyOf`, `allOf` and `oneOf` (`strictSchema` in
   [`openai-strict-schema.ts`](../packages/app/src/server/engines/openai-strict-schema.ts)). The caps
   stay in the descriptions.
-- **Gemini** (ENG-4): Google's
-  [structured-output guide](https://aistudio.google.com/docs/structured-output), read on 2026-11-18,
-  documents the Interactions API, which takes the schema in `response_format` (an object of type
-  `text` whose `schema` field holds it). It says `minLength` and `maxLength` are stripped and
-  ignored rather than rejected; `minItems`, `maxItems`, `required`, `enum`, `description` and
-  `additionalProperties` are supported; `format` is supported for strings, with `date-time`, `date`
-  and `time` as examples; and a schema that is too complex is rejected with `400 INVALID_ARGUMENT`.
-  The `generateContent` reference lists both `responseSchema` and `responseJsonSchema` in its
-  generation config but does not say which to prefer. To verify with a real call in ENG-4: which of
-  `response_format`, `responseJsonSchema` and `responseSchema` the engine uses, and how each treats
-  `pattern`, `format: uri`, `anyOf` and `$schema`.
+- **Gemini** (ENG-4): the schema goes in `responseJsonSchema`. Real calls on 2026-11-19 showed that
+  it accepts the derived draft-07 schema as it is, `pattern`, `format: uri`, `anyOf` and nullable
+  types included, on gemini-3.1-flash-lite, gemini-3.5-flash-lite, gemini-3.5-flash and
+  gemini-2.5-flash. The engine leaves out only `$schema`, which Gemini does not use (`geminiSchema`
+  in [`gemini.ts`](../packages/app/src/server/engines/gemini.ts)). `responseSchema` rejects the same
+  schema with `400 INVALID_ARGUMENT` (unknown fields `$schema` and `additionalProperties`) and is not
+  used; the Interactions API's `response_format` was not tried, because the engine uses
+  `generateContent`. Google's structured-output guide says `minLength` and `maxLength` are ignored,
+  so the caps stay in the descriptions. See [The Gemini engine](#the-gemini-engine).
 - **Agent command** (ENG-3): the schema goes to the command unchanged, as its template says (see
   [The agent command](#the-agent-command)); what the agent enforces depends on the agent, so
   validation on our side is the only guarantee.
@@ -236,6 +235,9 @@ prompt changes.
   link-local addresses after resolving DNS, limits time and size, and drops dead links. A card left
   without sources is flagged `uncertain`.
 - Links the app can build itself, such as a word's pronunciation page, are not asked of the engine.
+- Gemini's search sources are Google redirect URLs (`https://vertexaisearch.cloud.google.com/grounding-api-redirect/…`).
+  The link check (RES-2) must resolve each one to its final URL, and keep that, before a card is
+  saved.
 
 ## Privacy
 
@@ -269,13 +271,114 @@ single category, and set the fallback order.
   `research` to it (with the same tiers) and keeps Gemini for `suggest`, the fastest engine without
   search. The fallback order then becomes agent command, Gemini, OpenAI-compatible.
 - **Tiers, not model IDs.** A row names a tier; settings map each engine's tiers to model IDs, and
-  the agent command's template receives the tier. Model IDs change often and never live in code.
+  the agent command's template receives the tier. Model IDs change often and live in settings; the
+  only ones in code are Gemini's starting models for a new instance (see [The Gemini engine](#the-gemini-engine)).
 - **Fallback** happens on `rate_limited` and `auth` only, to the next configured engine in the
   order; an engine that is not configured is skipped. `research` has no default fallback, because
   the OpenAI-compatible engine writes from text only and cannot search; the job waits for the reset.
 - **Drafts.** A card from a fallback engine is marked a draft and redone by the primary engine once
   its limit resets. Drafts apply to cards only: a suggestion is not stored, so one from a fallback
   engine is simply shown.
+
+## The Gemini engine
+
+The Gemini engine
+([`src/server/engines/gemini.ts`](../packages/app/src/server/engines/gemini.ts), ENG-4) calls
+`generateContent` through Google's `@google/genai` SDK, on API version `v1beta`:
+
+- **Settings only.** The key, the model for each tier and the limits are read from settings at
+  every call. A new instance starts with `gemini-3.1-flash-lite` for `fast`, `gemini-2.5-flash` for
+  `standard` and `gemini-2.5-pro` for `deep`: the models a free key could use for each task on
+  2026-11-19 (see [What the real calls showed](#what-the-real-calls-showed)). A call fails with an
+  ordinary error, and records its run, when the key or the tier's model is not set.
+- **Suggestions** are one request with structured output, minimal thinking and no tools.
+- **Cards** (`explain` and `research`) are two requests to the tier's model. The first has Google
+  Search and URL context and no schema, and writes down the facts the card needs as plain notes; the
+  second writes the card as structured output from those facts, and may cite only the pages the
+  first searched or opened. Two requests, because the models a free key can search with refuse
+  structured output together with search.
+- **One request at a time**, with one `engine_runs` row per call (a card's two requests share it):
+  the reported model, the input tokens (the prompt and the tool prompts), the output tokens (the
+  answer and the thinking) and the searches (the queries the facts step ran). Gemini reports no
+  cost, so the cost stays empty.
+- **Limits.** Settings give each tier a per-minute and a per-day request limit for its model, `null`
+  (no limit) by default. Counters count each model's requests in the last minute and since midnight
+  Pacific time, when Google resets daily quotas. A call that would pass a limit is refused before any
+  request, as `rate_limited` until the window has room again (the next Pacific midnight for the daily
+  limit), and records its run; a card counts as two requests. The counters live in memory, in the one
+  server process, behind `UsageCounters` in
+  [`gemini-usage.ts`](../packages/app/src/server/engines/gemini-usage.ts): a restart forgets the
+  day's counts, and Google's own quota still applies.
+- **Errors**
+  ([`gemini-errors.ts`](../packages/app/src/server/engines/gemini-errors.ts)). 429 is
+  `rate_limited` until the `RetryInfo` delay, the next Pacific midnight when a `QuotaFailure` names a
+  per-day quota, or a minute from now when the error names neither (the recorded free-tier 429 names
+  neither). 401, 403, and 400 with the reason `API_KEY_INVALID` (how Gemini rejects a bad key) are
+  `auth`. Any other failing status, such as 503 when a model is overloaded, is an ordinary error. A
+  blocked prompt, an answer that stops early (the token limit, safety), an empty answer, and text that
+  is not JSON or breaks the format are `invalid`. No answer within the timeout, which covers both
+  requests of a card, is `timeout`. The SDK's own retries are off: the job runner retries.
+
+### What the real calls showed
+
+Recorded on 2026-11-19 with the owner's key, on Google's free tier, by
+[`tests/recordings/gemini.ts`](../packages/app/tests/recordings/gemini.ts), which also writes the
+response fixtures the specs answer from:
+
+| Question                                                     | What the calls showed                                                                                                                                                                                                                              |
+| ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `responseJsonSchema` or `responseSchema`                     | `responseJsonSchema` takes the derived schema as it is, on gemini-3.1-flash-lite, gemini-3.5-flash-lite, gemini-3.5-flash and gemini-2.5-flash. `responseSchema` rejects it with 400 (unknown fields `$schema` and `additionalProperties`).        |
+| `pattern`, `format: uri`, `anyOf`, nullable types, `$schema` | `responseJsonSchema` accepts all of them. The engine leaves out `$schema` only. Whether Gemini enforces `pattern` and `format` was not tested; the Valibot schema checks them.                                                                     |
+| Structured output with Google Search                         | gemini-2.5-flash refuses it: 400 "Tool use with a response mime type: 'application/json' is unsupported". It could not be tried on Gemini 3 or later with this key (next row).                                                                     |
+| Structured output with URL context                           | Works on gemini-3.1-flash-lite.                                                                                                                                                                                                                    |
+| Search on the free tier                                      | Every Gemini 3 or later model tried (gemini-3.8-flash, gemini-3.5-flash, gemini-3.1-flash-lite, gemini-3-flash-preview) answered a request with Google Search with 429 `RESOURCE_EXHAUSTED`. gemini-2.5-flash searched and returned its grounding. |
+| API version                                                  | The SDK defaults to `v1`, where Gemini refuses the search tool ("Search as tool is not enabled for api version v1"), so the engine asks for `v1beta`.                                                                                              |
+
+On a free key, then, search works only on Gemini 2.5, and Gemini 2.5 cannot combine it with
+structured output: hence the two-request card. Google documents structured output together with
+built-in tools for Gemini 3 and later, which on a paid key could make a card one request; that is
+not verified and not built.
+
+### Suggestion latency
+
+20 suggestions on gemini-3.1-flash-lite with minimal thinking, one at a time with a 30 s timeout,
+on 2026-11-19 on the free tier: 16 answered, 3 timed out and 1 got 503 ("high demand"). Of the 16
+answers, p50 was 3.1 s, p95 19.0 s and the fastest 1.5 s; none came within 1.5 s and 7 within the
+3 s suggestion timeout. A single suggestion earlier that day took 1.0 s. The responses reported no
+thinking tokens and the 503 named high demand, which points at load on Google's side rather than
+the request. The budget (p95 under 1.5 s) is not met on the free tier; when a suggestion misses
+it, capture falls back to history only.
+
+### Search grounding terms
+
+Google's [Gemini API terms](https://aistudio.google.com/docs/terms), read on 2026-11-19, set rules
+for results grounded with Google Search. Those that affect stockpot:
+
+- **Search Suggestions go with grounded results.** Grounded results may be shown only with their
+  Search Suggestions and links, and only to the end user who sent the prompt. The engine returns the
+  suggestions' HTML as `searchSuggestions` on the result, from the facts step's
+  `groundingMetadata.searchEntryPoint.renderedContent`. Rendering it is the card interface's job, a
+  later story; nothing renders it yet.
+- **Storing is limited.** Grounded results may not be cached, syndicated, analysed or used for
+  training, and their text may be stored for up to two years, only for the purposes the terms list.
+- **No modification.** Grounded results may not be modified or have other content interspersed
+  with them, nothing may be placed between a link or a Search Suggestion, and clicks on a Search
+  Suggestion may not be tracked.
+
+**Open decision for the owner.** A Gemini card is written by a second request from grounded facts,
+and kept in Base for as long as the owner wants it. Does that fit these terms: is the card a modified
+grounded result, does keeping it count as storage the terms do not allow, and must its Search
+Suggestions stay next to it? If it does not fit, the options include: Gemini keeps search only for
+fallback drafts, which another engine redoes later; cards from Gemini keep their Search Suggestions
+next to them for as long as they are kept; or cards that need search route to the agent command.
+The engine returns `searchSuggestions` either way.
+
+### Sources
+
+The facts step's sources are the pages URL context opened and Google's redirect URLs for the search
+results (`https://vertexaisearch.cloud.google.com/grounding-api-redirect/…`), titled with the site's
+domain. The card cites them as given; RES-2's link check must resolve each redirect to its final URL
+before the card is saved (see [Links](#links)).
 
 ## The OpenAI-compatible engine
 

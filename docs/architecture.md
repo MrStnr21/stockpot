@@ -156,8 +156,8 @@ in `src/server/engines/`:
   per-category routing overrides and the fallback order. The settings feature stores them, and the
   router and the engines read their types from here, since `server/` cannot import a feature.
 - **Concrete engines** implement the contract: the agent command engine (`agent-cli.ts`), Gemini
-  (`gemini.ts`) and any OpenAI-compatible endpoint (`openai-compatible.ts`). Provider SDKs and
-  command-line details stay inside these files.
+  (`gemini.ts`, with its `gemini-*.ts` helpers) and any OpenAI-compatible endpoint
+  (`openai-compatible.ts`). Provider SDKs and command-line details stay inside these files.
 - **The router** (`router.ts`, ENG-6) picks an engine for each task and category from a routing
   table, falls back to the next engine on `rate_limited` or `auth`, marks a card from a fallback
   engine as a draft and queues it to be redone by the primary engine once the limit resets.
