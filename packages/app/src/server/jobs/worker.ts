@@ -12,7 +12,7 @@ import {
 	type JobRow,
 	type Queryable,
 } from './queue'
-import { planDailyRun, type Plan } from './schedules'
+import { catchUpDailyRun, planDailyRun, type Plan } from './schedules'
 import type { JobDefinition } from './types'
 
 /** A database error the worker hit, and how long it waits before it tries again. */
@@ -135,11 +135,16 @@ function claimAndPlan(worker: Worker, db: Queryable) {
 	const job = claimNextJob(db, now)
 	const plan = job === undefined ? undefined : worker.plans.get(job.kind)
 
-	if (plan !== undefined) {
-		planDailyRun(db, plan, { timeZone: worker.timeZone(), now })
+	if (job === undefined || plan === undefined) {
+		return job
 	}
 
-	return job
+	const timeZone = worker.timeZone()
+	const claimed = catchUpDailyRun(db, { job, plan }, { timeZone, now })
+
+	planDailyRun(db, plan, { timeZone, now })
+
+	return claimed
 }
 
 /*

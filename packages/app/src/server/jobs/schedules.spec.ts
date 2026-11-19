@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
+import type { Database } from 'bun:sqlite'
 import {
 	afterEach,
 	beforeEach,
@@ -19,43 +20,44 @@ import { createRunner } from './runner'
 import type { JobDefinition, Runner, ScheduledRun } from './types'
 
 describe('daily schedules', () => {
+	let sqlite: Database
 	let db: TestDb
 	let run: Handler<ScheduledRun>
 	let digest: JobDefinition<ScheduledRun>
 	let timeZone: string
 	let at: string
+	let runner: Runner
 
-	/** A runner with one schedule; a second call stands for the server after a restart. */
+	/** Starts a runner with one schedule; a second call stands for the server after a restart. */
 	function startRunner() {
-		const runner = createRunner({ db, schedules: [{ job: digest, at }], timeZone: () => timeZone })
-
+		runner = createRunner({ db, schedules: [{ job: digest, at }], timeZone: () => timeZone })
 		runner.start()
 
 		return runner
 	}
 
+	function firedDays() {
+		return run.mock.calls.map(([payload]) => payload.day)
+	}
+
 	beforeEach(async () => {
-		;({ db } = await createTestDb())
+		;({ sqlite, db } = await createTestDb())
 		run = succeedingHandler()
 		digest = { kind: 'digest', run }
 	})
 
-	afterEach(() => {
+	afterEach(async () => {
+		await runner.stop()
+		sqlite.close()
 		jest.useRealTimers()
 	})
 
 	describe('at 07:00 in Tokyo', () => {
-		let runner: Runner
-
 		beforeEach(() => {
 			jest.useFakeTimers({ now: new Date('2026-11-18T12:00:00Z') })
 			timeZone = 'Asia/Tokyo'
 			at = '07:00'
-			runner = startRunner()
-		})
-
-		afterEach(async () => {
-			await runner.stop()
+			startRunner()
 		})
 
 		it('fires at 07:00 local time with that day, not before', async () => {
@@ -78,7 +80,7 @@ describe('daily schedules', () => {
 			])
 		})
 
-		it('moves the planned run when the time zone changes', () => {
+		it('keeps the day and moves its time when the time zone changes', () => {
 			timeZone = 'Europe/Paris'
 			runner.refreshSchedules()
 
@@ -86,20 +88,64 @@ describe('daily schedules', () => {
 				{ payload: { day: '2026-11-19' }, runAt: new Date('2026-11-19T06:00:00Z') },
 			])
 		})
+
+		it('does not run 2026-11-19 again after a move to Paris at 23:00Z', async () => {
+			await advanceTo(runner, '2026-11-18T23:00:00Z')
+			timeZone = 'Europe/Paris'
+			runner.refreshSchedules()
+			await advanceTo(runner, '2026-11-20T06:00:00Z')
+
+			expect(firedDays()).toEqual(['2026-11-19', '2026-11-20'])
+		})
+
+		it('does not run the day again when the time moves from 07:00 to 09:00 after its run', async () => {
+			await advanceTo(runner, '2026-11-18T23:00:00Z')
+			await runner.stop()
+			at = '09:00'
+			startRunner()
+			await advanceTo(runner, '2026-11-20T00:00:00Z')
+
+			expect(firedDays()).toEqual(['2026-11-19', '2026-11-20'])
+		})
+	})
+
+	describe('at 09:00 or 07:00, before the run', () => {
+		beforeEach(() => {
+			jest.useFakeTimers({ now: new Date('2026-11-18T12:00:00Z') })
+		})
+
+		it('does not skip 2026-11-19 after a move from Paris to Tokyo at 23:30Z', async () => {
+			timeZone = 'Europe/Paris'
+			at = '07:00'
+			startRunner()
+			await advanceTo(runner, '2026-11-18T23:30:00Z')
+			timeZone = 'Asia/Tokyo'
+			runner.refreshSchedules()
+			await advanceTo(runner, '2026-11-19T22:00:00Z')
+
+			expect(firedDays()).toEqual(['2026-11-19', '2026-11-20'])
+		})
+
+		it('fires the day at once when the time moves from 09:00 to 07:00 after 07:00', async () => {
+			timeZone = 'Asia/Tokyo'
+			at = '09:00'
+			startRunner()
+			await advanceTo(runner, '2026-11-18T23:00:00Z')
+			await runner.stop()
+			at = '07:00'
+			startRunner()
+			await advanceBy(runner, 0)
+
+			expect(firedDays()).toEqual(['2026-11-19'])
+		})
 	})
 
 	describe('on the day the clocks go forward in Berlin', () => {
-		let runner: Runner
-
 		beforeEach(() => {
 			jest.useFakeTimers({ now: new Date('2026-03-28T12:00:00Z') })
 			timeZone = 'Europe/Berlin'
 			at = '02:30'
-			runner = startRunner()
-		})
-
-		afterEach(async () => {
-			await runner.stop()
+			startRunner()
 		})
 
 		it('fires the skipped 02:30 an hour later, at 03:30 summer time', async () => {
@@ -111,17 +157,11 @@ describe('daily schedules', () => {
 	})
 
 	describe('on the day the clocks go back in New York', () => {
-		let runner: Runner
-
 		beforeEach(() => {
 			jest.useFakeTimers({ now: new Date('2026-10-31T12:00:00Z') })
 			timeZone = 'America/New_York'
 			at = '01:30'
-			runner = startRunner()
-		})
-
-		afterEach(async () => {
-			await runner.stop()
+			startRunner()
 		})
 
 		it('fires the repeated 01:30 once, at its first occurrence', async () => {
@@ -138,25 +178,18 @@ describe('daily schedules', () => {
 	})
 
 	describe('after the server was down at the run time', () => {
-		let runner: Runner
-
 		beforeEach(async () => {
 			jest.useFakeTimers({ now: new Date('2026-11-18T12:00:00Z') })
 			timeZone = 'Asia/Tokyo'
 			at = '07:00'
 			await startRunner().stop()
 			setSystemTime(new Date('2026-11-21T03:00:00Z'))
-			runner = startRunner()
+			startRunner()
 			await advanceBy(runner, 0)
 		})
 
-		afterEach(async () => {
-			await runner.stop()
-		})
-
-		it('fires the latest missed run once, with its day', () => {
-			expect(run).toHaveBeenCalledTimes(1)
-			expect(run).toHaveBeenCalledWith({ day: '2026-11-21' }, expect.anything())
+		it('fires only the latest missed run, with its day', () => {
+			expect(firedDays()).toEqual(['2026-11-21'])
 		})
 
 		it('plans the next run for the next day', () => {
@@ -172,7 +205,6 @@ describe('daily schedules', () => {
 	})
 
 	describe('when the time zone setting is invalid at the run time', () => {
-		let runner: Runner
 		let logged: Mock<typeof console.error>
 
 		beforeEach(async () => {
@@ -183,14 +215,13 @@ describe('daily schedules', () => {
 
 			timeZone = 'Asia/Tokyo'
 			at = '07:00'
-			runner = startRunner()
+			startRunner()
 			timeZone = 'Asia/Nowhere'
 			await advanceTo(runner, '2026-11-18T22:00:00Z')
 		})
 
-		afterEach(async () => {
+		afterEach(() => {
 			logged.mockRestore()
-			await runner.stop()
 		})
 
 		it('leaves the run queued and planned, without running it', () => {
@@ -203,30 +234,21 @@ describe('daily schedules', () => {
 			timeZone = 'Asia/Tokyo'
 			await advanceBy(runner, 30_000)
 
-			expect(run).toHaveBeenCalledWith({ day: '2026-11-19' }, expect.anything())
+			expect(firedDays()).toEqual(['2026-11-19'])
 			expect(jobRows(db)).toMatchObject([{ status: 'done' }, { status: 'queued' }])
 		})
 	})
 
 	describe("when the server restarts after the day's run", () => {
-		let runner: Runner
-
 		beforeEach(async () => {
 			jest.useFakeTimers({ now: new Date('2026-11-18T12:00:00Z') })
 			timeZone = 'Asia/Tokyo'
 			at = '07:00'
-
-			const first = startRunner()
-
-			await advanceTo(first, '2026-11-18T22:00:00Z')
-			await first.stop()
-			setSystemTime(new Date('2026-11-18T23:00:00Z'))
-			runner = startRunner()
-			await advanceBy(runner, 0)
-		})
-
-		afterEach(async () => {
+			await advanceTo(startRunner(), '2026-11-18T22:00:00Z')
 			await runner.stop()
+			setSystemTime(new Date('2026-11-18T23:00:00Z'))
+			startRunner()
+			await advanceBy(runner, 0)
 		})
 
 		it('does not fire again', () => {

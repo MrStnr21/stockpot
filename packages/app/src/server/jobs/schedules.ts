@@ -1,8 +1,17 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
-import { latestDailyRun, nextDailyRun, parseTimeOfDay } from './daily'
-import { insertJob, plannedRun, replanJob, type Priority, type Queryable } from './queue'
+import * as v from 'valibot'
+
+import { dailyRunOn, latestDailyRun, nextDailyRun, parseTimeOfDay } from './daily'
+import {
+	insertJob,
+	plannedRun,
+	replanJob,
+	type JobRow,
+	type Priority,
+	type Queryable,
+} from './queue'
 import type { DailySchedule } from './types'
 
 /** A schedule as the runner keeps it, with its time of day parsed. */
@@ -16,11 +25,21 @@ export function toPlan({ job, at, priority = 'batch' }: DailySchedule): Plan {
 	return { kind: job.kind, at: parseTimeOfDay(at), priority }
 }
 
+/** A scheduled run's payload, read back from its row. */
+const scheduledRun = v.object({ day: v.string() })
+
+/** The local date a scheduled run belongs to, or undefined for a row whose payload has none. */
+function dayOf(job: JobRow) {
+	const parsed = v.safeParse(scheduledRun, job.payload)
+
+	return parsed.success ? parsed.output.day : undefined
+}
+
 /*
- * Keeps one planned run per schedule, so a run fires once a day across restarts. A run missed while
- * the server was down is not dropped: the latest missed run fires once on the next start, with that
- * run's day, and earlier missed days are skipped. A planned run that is not due yet moves when the
- * time zone or the time of day changed.
+ * Keeps one planned run per schedule, so a run fires once a day across restarts. The planned run
+ * keeps its day when the time zone or the time of day changes: it moves to that day's time in the new
+ * zone or at the new time, and fires at once when that time has passed, so no day runs twice or is
+ * skipped.
  */
 export function planDailyRun(
 	db: Queryable,
@@ -37,10 +56,34 @@ export function planDailyRun(
 		return
 	}
 
-	const run =
-		planned.runAt <= now ? latestDailyRun(now, at, timeZone) : nextDailyRun(now, at, timeZone)
+	const day = dayOf(planned)
+	const run = day === undefined ? nextDailyRun(now, at, timeZone) : dailyRunOn(day, at, timeZone)
 
 	if (run.runAt.getTime() !== planned.runAt.getTime()) {
 		replanJob(db, { id: planned.id, runAt: run.runAt, payload: { day: run.day } })
 	}
+}
+
+/*
+ * Only the latest missed run fires. A first attempt claimed after a later day's time, because the
+ * server was down or the queue was busy for more than a day, runs as that later day, and the next
+ * run is planned after it, so the following day is not skipped either.
+ */
+export function catchUpDailyRun(
+	db: Queryable,
+	{ job, plan }: { job: JobRow; plan: Plan },
+	{ timeZone, now }: { timeZone: string; now: Date },
+): JobRow {
+	const day = dayOf(job)
+	const latest = latestDailyRun(now, plan.at, timeZone)
+
+	if (job.attempts !== 1 || day === undefined || latest.day <= day) {
+		return job
+	}
+
+	const payload = { day: latest.day }
+
+	replanJob(db, { id: job.id, runAt: latest.runAt, payload })
+
+	return { ...job, runAt: latest.runAt, payload }
 }

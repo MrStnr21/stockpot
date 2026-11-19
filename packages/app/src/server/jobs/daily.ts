@@ -35,6 +35,11 @@ function localDate(instant: Date, timeZone: string) {
 		.toPlainDate()
 }
 
+/** The run that belongs to a local date, such as '2026-11-18'. */
+export function dailyRunOn(day: string, at: Temporal.PlainTime, timeZone: string): DailyRun {
+	return runOn(Temporal.PlainDate.from(day), at, timeZone)
+}
+
 /** The first run strictly after `after`. */
 export function nextDailyRun(after: Date, at: Temporal.PlainTime, timeZone: string): DailyRun {
 	const today = localDate(after, timeZone)
