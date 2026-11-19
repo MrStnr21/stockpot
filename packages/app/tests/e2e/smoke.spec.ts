@@ -4,11 +4,12 @@
 import { expect, test } from '@playwright/test'
 
 test.describe('home page', () => {
-	test('serves the placeholder', async ({ page }) => {
+	test('sends a visitor to setup while the instance has no owner', async ({ page }) => {
 		const response = await page.goto('/')
 
 		expect(response?.status()).toBe(200)
-		await expect(page).toHaveTitle('stockpot')
-		await expect(page.getByText('Toss in the scraps of your day. Wake up to broth.')).toBeVisible()
+		await expect(page).toHaveURL(/\/setup$/u)
+		await expect(page).toHaveTitle('Set up stockpot')
+		await expect(page.getByRole('heading', { name: 'Set up your instance' })).toBeVisible()
 	})
 })

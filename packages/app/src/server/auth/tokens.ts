@@ -34,7 +34,7 @@ export function secretsMatch(given: string, expected: string): boolean {
 
 	for (let index = 0; index < left.length; index += 1) {
 		// oxlint-disable-next-line no-bitwise -- XOR, then OR, is the constant-time comparison.
-		difference |= left.charCodeAt(index) ^ right.charCodeAt(index)
+		difference |= (left.codePointAt(index) ?? 0) ^ (right.codePointAt(index) ?? 0)
 	}
 
 	return difference === 0
