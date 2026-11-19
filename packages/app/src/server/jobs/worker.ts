@@ -3,7 +3,15 @@
 
 import type { Db } from '#/server/db/client'
 
-import { claimNextJob, failJob, finishJob, nextRunAt, retryJob, type JobRow } from './queue'
+import {
+	claimNextJob,
+	failJob,
+	finishJob,
+	nextRunAt,
+	retryJob,
+	type JobRow,
+	type Queryable,
+} from './queue'
 import { planDailyRun, type Plan } from './schedules'
 import type { JobDefinition } from './types'
 
@@ -99,17 +107,25 @@ async function execute(worker: Worker, job: JobRow) {
 	finishJob(worker.db, job.id, new Date())
 }
 
-function claim(worker: Worker) {
+function claimAndPlan(worker: Worker, db: Queryable) {
 	const now = new Date()
-	const job = worker.running ? claimNextJob(worker.db, now) : undefined
+	const job = claimNextJob(db, now)
 	const plan = job === undefined ? undefined : worker.plans.get(job.kind)
 
-	// Plan the next day's run before this one starts, so a slow or crashing run cannot lose it.
 	if (plan !== undefined) {
-		planDailyRun(worker.db, plan, { timeZone: worker.timeZone(), now })
+		planDailyRun(db, plan, { timeZone: worker.timeZone(), now })
 	}
 
 	return job
+}
+
+/*
+ * Claims the next due job and, for a schedule, plans the next day's run in one transaction, so that a
+ * crash or a throw, such as an invalid time zone from settings, neither leaves the row running nor
+ * loses the plan.
+ */
+function claim(worker: Worker) {
+	return worker.running ? worker.db.transaction((tx) => claimAndPlan(worker, tx)) : undefined
 }
 
 async function drain(worker: Worker) {
@@ -121,14 +137,15 @@ async function drain(worker: Worker) {
 
 /** Sets the one timer for the earliest queued job. While the worker drains, it plans when it is done. */
 export function planWake(worker: Worker): void {
-	clearTimeout(worker.timer)
-	delete worker.timer
-
 	if (!worker.running || worker.draining !== undefined || worker.failure !== undefined) {
 		return
 	}
 
+	// Read first: a failed read keeps the timer that is already set.
 	const runAt = nextRunAt(worker.db)
+
+	clearTimeout(worker.timer)
+	delete worker.timer
 
 	if (runAt !== undefined) {
 		const delay = Math.min(Math.max(runAt.getTime() - Date.now(), 0), longestTimer)

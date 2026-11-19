@@ -1,7 +1,17 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
-import { afterEach, beforeEach, describe, expect, it, jest, setSystemTime } from 'bun:test'
+import {
+	afterEach,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	jest,
+	setSystemTime,
+	spyOn,
+	type Mock,
+} from 'bun:test'
 import { createTestDb, type TestDb } from '#tests/setup/db'
 import { advanceBy, advanceTo, jobRows, succeedingHandler, type Handler } from '#tests/setup/jobs'
 
@@ -158,6 +168,43 @@ describe('daily schedules', () => {
 					runAt: new Date('2026-11-21T22:00:00Z'),
 				},
 			])
+		})
+	})
+
+	describe('when the time zone setting is invalid at the run time', () => {
+		let runner: Runner
+		let logged: Mock<typeof console.error>
+
+		beforeEach(async () => {
+			jest.useFakeTimers({ now: new Date('2026-11-18T12:00:00Z') })
+			logged = spyOn(console, 'error').mockImplementation(() => {
+				// Keeps the expected error out of the spec output.
+			})
+
+			timeZone = 'Asia/Tokyo'
+			at = '07:00'
+			runner = startRunner()
+			timeZone = 'Asia/Nowhere'
+			await advanceTo(runner, '2026-11-18T22:00:00Z')
+		})
+
+		afterEach(async () => {
+			logged.mockRestore()
+			await runner.stop()
+		})
+
+		it('leaves the run queued and planned, without running it', () => {
+			expect(run).not.toHaveBeenCalled()
+			expect(jobRows(db)).toMatchObject([{ status: 'queued', attempts: 0 }])
+			expect(runner.health()).toMatchObject({ status: 'failing' })
+		})
+
+		it('fires the run once the setting is valid again', async () => {
+			timeZone = 'Asia/Tokyo'
+			await advanceBy(runner, 30_000)
+
+			expect(run).toHaveBeenCalledWith({ day: '2026-11-19' }, expect.anything())
+			expect(jobRows(db)).toMatchObject([{ status: 'done' }, { status: 'queued' }])
 		})
 	})
 

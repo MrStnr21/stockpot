@@ -13,6 +13,9 @@ export type Priority = keyof typeof priorities
 
 export type JobRow = typeof jobs.$inferSelect
 
+/** The database or a transaction on it: the queries below run in either. */
+export type Queryable = Pick<Db, 'insert' | 'select' | 'update'>
+
 export interface NewJob {
 	kind: string
 	payload: unknown
@@ -23,7 +26,7 @@ export interface NewJob {
 const interrupted = 'Interrupted: the server stopped while the job was running'
 
 /** Queues a job and returns its id. */
-export function insertJob(db: Db, { kind, payload, priority, runAt }: NewJob): number {
+export function insertJob(db: Queryable, { kind, payload, priority, runAt }: NewJob): number {
 	return db
 		.insert(jobs)
 		.values({ kind, payload, priority: priorities[priority], runAt })
@@ -36,7 +39,7 @@ export function insertJob(db: Db, { kind, payload, priority, runAt }: NewJob): n
  * `jobs_queue_idx` serves both the filter and the order, so no sort runs; a spec checks the plan.
  */
 // oxlint-disable-next-line typescript/explicit-module-boundary-types -- The Drizzle query type is long; the spec reads its SQL.
-export function nextDueJob(db: Db, now: Date) {
+export function nextDueJob(db: Queryable, now: Date) {
 	return db
 		.select({ id: jobs.id })
 		.from(jobs)
@@ -46,7 +49,7 @@ export function nextDueJob(db: Db, now: Date) {
 }
 
 /** Marks the next due job as running and counts the attempt, in one statement. */
-export function claimNextJob(db: Db, now: Date): JobRow | undefined {
+export function claimNextJob(db: Queryable, now: Date): JobRow | undefined {
 	return db
 		.update(jobs)
 		.set({ status: 'running', attempts: sql`${jobs.attempts} + 1`, startedAt: now })
@@ -56,7 +59,7 @@ export function claimNextJob(db: Db, now: Date): JobRow | undefined {
 }
 
 /** The earliest run time among queued jobs, due or not, for the worker's next wake-up. */
-export function nextRunAt(db: Db): Date | undefined {
+export function nextRunAt(db: Queryable): Date | undefined {
 	return (
 		db
 			.select({ runAt: min(jobs.runAt) })
@@ -66,12 +69,12 @@ export function nextRunAt(db: Db): Date | undefined {
 	)
 }
 
-export function finishJob(db: Db, id: number, now: Date): void {
+export function finishJob(db: Queryable, id: number, now: Date): void {
 	db.update(jobs).set({ status: 'done', finishedAt: now }).where(eq(jobs.id, id)).run()
 }
 
 export function retryJob(
-	db: Db,
+	db: Queryable,
 	{ id, error, runAt }: { id: number; error: string; runAt: Date },
 ): void {
 	db.update(jobs)
@@ -81,7 +84,7 @@ export function retryJob(
 }
 
 export function failJob(
-	db: Db,
+	db: Queryable,
 	{ id, error, now }: { id: number; error: string; now: Date },
 ): void {
 	db.update(jobs)
@@ -94,7 +97,7 @@ export function failJob(
  * Puts jobs that were running when the process stopped back in the queue. Their attempt stays
  * counted, so a job that crashes the process every time still runs out of attempts.
  */
-export function requeueInterrupted(db: Db): void {
+export function requeueInterrupted(db: Queryable): void {
 	db.update(jobs)
 		.set({ status: 'queued', lastError: interrupted, startedAt: null })
 		.where(eq(jobs.status, 'running'))
@@ -102,7 +105,7 @@ export function requeueInterrupted(db: Db): void {
 }
 
 /** The run a schedule has planned and not started yet: queued and never attempted. */
-export function plannedRun(db: Db, kind: string): JobRow | undefined {
+export function plannedRun(db: Queryable, kind: string): JobRow | undefined {
 	return db
 		.select()
 		.from(jobs)
@@ -113,7 +116,7 @@ export function plannedRun(db: Db, kind: string): JobRow | undefined {
 }
 
 export function replanJob(
-	db: Db,
+	db: Queryable,
 	{ id, runAt, payload }: { id: number; runAt: Date; payload: unknown },
 ): void {
 	db.update(jobs).set({ runAt, payload }).where(eq(jobs.id, id)).run()

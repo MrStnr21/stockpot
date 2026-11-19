@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
-import type { Db } from '#/server/db/client'
-
 import { latestDailyRun, nextDailyRun, parseTimeOfDay } from './daily'
-import { insertJob, plannedRun, replanJob, type Priority } from './queue'
+import { insertJob, plannedRun, replanJob, type Priority, type Queryable } from './queue'
 import type { DailySchedule } from './types'
 
 /** A schedule as the runner keeps it, with its time of day parsed. */
@@ -25,7 +23,7 @@ export function toPlan({ job, at, priority = 'batch' }: DailySchedule): Plan {
  * time zone or the time of day changed.
  */
 export function planDailyRun(
-	db: Db,
+	db: Queryable,
 	{ kind, at, priority }: Plan,
 	{ timeZone, now }: { timeZone: string; now: Date },
 ): void {
