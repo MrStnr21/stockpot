@@ -53,6 +53,46 @@ export function splitWords(command: string): string[] {
 	return words
 }
 
+/* An answer is a few kilobytes of JSON; a process that prints more than this is runaway, and reading it
+ * all would hold it in memory. Only the end of stderr is kept, for the error message. */
+export const stdoutCapBytes = 1024 * 1024
+
+const stderrTailChars = 8192
+
+/** Reads a stream to its end as text, or returns `null` (and cancels it) past `capBytes`. */
+async function readCapped(
+	stream: ReadableStream<Uint8Array>,
+	capBytes: number,
+): Promise<string | null> {
+	const decoder = new TextDecoder()
+	let text = ''
+	let bytes = 0
+
+	for await (const chunk of stream) {
+		bytes += chunk.byteLength
+
+		if (bytes > capBytes) {
+			return null
+		}
+
+		text += decoder.decode(chunk, { stream: true })
+	}
+
+	return text + decoder.decode()
+}
+
+/** Reads a stream to its end, keeping only its last `maxChars` characters. */
+async function readTail(stream: ReadableStream<Uint8Array>, maxChars: number): Promise<string> {
+	const decoder = new TextDecoder()
+	let tail = ''
+
+	for await (const chunk of stream) {
+		tail = (tail + decoder.decode(chunk, { stream: true })).slice(-maxChars)
+	}
+
+	return (tail + decoder.decode()).slice(-maxChars)
+}
+
 type StopSignal = 'SIGINT' | 'SIGTERM' | 'SIGKILL'
 
 /**
@@ -71,6 +111,7 @@ function signalGroup(pid: number, signal: StopSignal) {
 export interface ProcessExit {
 	readonly exitCode: number
 	readonly stdout: string
+	/** The last 8 KB or so of stderr. */
 	readonly stderr: string
 }
 
@@ -86,9 +127,10 @@ export interface ProcessRun {
 }
 
 /**
- * Runs a process to its exit and returns what it printed. On the timeout or an abort it sends its group
- * SIGINT, then SIGTERM and SIGKILL a grace period apart, and fails once the process is gone with
- * `timeout` or the abort reason, without waiting for output that a child may still hold open.
+ * Runs a process to its exit and returns what it printed. On the timeout, an abort or stdout past
+ * `stdoutCapBytes` it sends its group SIGINT, then SIGTERM and SIGKILL a grace period apart, and fails
+ * once the process is gone with `timeout`, the abort reason or `invalid`, without waiting for output
+ * that a child may still hold open.
  */
 export async function runProcess({
 	cmd,
@@ -121,8 +163,12 @@ export async function runProcess({
 		)
 	}
 
-	// Runs at most once: each way in removes the other.
 	function stop(reason: Error) {
+		// A stop starts the escalation, so a second way in finds it started and leaves it be.
+		if (escalations.length > 0) {
+			return
+		}
+
 		clearTimeout(timeout)
 		signal?.removeEventListener('abort', onAbort)
 		signalGroup(agent.pid, 'SIGINT')
@@ -144,11 +190,19 @@ export async function runProcess({
 
 	signal?.addEventListener('abort', onAbort, { once: true })
 
-	const output = Promise.all([
-		new Response(agent.stdout).text(),
-		new Response(agent.stderr).text(),
-		agent.exited,
-	])
+	async function readStdout() {
+		const text = await readCapped(agent.stdout, stdoutCapBytes)
+
+		if (text === null) {
+			const issue = `The agent printed more than ${stdoutCapBytes} bytes`
+
+			stop(new EngineError({ kind: 'invalid', issues: [issue] }, issue))
+		}
+
+		return text ?? ''
+	}
+
+	const output = Promise.all([readStdout(), readTail(agent.stderr, stderrTailChars), agent.exited])
 
 	try {
 		const [stdout, stderr, exitCode] = await Promise.race([output, stopped])

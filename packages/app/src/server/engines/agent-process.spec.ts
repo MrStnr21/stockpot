@@ -5,7 +5,13 @@ import { $ } from 'bun'
 import { afterEach, beforeEach, describe, expect, it, jest } from 'bun:test'
 import { join } from 'node:path'
 
-import { runProcess, splitWords, type ProcessExit, type ProcessRun } from './agent-process'
+import {
+	runProcess,
+	splitWords,
+	stdoutCapBytes,
+	type ProcessExit,
+	type ProcessRun,
+} from './agent-process'
 
 /** The error a run failed with; fails the test when it succeeds. */
 async function errorOf(run: Promise<ProcessExit>): Promise<Error> {
@@ -158,6 +164,33 @@ describe('agent-process', () => {
 			it('stops the child with the script', async () => {
 				expect(await isRunning(child)).toBe(false)
 			})
+		})
+
+		describe('with a process that prints without end', () => {
+			let error: Error
+
+			beforeEach(async () => {
+				error = await errorOf(run('echo $$ > pid; exec yes', { timeoutMs: 60_000 }))
+			})
+
+			it('stops it at the stdout cap and fails with invalid', async () => {
+				const pid = await pidIn(cwd)
+
+				expect(error).toMatchObject({
+					failure: {
+						kind: 'invalid',
+						issues: [`The agent printed more than ${stdoutCapBytes} bytes`],
+					},
+				})
+				expect(await isRunning(pid)).toBe(false)
+			})
+		})
+
+		it('keeps only the end of stderr', async () => {
+			const exit = await run('yes error | head -n 20000 >&2; echo last >&2')
+
+			expect(exit.stderr).toHaveLength(8192)
+			expect(exit.stderr).toEndWith('error\nlast\n')
 		})
 
 		describe('when the run is aborted', () => {

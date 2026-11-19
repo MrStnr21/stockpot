@@ -331,7 +331,9 @@ answer itself or a wrapper around it:
 ```
 
 `model` and each `usage` field are optional and recorded when present. Nothing else may go to
-stdout: logs and progress belong on stderr.
+stdout: logs and progress belong on stderr, of which the engine keeps the last 8 KB. Stdout may hold at
+most 1 MiB: past it the run is stopped like a timed-out one and fails with `invalid`, so a runaway
+agent cannot fill the server's memory.
 
 ### Failures
 
