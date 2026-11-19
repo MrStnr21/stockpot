@@ -3,3 +3,5 @@ packages/
 tools/
 bun.lock
 THIRD_PARTY_NOTICES.md
+# The design canvas's own files, kept as the design tool stores them so a new export is a plain copy.
+docs/design-canvas/project/

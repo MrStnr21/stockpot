@@ -1,0 +1,143 @@
+<!doctype html>
+<!--
+  SPDX-License-Identifier: AGPL-3.0-or-later
+  SPDX-FileCopyrightText: 2026 The stockpot authors
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Capture: Shortcut menus</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./tokens.css">
+<link rel="stylesheet" href="./kit.css">
+<link rel="stylesheet" href="./screens.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&amp;family=Literata:ital,opsz,wght@0,7..72,400..700;1,7..72,400..500&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#9D1E60}a:hover{color:#AC1E68}
+</style>
+</helmet>
+<div class="kit b-board" data-scheme="light" style="min-height: 1900px">
+<svg class="b-sprite" aria-hidden="true" focusable="false">
+<symbol id="i-chevron" viewBox="0 0 24 24"><path d="M9.5 6l6 6-6 6"></path></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"></path></symbol>
+<symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 3L5 13.5h6L10 21l8-10.5h-6z"></path></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2"></rect><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.75"></circle><path d="M12 7.75v5M12 16.25h.01"></path></symbol>
+</svg>
+
+<header class="b-head">
+<div>
+<p class="b-kicker">stockpot screens · capture · Shortcut</p>
+<h1 class="b-title">Shortcut menus</h1>
+<p class="b-lede" style="max-width: 1100px">“Add to stockpot” captures from the share sheet, Siri and the Action button. It sends the text and any link, then asks one question in a system menu: tapping a category saves, so a Safari selection lands in three taps. iOS draws these menus and banners in its own style; they are drawn here schematically so the copy can be reviewed. A chevron marks an item that opens a second menu.</p>
+</div>
+<span class="b-tag">DES-2 · iPhone only · 3 taps</span>
+</header>
+
+<div class="flow" style="margin-bottom: 32px">
+<span class="step" data-plain="true">Select text in Safari</span>
+<svg class="ico" aria-hidden="true"><use href="#i-chevron"></use></svg>
+<span class="step"><span class="step-n">1</span>Share</span>
+<svg class="ico" aria-hidden="true"><use href="#i-chevron"></use></svg>
+<span class="step"><span class="step-n">2</span>Add to stockpot</span>
+<svg class="ico" aria-hidden="true"><use href="#i-chevron"></use></svg>
+<span class="step"><span class="step-n">3</span>Technology</span>
+<svg class="ico" aria-hidden="true"><use href="#i-chevron"></use></svg>
+<span class="step" data-plain="true">Banner: Saved: Kafka</span>
+</div>
+
+<div class="b-schemes">
+<sc-for list="{{schemes}}" as="s" hint-placeholder-count="2">
+<section class="b-panel" data-scheme="{{s.id}}">
+<p class="b-panel-label">{{s.label}}</p>
+
+<div class="b-section">
+<h2 class="b-h">Menus <small>Suggested categories first, best at the top</small></h2>
+<div class="sys-grid">
+<div class="sys">
+<div class="sys-head"><p class="sys-title">Save “Kafka” as</p><p class="sys-sub">After sharing a selection</p></div>
+<button class="sys-item" type="button">Technology</button>
+<button class="sys-item" type="button">Concept</button>
+<button class="sys-item" type="button">Other</button>
+<button class="sys-item" type="button">All categories…<svg class="ico" data-size="16" aria-hidden="true" style="margin-left: auto"><use href="#i-chevron"></use></svg></button>
+<button class="sys-item" type="button">Research now…<svg class="ico" data-size="16" aria-hidden="true" style="margin-left: auto"><use href="#i-chevron"></use></svg></button>
+<button class="sys-item" type="button">Private…<svg class="ico" data-size="16" aria-hidden="true" style="margin-left: auto"><use href="#i-chevron"></use></svg></button>
+<button class="sys-item" type="button" data-tone="cancel">Cancel</button>
+</div>
+
+<div class="sys">
+<div class="sys-head"><p class="sys-title">Research “Kafka” now as</p><p class="sys-sub">After Research now…</p></div>
+<button class="sys-item" type="button">Technology</button>
+<button class="sys-item" type="button">Concept</button>
+<button class="sys-item" type="button">Other</button>
+<button class="sys-item" type="button">All categories…<svg class="ico" data-size="16" aria-hidden="true" style="margin-left: auto"><use href="#i-chevron"></use></svg></button>
+<button class="sys-item" type="button" data-tone="cancel">Cancel</button>
+</div>
+
+<div class="sys">
+<div class="sys-head"><p class="sys-title">Already seen: Bun</p><p class="sys-sub">Technology · read 12 Nov</p></div>
+<button class="sys-item" type="button">Save as repeat</button>
+<button class="sys-item" type="button">Open card</button>
+<button class="sys-item" type="button">Different meaning…<svg class="ico" data-size="16" aria-hidden="true" style="margin-left: auto"><use href="#i-chevron"></use></svg></button>
+<button class="sys-item" type="button" data-tone="cancel">Cancel</button>
+</div>
+
+<div class="sys">
+<div class="sys-head"><p class="sys-title">Which “SABR”?</p><p class="sys-sub">Each meaning gets its own card</p></div>
+<button class="sys-item" type="button">YouTube streaming protocol<span class="tag">Technology</span></button>
+<button class="sys-item" type="button">Baseball research society<span class="tag">Other</span></button>
+<button class="sys-item" type="button">None of these…<svg class="ico" data-size="16" aria-hidden="true" style="margin-left: auto"><use href="#i-chevron"></use></svg></button>
+<button class="sys-item" type="button" data-tone="cancel">Cancel</button>
+</div>
+
+<div class="sys">
+<div class="sys-head"><p class="sys-title">Save “Kafka” privately as</p><p class="sys-sub">Only the term goes to the engine</p></div>
+<button class="sys-item" type="button">Technology</button>
+<button class="sys-item" type="button">Concept</button>
+<button class="sys-item" type="button">Other</button>
+<button class="sys-item" type="button">All categories…<svg class="ico" data-size="16" aria-hidden="true" style="margin-left: auto"><use href="#i-chevron"></use></svg></button>
+<button class="sys-item" type="button" data-tone="cancel">Cancel</button>
+</div>
+
+<div class="sys">
+<div class="sys-head"><p class="sys-title">Add to stockpot</p><p class="sys-sub">From Siri or the Action button, with nothing shared</p></div>
+<div class="sys-input">
+<p class="sys-title">What’s the word, term or idea?</p>
+<div class="field-box"><span class="placeholder">Dictate or type</span></div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="b-section">
+<h2 class="b-h">Banners <small>The Shortcut ends with one notification</small></h2>
+<div class="sys-grid">
+<div class="banner"><span class="tile"><svg class="ico" aria-hidden="true"><use href="#i-check"></use></svg></span><span class="banner-text"><span class="banner-title">Saved: Kafka</span><span class="banner-sub">Technology · in tomorrow’s digest</span></span></div>
+<div class="banner"><span class="tile"><svg class="ico" aria-hidden="true"><use href="#i-bolt"></use></svg></span><span class="banner-text"><span class="banner-title">Researching Kafka</span><span class="banner-sub">You’ll get a notification when the card is ready</span></span></div>
+<div class="banner"><span class="tile"><svg class="ico" aria-hidden="true"><use href="#i-check"></use></svg></span><span class="banner-text"><span class="banner-title">Saved as a repeat: Bun</span><span class="banner-sub">Level 2 tonight, first in tomorrow’s digest</span></span></div>
+<div class="banner"><span class="tile"><svg class="ico" aria-hidden="true"><use href="#i-lock"></use></svg></span><span class="banner-text"><span class="banner-title">Saved privately: blue-green deployment</span><span class="banner-sub">Only the term goes to the engine</span></span></div>
+<div class="banner" data-tone="danger"><span class="tile"><svg class="ico" aria-hidden="true"><use href="#i-alert"></use></svg></span><span class="banner-text"><span class="banner-title">Can’t reach your server</span><span class="banner-sub">The text is on your clipboard, so nothing is lost</span></span></div>
+<div class="banner" data-tone="danger"><span class="tile"><svg class="ico" aria-hidden="true"><use href="#i-alert"></use></svg></span><span class="banner-text"><span class="banner-title">This device is signed out</span><span class="banner-sub">Install the Shortcut again from Settings › Devices</span></span></div>
+</div>
+</div>
+</section>
+</sc-for>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1680,"height":1900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      schemes: [ { id: 'light', label: 'Light' }, { id: 'dark', label: 'Dark' } ],
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,336 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "Capture1440.dc.html": {
+      "h": 4540,
+      "page": "capture",
+      "title": "Capture · 1440",
+      "w": 3070,
+      "x": 6170,
+      "y": 0
+    },
+    "Capture390.dc.html": {
+      "h": 4320,
+      "page": "capture",
+      "title": "Capture · 390",
+      "w": 2680,
+      "x": 0,
+      "y": 0
+    },
+    "Capture768.dc.html": {
+      "h": 2760,
+      "page": "capture",
+      "title": "Capture · 768",
+      "w": 3330,
+      "x": 2760,
+      "y": 0
+    },
+    "CaptureShortcut.dc.html": {
+      "h": 1900,
+      "page": "capture",
+      "title": "Capture · Shortcut menus",
+      "w": 1680,
+      "x": 3196,
+      "y": 2938
+    },
+    "Card.dc.html": {
+      "h": 1120,
+      "page": "kit",
+      "title": "Card",
+      "w": 1680,
+      "x": 1760,
+      "y": 2180
+    },
+    "Categories.dc.html": {
+      "h": 1700,
+      "page": "kit",
+      "title": "Categories and icons",
+      "w": 1680,
+      "x": 5280,
+      "y": 0
+    },
+    "Controls.dc.html": {
+      "h": 1700,
+      "page": "kit",
+      "title": "Controls",
+      "w": 1680,
+      "x": 0,
+      "y": 2180
+    },
+    "Feedback.dc.html": {
+      "h": 1460,
+      "page": "kit",
+      "title": "Feedback",
+      "w": 1680,
+      "x": 7040,
+      "y": 2180
+    },
+    "Lists.dc.html": {
+      "h": 1120,
+      "page": "kit",
+      "title": "Lists",
+      "w": 1680,
+      "x": 3520,
+      "y": 2180
+    },
+    "Main.dc.html": {
+      "h": 1760,
+      "page": "kit",
+      "title": "Colour",
+      "w": 1680,
+      "x": 0,
+      "y": 0
+    },
+    "Navigation.dc.html": {
+      "h": 1420,
+      "page": "kit",
+      "title": "Navigation",
+      "w": 1680,
+      "x": 5280,
+      "y": 2180
+    },
+    "Space.dc.html": {
+      "h": 1240,
+      "page": "kit",
+      "title": "Spacing, radius, elevation, motion",
+      "w": 1680,
+      "x": 3520,
+      "y": 0
+    },
+    "Type.dc.html": {
+      "h": 1180,
+      "page": "kit",
+      "title": "Type",
+      "w": 1680,
+      "x": 1760,
+      "y": 0
+    },
+    "Notes390.dc.html": {
+      "x": 0,
+      "y": 0,
+      "w": 2240,
+      "h": 4320,
+      "title": "Notes and Base · 390",
+      "page": "notes"
+    },
+    "Cards390.dc.html": {
+      "x": 2320,
+      "y": 0,
+      "w": 2680,
+      "h": 8300,
+      "title": "Cards · 390",
+      "page": "notes"
+    },
+    "CardStates.dc.html": {
+      "x": 5080,
+      "y": 0,
+      "w": 2560,
+      "h": 4150,
+      "title": "Cards · every format in every state",
+      "page": "notes"
+    },
+    "Notes768.dc.html": {
+      "x": 5080,
+      "y": 4270,
+      "w": 3330,
+      "h": 2760,
+      "title": "Notes, cards, Base · 768",
+      "page": "notes"
+    },
+    "Notes1440.dc.html": {
+      "x": 7720,
+      "y": 0,
+      "w": 3070,
+      "h": 4540,
+      "title": "Notes, cards, Base · 1440",
+      "page": "notes"
+    },
+    "Settings390.dc.html": {
+      "x": 0,
+      "y": 0,
+      "w": 2680,
+      "h": 7300,
+      "title": "Settings · 390",
+      "page": "settings"
+    },
+    "FirstRun390.dc.html": {
+      "x": 2760,
+      "y": 0,
+      "w": 3500,
+      "h": 2480,
+      "title": "First run · 390",
+      "page": "settings"
+    },
+    "FirstRunWide.dc.html": {
+      "x": 2760,
+      "y": 2600,
+      "w": 3330,
+      "h": 6800,
+      "title": "First run · 768 and 1440",
+      "page": "settings"
+    },
+    "Settings768.dc.html": {
+      "x": 6340,
+      "y": 0,
+      "w": 3330,
+      "h": 2760,
+      "title": "Settings · 768",
+      "page": "settings"
+    },
+    "Settings1440.dc.html": {
+      "x": 6340,
+      "y": 2880,
+      "w": 3070,
+      "h": 4540,
+      "title": "Settings · 1440",
+      "page": "settings"
+    },
+    "Today390.dc.html": {
+      "x": 0,
+      "y": 0,
+      "w": 3500,
+      "h": 7100,
+      "title": "Today · 390",
+      "page": "today"
+    },
+    "Today768.dc.html": {
+      "x": 3580,
+      "y": 0,
+      "w": 3330,
+      "h": 2760,
+      "title": "Today · 768",
+      "page": "today"
+    },
+    "TodayPush.dc.html": {
+      "x": 3580,
+      "y": 2880,
+      "w": 1680,
+      "h": 1700,
+      "title": "Today · push copy",
+      "page": "today"
+    },
+    "Today1440.dc.html": {
+      "x": 6990,
+      "y": 0,
+      "w": 3070,
+      "h": 4540,
+      "title": "Today · 1440",
+      "page": "today"
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-11-18T12:00:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas",
+    "page": "today"
+  },
+  "notes": {
+    "capture": {
+      "kind": "title1",
+      "maxW": 8000,
+      "page": "capture",
+      "text": "Capture sheet · DES-2",
+      "w": 240,
+      "x": 0,
+      "y": -320
+    },
+    "foundations": {
+      "kind": "title1",
+      "maxW": 6960,
+      "page": "kit",
+      "text": "Kit · foundations",
+      "w": 240,
+      "x": 0,
+      "y": -320
+    },
+    "primitives": {
+      "kind": "title1",
+      "maxW": 8000,
+      "page": "kit",
+      "text": "Kit · primitives",
+      "w": 240,
+      "x": 0,
+      "y": 1860
+    },
+    "notes": {
+      "x": 0,
+      "y": -320,
+      "text": "Notes, cards and Base · DES-3",
+      "kind": "title1",
+      "maxW": 10790,
+      "page": "notes"
+    },
+    "settings": {
+      "x": 0,
+      "y": -320,
+      "text": "Settings and first run · DES-5",
+      "kind": "title1",
+      "maxW": 9670,
+      "page": "settings"
+    },
+    "today": {
+      "x": 0,
+      "y": -320,
+      "text": "Today and the weekly summary · DES-4",
+      "kind": "title1",
+      "maxW": 10060,
+      "page": "today"
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "Type.dc.html",
+    "Space.dc.html",
+    "Categories.dc.html",
+    "Controls.dc.html",
+    "Card.dc.html",
+    "Lists.dc.html",
+    "Navigation.dc.html",
+    "Feedback.dc.html",
+    "Capture390.dc.html",
+    "Capture768.dc.html",
+    "CaptureShortcut.dc.html",
+    "Capture1440.dc.html",
+    "Notes390.dc.html",
+    "Cards390.dc.html",
+    "CardStates.dc.html",
+    "Notes768.dc.html",
+    "Notes1440.dc.html",
+    "Settings390.dc.html",
+    "FirstRun390.dc.html",
+    "FirstRunWide.dc.html",
+    "Settings768.dc.html",
+    "Settings1440.dc.html",
+    "Today390.dc.html",
+    "Today768.dc.html",
+    "TodayPush.dc.html",
+    "Today1440.dc.html"
+  ],
+  "pages": [
+    {
+      "id": "kit",
+      "name": "Kit"
+    },
+    {
+      "id": "capture",
+      "name": "Capture"
+    },
+    {
+      "id": "notes",
+      "name": "Notes and cards"
+    },
+    {
+      "id": "settings",
+      "name": "Settings and first run"
+    },
+    {
+      "id": "today",
+      "name": "Today"
+    }
+  ],
+  "title": "stockpot design canvas"
+}

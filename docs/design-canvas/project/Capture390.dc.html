@@ -1,0 +1,286 @@
+<!doctype html>
+<!--
+  SPDX-License-Identifier: AGPL-3.0-or-later
+  SPDX-FileCopyrightText: 2026 The stockpot authors
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Capture sheet: phone</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./tokens.css">
+<link rel="stylesheet" href="./kit.css">
+<link rel="stylesheet" href="./screens.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&amp;family=Literata:ital,opsz,wght@0,7..72,400..700;1,7..72,400..500&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#9D1E60}a:hover{color:#AC1E68}
+</style>
+</helmet>
+<div class="kit b-board" data-scheme="light" style="width: 2680px; min-height: 4320px">
+<svg class="b-sprite" aria-hidden="true" focusable="false">
+<symbol id="i-english" viewBox="0 0 24 24"><path d="M5 4.5h14a1.5 1.5 0 0 1 1.5 1.5v9.5a1.5 1.5 0 0 1-1.5 1.5h-7l-4.5 3.5V17H5a1.5 1.5 0 0 1-1.5-1.5V6A1.5 1.5 0 0 1 5 4.5zM9.25 13.75L12 7.25l2.75 6.5M10.2 11.6h3.6"></path></symbol>
+<symbol id="i-ai" viewBox="0 0 24 24"><path d="M10.5 3.5l1.9 5.1 5.1 1.9-5.1 1.9-1.9 5.1-1.9-5.1-5.1-1.9 5.1-1.9zM18 15.25l.8 1.95 1.95.8-1.95.8-.8 1.95-.8-1.95-1.95-.8 1.95-.8z"></path></symbol>
+<symbol id="i-tech" viewBox="0 0 24 24"><path d="M8.5 7.5L4 12l4.5 4.5M15.5 7.5L20 12l-4.5 4.5M13.5 5l-3 14"></path></symbol>
+<symbol id="i-concept" viewBox="0 0 24 24"><path d="M12 3.25l4 6.5H8z"></path><circle cx="7.25" cy="16.25" r="3.75"></circle><rect x="13.25" y="12.5" width="7.25" height="7.25" rx="1.25"></rect></symbol>
+<symbol id="i-idea" viewBox="0 0 24 24"><path d="M9.25 18h5.5M10.25 21h3.5M12 3a6 6 0 0 0-3.6 10.8c.7.55 1.1 1.3 1.1 2.1V16h5v-.1c0-.8.4-1.55 1.1-2.1A6 6 0 0 0 12 3z"></path></symbol>
+<symbol id="i-other" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.75"></circle><path d="M8 12h.01M12 12h.01M16 12h.01"></path></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"></path></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M12 2.75v2M12 19.25v2M2.75 12h2M19.25 12h2M5.46 5.46l1.41 1.41M17.13 17.13l1.41 1.41M5.46 18.54l1.41-1.41M17.13 6.87l1.41-1.41"></path></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"></path></symbol>
+<symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M7 3.75h10a1 1 0 0 1 1 1v15.5l-6-4.25-6 4.25V4.75a1 1 0 0 1 1-1z"></path></symbol>
+<symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h8M16 7h4M4 17h3M11 17h9"></path><circle cx="14" cy="7" r="2"></circle><circle cx="9" cy="17" r="2"></circle></symbol>
+<symbol id="i-clipboard" viewBox="0 0 24 24"><rect x="8.5" y="3" width="7" height="4" rx="1"></rect><path d="M15.5 5h1.75A1.75 1.75 0 0 1 19 6.75v12.5A1.75 1.75 0 0 1 17.25 21H6.75A1.75 1.75 0 0 1 5 19.25V6.75A1.75 1.75 0 0 1 6.75 5H8.5"></path></symbol>
+<symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13.5a4 4 0 0 0 5.66.5l2.83-2.83a4 4 0 0 0-5.66-5.66l-1.06 1.06M14 10.5a4 4 0 0 0-5.66-.5l-2.83 2.83a4 4 0 0 0 5.66 5.66l1.06-1.06"></path></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2"></rect><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"></path></symbol>
+<symbol id="i-chevron" viewBox="0 0 24 24"><path d="M9.5 6l6 6-6 6"></path></symbol>
+<symbol id="i-deeper" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4 4M11 8.25v5.5M8.25 11h5.5"></path></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l.9 12.1A2 2 0 0 0 8.9 21h6.2a2 2 0 0 0 2-1.9L18 7M9 7V4.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 .5.5V7"></path></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.75"></circle><path d="M12 7.75v5M12 16.25h.01"></path></symbol>
+</svg>
+
+<header class="b-head">
+<div>
+<p class="b-kicker">stockpot screens · capture · 390</p>
+<h1 class="b-title">Capture sheet on a phone</h1>
+<p class="b-lede" style="max-width: 1180px">Every state of capture. The sheet rises over the current tab with the keyboard up. The category sits right under the term, where the suggestion appears, so the usual capture is: type, glance at the picked category, Save. Frames with the keyboard show the room it leaves, and the buttons always stay above it; the others show the whole sheet once the keyboard is dismissed. Today behind the sheet is a stand-in until DES-4.</p>
+</div>
+<span class="b-tag">DES-2 · 12 states · keyboard 336 px</span>
+</header>
+
+<div class="s-panels">
+<sc-for list="{{schemes}}" as="s" hint-placeholder-count="2">
+<section class="b-panel s-panel" data-scheme="{{s.id}}">
+<p class="b-panel-label">{{s.label}}</p>
+<div class="s-grid" data-cols="6">
+<sc-for list="{{s.states}}" as="st" hint-placeholder-count="12">
+<div class="s-cell">
+<span class="b-state-label">{{st.n}} · {{st.name}}</span>
+<p class="s-cap">{{st.cap}}</p>
+<div class="frame" data-device="phone">
+
+<div class="ph-app">
+<div class="td-head"><p class="td-date">Thursday, 19 November</p><h2 class="td-title">Today</h2></div>
+<div class="td-progress"><div class="td-bar"><span style="width: 43%"></span></div><div class="td-meta"><span>3 of 7 read</span><span>About 4 min left</span></div></div>
+<div class="td-list">
+<article class="card">
+<div class="card-top"><span class="cat" data-cat="english" data-size="s"><svg class="ico" aria-hidden="true"><use href="#i-english"></use></svg>English</span><span class="badge" data-status="ready"><span class="dot"></span>Ready</span><span class="card-meta">1 min</span></div>
+<h3 class="card-title">serendipity</h3>
+<p class="card-sum">noun · finding something good by chance</p>
+<div class="card-actions">
+<button class="card-action" type="button" data-tone="accent"><svg class="ico" aria-hidden="true"><use href="#i-check"></use></svg>Got it</button>
+<button class="card-action" type="button"><svg class="ico" aria-hidden="true"><use href="#i-deeper"></use></svg>Deeper</button>
+<button class="card-action" type="button"><svg class="ico" aria-hidden="true"><use href="#i-bookmark"></use></svg>Keep</button>
+<button class="card-action" type="button"><svg class="ico" aria-hidden="true"><use href="#i-trash"></use></svg>Delete</button>
+</div>
+</article>
+<article class="card">
+<div class="card-top"><span class="cat" data-cat="concept" data-size="s"><svg class="ico" aria-hidden="true"><use href="#i-concept"></use></svg>Concept</span><span class="badge" data-status="ready"><span class="dot"></span>Ready</span><span class="card-meta">1 min</span></div>
+<h3 class="card-title">Idempotency</h3>
+<p class="card-sum">Doing it twice has the same effect as doing it once.</p>
+<div class="card-actions">
+<button class="card-action" type="button" data-tone="accent"><svg class="ico" aria-hidden="true"><use href="#i-check"></use></svg>Got it</button>
+<button class="card-action" type="button"><svg class="ico" aria-hidden="true"><use href="#i-deeper"></use></svg>Deeper</button>
+<button class="card-action" type="button"><svg class="ico" aria-hidden="true"><use href="#i-bookmark"></use></svg>Keep</button>
+<button class="card-action" type="button"><svg class="ico" aria-hidden="true"><use href="#i-trash"></use></svg>Delete</button>
+</div>
+</article>
+</div>
+</div>
+<div class="ph-nav">
+<nav class="tabbar" aria-label="Main">
+<a class="tab" href="#today" aria-current="page"><span class="tab-ico"><svg class="ico" data-size="24" aria-hidden="true"><use href="#i-sun"></use></svg><span class="tab-badge">4</span></span>Today</a>
+<a class="tab" href="#notes"><span class="tab-ico"><svg class="ico" data-size="24" aria-hidden="true"><use href="#i-list"></use></svg></span>Notes</a>
+<a class="tab" href="#add" data-add="true"><span class="tab-ico"><svg class="ico" data-size="24" aria-hidden="true"><use href="#i-plus"></use></svg></span>Add</a>
+<a class="tab" href="#base"><span class="tab-ico"><svg class="ico" data-size="24" aria-hidden="true"><use href="#i-bookmark"></use></svg></span>Base</a>
+<a class="tab" href="#settings"><span class="tab-ico"><svg class="ico" data-size="24" aria-hidden="true"><use href="#i-sliders"></use></svg></span>Settings</a>
+</nav>
+</div>
+
+<sc-if value="{{st.sheet}}" hint-placeholder-val="{{true}}">
+<div class="scrim"></div>
+<section class="sheet ph-sheet" data-kb="{{st.kb}}" aria-label="New note">
+<span class="sheet-grabber"></span>
+<div class="sheet-head"><h3>New note</h3><button class="icon-btn" type="button" aria-label="Close"><svg class="ico" aria-hidden="true"><use href="#i-x"></use></svg></button></div>
+
+<div class="field-box cap-term" data-size="l" data-state="{{st.termState}}">
+<span class="vh">Word, term or idea</span>
+<span class="cap-val"><sc-if value="{{st.caretStart}}" hint-placeholder-val="{{false}}"><span class="caret"></span></sc-if><sc-if value="{{st.noTerm}}" hint-placeholder-val="{{false}}"><span class="placeholder">Word, term or idea</span></sc-if><sc-if value="{{st.hasTerm}}" hint-placeholder-val="{{true}}">{{st.term}}</sc-if><sc-if value="{{st.caretEnd}}" hint-placeholder-val="{{false}}"><span class="caret"></span></sc-if></span>
+<sc-if value="{{st.paste}}" hint-placeholder-val="{{false}}"><button class="btn" type="button" data-variant="outline" data-size="s"><svg class="ico" data-size="16" aria-hidden="true"><use href="#i-clipboard"></use></svg><span>Paste</span></button></sc-if>
+</div>
+
+<sc-if value="{{st.catOn}}" hint-placeholder-val="{{true}}">
+<div class="field">
+<div class="field-head"><span class="field-label">{{st.catLabel}}</span><sc-if value="{{st.allBtn}}" hint-placeholder-val="{{true}}"><button class="btn link-btn" type="button" data-variant="ghost" data-size="s">{{st.allLabel}}</button></sc-if></div>
+<sc-if value="{{st.catHint}}" hint-placeholder-val="{{false}}"><p class="cap-hint">Suggestions appear as you type</p></sc-if>
+<sc-if value="{{st.catSkel}}" hint-placeholder-val="{{false}}">
+<div class="suggest" aria-busy="true">
+<span class="skel" data-shape="pill" style="display: block; width: 128px; height: 40px"></span>
+<span class="skel" data-shape="pill" style="display: block; width: 104px; height: 40px"></span>
+<span class="skel" data-shape="pill" style="display: block; width: 84px; height: 40px"></span>
+</div>
+</sc-if>
+<sc-if value="{{st.catChips}}" hint-placeholder-val="{{true}}">
+<div class="suggest">
+<sc-for list="{{st.cats}}" as="c" hint-placeholder-count="3">
+<button class="cat" type="button" data-cat="{{c.id}}" aria-pressed="{{c.on}}"><svg class="ico" aria-hidden="true"><use href="#i-{{c.id}}"></use></svg><span>{{c.label}}</span></button>
+</sc-for>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{st.seen}}" hint-placeholder-val="{{false}}">
+<div class="seen">
+<div class="seen-top">
+<span class="seen-kicker">{{st.sd.kicker}}</span>
+<span class="cat" data-cat="{{st.sd.cat}}" data-size="s"><svg class="ico" aria-hidden="true"><use href="#i-{{st.sd.cat}}"></use></svg>{{st.sd.catLabel}}</span>
+<span class="badge" data-status="{{st.sd.status}}"><sc-if value="{{st.sd.isRead}}" hint-placeholder-val="{{true}}"><svg class="ico" aria-hidden="true"><use href="#i-check"></use></svg></sc-if><sc-if value="{{st.sd.isQueued}}" hint-placeholder-val="{{false}}"><span class="dot"></span></sc-if>{{st.sd.badge}}</span>
+</div>
+<p class="seen-title">{{st.sd.title}}</p>
+<p class="seen-sum">{{st.sd.sum}}</p>
+<div class="seen-foot">
+<button class="btn" type="button" data-variant="ghost" data-size="s"><span>{{st.sd.open}}</span><svg class="ico" data-size="16" aria-hidden="true"><use href="#i-chevron"></use></svg></button>
+<sc-if value="{{st.sd.other}}" hint-placeholder-val="{{true}}"><button class="btn" type="button" data-variant="ghost" data-size="s">Different meaning</button></sc-if>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{st.senses}}" hint-placeholder-val="{{false}}">
+<div class="field">
+<span class="field-label">Which meaning?</span>
+<div class="senses" role="radiogroup" aria-label="Which meaning?">
+<sc-for list="{{st.sn}}" as="m" hint-placeholder-count="2">
+<button class="sense" type="button" role="radio" aria-checked="{{m.on}}"><span class="radio"></span><span class="sense-main"><span class="sense-title">{{m.title}}</span><span class="cat" data-cat="{{m.cat}}" data-size="s"><svg class="ico" aria-hidden="true"><use href="#i-{{m.cat}}"></use></svg>{{m.catLabel}}</span></span></button>
+</sc-for>
+</div>
+<button class="btn sense-none" type="button" data-variant="ghost" data-size="s">None of these</button>
+</div>
+</sc-if>
+
+<div class="field-box cap-ctx">
+<span class="vh">Where you saw it</span>
+<sc-if value="{{st.noCtx}}" hint-placeholder-val="{{true}}"><span class="cap-val placeholder">Where you saw it, or a link</span></sc-if>
+<sc-if value="{{st.hasCtx}}" hint-placeholder-val="{{false}}"><span class="cap-val">{{st.ctx}}</span></sc-if>
+<button class="icon-btn" type="button" aria-label="Paste a link"><svg class="ico" aria-hidden="true"><use href="#i-link"></use></svg></button>
+</div>
+<sc-if value="{{st.ctxNote}}" hint-placeholder-val="{{false}}"><p class="ctx-note"><svg class="ico" aria-hidden="true"><use href="#i-lock"></use></svg>Stays on your server</p></sc-if>
+
+<div class="toggle-row priv" data-on="{{st.priv}}">
+<svg class="ico" aria-hidden="true"><use href="#i-lock"></use></svg>
+<span class="toggle-text"><b class="t-label">Private</b><span>{{st.privSub}}</span></span>
+<button class="switch" type="button" role="switch" aria-checked="{{st.priv}}" aria-label="Private"></button>
+</div>
+
+<sc-if value="{{st.err}}" hint-placeholder-val="{{false}}"><div class="cap-error" role="alert"><svg class="ico" aria-hidden="true"><use href="#i-alert"></use></svg><span><b>Can’t reach your server.</b> The note stays here until it saves.</span></div></sc-if>
+
+<div class="sheet-foot">
+<button class="btn" type="button" data-variant="tonal" data-size="l" disabled="{{st.tonalOff}}" style="padding: 0 12px"><span>{{st.tonal}}</span></button>
+<button class="btn" type="button" data-variant="primary" data-size="l" disabled="{{st.primaryOff}}" aria-busy="{{st.busy}}"><sc-if value="{{st.busy}}" hint-placeholder-val="{{false}}"><span class="spin" aria-hidden="true"></span></sc-if><span>{{st.primary}}</span></button>
+</div>
+<sc-if value="{{st.hasFootCap}}" hint-placeholder-val="{{false}}"><p class="foot-cap">{{st.footCap}}</p></sc-if>
+</section>
+</sc-if>
+
+<sc-if value="{{st.kb}}" hint-placeholder-val="{{false}}"><div class="kb" aria-hidden="true">System keyboard</div></sc-if>
+
+<sc-if value="{{st.toast}}" hint-placeholder-val="{{false}}">
+<div class="toast ph-toast" role="status">
+<sc-if value="{{st.ts.check}}" hint-placeholder-val="{{true}}"><svg class="ico" aria-hidden="true"><use href="#i-check"></use></svg></sc-if>
+<sc-if value="{{st.ts.spin}}" hint-placeholder-val="{{false}}"><span class="spin" aria-hidden="true"></span></sc-if>
+<span class="toast-text"><b>{{st.ts.title}}</b><small>{{st.ts.sub}}</small></span>
+<button class="toast-action" type="button">{{st.ts.action}}</button>
+</div>
+</sc-if>
+
+</div>
+</div>
+</sc-for>
+</div>
+</section>
+</sc-for>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":2680,"height":4320}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const L = { english: 'English', ai: 'AI', tech: 'Technology', concept: 'Concept', idea: 'Idea', other: 'Other' };
+    const cats = (ids, on) => ids.map((id) => ({ id: id, label: L[id], on: id === on }));
+    const blankSeen = { kicker: '', cat: 'other', catLabel: '', status: 'read', badge: '', title: '', sum: '', open: '', other: false };
+    const blankToast = { check: false, spin: false, title: '', sub: '', action: '' };
+    const make = (o) => {
+      const s = Object.assign({
+        sheet: true, kb: false, term: '', caret: false, focus: false, paste: false,
+        catLabel: 'Category · suggested', catHint: false, catSkel: false, cats: [], allBtn: true, allLabel: 'All categories',
+        seen: false, sd: {}, senses: false, sn: [],
+        ctx: '', ctxNote: false, priv: false, privSub: 'The engine gets only the term', err: false,
+        tonal: 'Research now', tonalOff: false, primary: 'Save', primaryOff: false, busy: false, footCap: '',
+        toast: false, ts: {},
+      }, o);
+      s.hasTerm = s.term !== '';
+      s.noTerm = !s.hasTerm;
+      s.caretStart = s.caret && s.noTerm;
+      s.caretEnd = s.caret && s.hasTerm;
+      s.termState = s.focus ? 'focus' : 'idle';
+      s.catChips = s.cats.length > 0;
+      s.catOn = s.catHint || s.catSkel || s.catChips;
+      s.allBtn = s.allBtn && s.catChips;
+      s.hasCtx = s.ctx !== '';
+      s.noCtx = !s.hasCtx;
+      s.hasFootCap = s.footCap !== '';
+      s.sd = Object.assign({}, blankSeen, s.sd);
+      s.sd.isRead = s.sd.status === 'read';
+      s.sd.isQueued = s.sd.status === 'queued' || s.sd.status === 'new';
+      s.ts = Object.assign({}, blankToast, s.ts);
+      return s;
+    };
+    const kafka = { term: 'Kafka', cats: cats(['tech', 'concept', 'other'], 'tech') };
+    const states = [
+      make({ n: '01', name: 'Empty', cap: 'Opens with the keyboard up and the field focused. Paste takes the clipboard; Save waits for a category.',
+        kb: true, caret: true, focus: true, paste: true, catLabel: 'Category', catHint: true, tonalOff: true, primaryOff: true }),
+      make({ n: '02', name: 'Typing', cap: 'After a half-second pause: history first, then the fast engine. The buttons wait for a category.',
+        kb: true, term: 'Kafka', caret: true, focus: true, catLabel: 'Category · suggesting', catSkel: true, tonalOff: true, primaryOff: true }),
+      make(Object.assign({ n: '03', name: 'Suggestions', cap: 'One to three categories, best first and already picked, so Save is one tap. All categories shows the rest.',
+        kb: true, caret: true, focus: true }, kafka)),
+      make({ n: '04', name: 'Already seen', cap: 'History matched “Bun”, so no engine call. A repeat is a signal: tonight it gets level 2 and leads the digest.',
+        term: 'Bun', seen: true, sd: { kicker: 'Already seen', cat: 'tech', catLabel: 'Technology', status: 'read', badge: 'Read 12 Nov', title: 'Bun', sum: 'A JavaScript runtime with a package manager, a test runner and a bundler built in.', open: 'Open card', other: true },
+        tonal: 'Deeper now', primary: 'Save as repeat', footCap: 'Tonight: level 2, first in tomorrow’s digest' }),
+      make({ n: '05', name: 'Already saved', cap: 'Saved but not shown yet: a second capture adds its context to the first note instead of making a new one.',
+        term: 'serendipity', ctx: 'Heard it again in a talk on cities', seen: true, sd: { kicker: 'Already saved', cat: 'english', catLabel: 'English', status: 'new', badge: 'New', title: 'serendipity', sum: 'Saved yesterday from a podcast about city planning. It comes in tomorrow’s digest.', open: 'Open note', other: false },
+        primary: 'Add context', footCap: 'The new context joins the saved note' }),
+      make({ n: '06', name: 'Sense choice', cap: 'An ambiguous term lists its meanings, likeliest first and picked. The meaning sets the category; each gets its own card.',
+        term: 'SABR', ctx: 'yt-dlp release notes', senses: true, sn: [
+          { title: 'YouTube’s adaptive streaming protocol', cat: 'tech', catLabel: 'Technology', on: true },
+          { title: 'Society for American Baseball Research', cat: 'other', catLabel: 'Other', on: false },
+        ] }),
+      make({ n: '07', name: 'Private', cap: 'Private keeps the context and link on your server. The engine sees only the term, now and at every depth.',
+        term: 'blue-green deployment', ctx: 'Release review at work', ctxNote: true, priv: true, privSub: 'Only “blue-green deployment” goes to the engine', cats: cats(['tech', 'concept', 'other'], 'tech') }),
+      make({ n: '08', name: 'All categories', cap: 'Every category in the same place, with the suggestion still picked. New categories are made in Settings.',
+        term: 'Zettelkasten', catLabel: 'Category · all', allLabel: 'Suggested', cats: cats(['english', 'tech', 'ai', 'concept', 'idea', 'other'], 'concept') }),
+      make(Object.assign({ n: '09', name: 'Saving', cap: 'Save holds the sheet only while the server answers, usually under 50 ms, so this is rarely seen.',
+        ctx: 'A podcast on event-driven systems', tonalOff: true, busy: true }, kafka)),
+      make(Object.assign({ n: '10', name: 'Couldn’t save', cap: 'The server is out of reach. Nothing is lost: the note stays in the sheet until it saves.',
+        ctx: 'A podcast on event-driven systems', err: true, primary: 'Try again' }, kafka)),
+      make({ n: '11', name: 'Saved', cap: 'The sheet closes at once. The toast confirms for 4 s and offers Undo.',
+        sheet: false, toast: true, ts: { check: true, title: 'Saved: Kafka', sub: 'In tomorrow’s digest', action: 'Undo' } }),
+      make({ n: '12', name: 'Research now', cap: 'The note jumps the queue. A card takes about a minute, an idea a few; the push “Ready: Kafka” opens it.',
+        sheet: false, toast: true, ts: { spin: true, title: 'Researching Kafka', sub: 'You’ll get a notification', action: 'View' } }),
+    ];
+    return {
+      schemes: [
+        { id: 'light', label: 'Light', states: states },
+        { id: 'dark', label: 'Dark', states: states },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>
