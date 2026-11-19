@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
+import { sleep } from 'bun'
 import { afterEach, beforeEach, describe, expect, it, setSystemTime } from 'bun:test'
 import { firstCardInput } from '#tests/factories/engine-input'
 import badKey from '#tests/recordings/gemini/bad-key.json'
@@ -168,11 +169,28 @@ describe('gemini', () => {
 				expect(runRows()).toMatchObject([{ outcome: kind }])
 			})
 
-			it('reports the recorded 503 as an ordinary error', async () => {
+			it('reports the recorded 503 as an ordinary error with its body', async () => {
 				answers = [recorded(unavailable)]
 
-				expect(await errorOf(engine.suggest(suggestInput, fast))).not.toBeInstanceOf(EngineError)
+				const error = await errorOf(engine.suggest(suggestInput, fast))
+
+				expect(error.constructor).toBe(Error)
+				expect(error.message).toBe(`Gemini answered 503: ${JSON.stringify(unavailable.body)}`)
 				expect(runRows()).toMatchObject([{ outcome: 'error' }])
+			})
+
+			it('ends a card whose second request hangs at the one deadline of the call', async () => {
+				const facts = recorded(explainFacts)
+
+				// The facts take 40 of the 60 ms, so a deadline per request would end the card near 100 ms.
+				answers = [async (request) => sleep(40).then(async () => facts(request)), hang]
+
+				const call = engine.explain(cardInput, { tier: 'standard', timeoutMs: 60 })
+
+				expect(await errorOf(call)).toMatchObject({ failure: { kind: 'timeout', afterMs: 60 } })
+				expect(sent).toHaveLength(2)
+				expect(runRows()).toMatchObject([{ task: 'explain', outcome: 'timeout' }])
+				expect(runRows()[0]?.durationMs).toBeLessThan(95)
 			})
 
 			it('stops at the timeout', async () => {
