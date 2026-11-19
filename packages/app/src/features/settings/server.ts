@@ -37,10 +37,11 @@ function canonicalTimeZone(value: string) {
 }
 
 /*
- * A named IANA zone that both Intl and Temporal accept, so the job runner (SRV-6) can schedule in it.
- * Offsets such as +05:00 are zones to Intl and Temporal but not IANA names, and ignore daylight saving.
- * `Intl.supportedValuesOf('timeZone')` is not the test: Bun 1.4's list lacks current names such as
- * Europe/Kyiv and Asia/Kolkata, which both APIs accept (checked 2026-11-19).
+ * A named zone from the IANA database that both Intl and Temporal accept, so the job runner (SRV-6)
+ * can schedule in it. That includes fixed-offset names such as EST, GMT and Etc/GMT+5, which are IANA
+ * entries too. Offset strings such as +05:00 are refused: Intl and Temporal take them, but they are
+ * not names. `Intl.supportedValuesOf('timeZone')` is not the test: Bun 1.4's list lacks current names
+ * such as Europe/Kyiv and Asia/Kolkata, which both APIs accept (checked 2026-11-19).
  */
 function isTimeZone(value: string) {
 	if (/^[+-]/u.test(value)) {

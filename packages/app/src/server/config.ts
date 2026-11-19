@@ -102,12 +102,11 @@ export class ConfigError extends Error {
 	public override readonly name = 'ConfigError'
 }
 
-/** One line per invalid variable. The value is cut short, in case a secret went into the wrong one. */
+/** One line per invalid variable. Only the value's length is shown, in case a secret went into it. */
 function describeIssue(issue: v.BaseIssue<unknown>) {
-	const value = String(issue.input)
-	const shown = value.length > 40 ? `${value.slice(0, 40)}…` : value
+	const { length } = String(issue.input)
 
-	return `- ${v.getDotPath(issue) ?? 'environment'} ${issue.message}, got "${shown}"`
+	return `- ${v.getDotPath(issue) ?? 'environment'} ${issue.message}, got ${length} characters`
 }
 
 /**

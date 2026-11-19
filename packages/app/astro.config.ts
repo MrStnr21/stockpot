@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
+import { join } from 'node:path'
 import node from '@astrojs/node'
 import svelte from '@astrojs/svelte'
 import tailwindcss from '@tailwindcss/vite'
@@ -17,7 +18,7 @@ const adapterEntry = '@astrojs/node/server.js'
  * entry is never seen, as after an adapter upgrade that renames it, the server build fails.
  */
 function boot(): AstroIntegration {
-	const bootModule = decodeURIComponent(new URL('src/server/boot.ts', import.meta.url).pathname)
+	const bootModule = join(import.meta.dirname, 'src/server/boot.ts')
 	let entryId: string | null = null
 	let isInjected = false
 

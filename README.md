@@ -45,6 +45,9 @@ The agent command is set only here, never in the app: a shell command that could
 HTTP would turn any stolen session into shell access on your machine, and stockpot is built to
 stay safe on the open internet. The app shows only whether it is set.
 
+Until you save a time zone in the app, the digest follows the time zone of the machine stockpot
+runs on (its `TZ`), or UTC when that is not a named zone.
+
 Engine keys are stored in the database as plain text and never sent back to a browser, so keep the
 data directory readable only by the account that runs stockpot, and treat its backups the same way.
 

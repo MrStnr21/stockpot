@@ -78,23 +78,22 @@ describe('parseConfig', () => {
 
 			expect(message).toStartWith('stockpot cannot start: invalid environment.')
 			expect(message).toContain(`- ${name} must be`)
-			expect(message).toContain(`got "${value}"`)
+			expect(message).toContain(`got ${value.length} characters`)
 		})
 
 		it('lists every invalid variable', () => {
 			const message = failureOf({ PORT: 'abc', STOCKPOT_SOURCE_URL: 'nope' })
 
 			expect(message.split('\n').slice(1)).toEqual([
-				'- PORT must be a port number from 1 to 65535, got "abc"',
-				'- STOCKPOT_SOURCE_URL must be an http or https URL, got "nope"',
+				'- PORT must be a port number from 1 to 65535, got 3 characters',
+				'- STOCKPOT_SOURCE_URL must be an http or https URL, got 4 characters',
 			])
 		})
 
-		it('cuts a long value short', () => {
-			const message = failureOf({ STOCKPOT_PUBLIC_ORIGIN: 'x'.repeat(100) })
+		it('never prints the value', () => {
+			const message = failureOf({ STOCKPOT_PUBLIC_ORIGIN: 'sk-secret-key' })
 
-			expect(message).toContain(`got "${'x'.repeat(40)}…"`)
-			expect(message).not.toContain('x'.repeat(41))
+			expect(message).not.toContain('sk-secret-key')
 		})
 	})
 
@@ -119,7 +118,7 @@ describe('parseConfig', () => {
 		})
 
 		it('prints which variable is wrong', () => {
-			expect(stderr).toContain('- PORT must be a port number from 1 to 65535, got "abc"')
+			expect(stderr).toContain('- PORT must be a port number from 1 to 65535, got 3 characters')
 		})
 	})
 })

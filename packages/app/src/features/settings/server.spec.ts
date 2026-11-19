@@ -140,12 +140,17 @@ describe('settings', () => {
 	})
 
 	describe('the time zone', () => {
-		it.each(['Europe/Berlin', 'America/New_York', 'UTC', 'Europe/Kyiv', 'Asia/Kolkata'])(
-			'accepts %s',
-			(zone) => {
-				expect(parseZone(zone).output).toEqual({ digest: { timeZone: zone } })
-			},
-		)
+		it.each([
+			'Europe/Berlin',
+			'America/New_York',
+			'UTC',
+			'Europe/Kyiv',
+			'Asia/Kolkata',
+			'EST',
+			'Etc/GMT+5',
+		])('accepts %s', (zone) => {
+			expect(parseZone(zone).output).toEqual({ digest: { timeZone: zone } })
+		})
 
 		it('takes the runtime spelling of a zone', () => {
 			expect(parseZone('europe/berlin').output).toEqual({ digest: { timeZone: 'Europe/Berlin' } })
