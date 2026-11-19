@@ -9,20 +9,35 @@ import { advanceBy, advanceTo, jobRows, succeedingHandler, type Handler } from '
 
 import { createRunner } from './runner'
 import type { JobDefinition, Runner } from './types'
+import { retryDelay } from './worker'
 
 describe('worker', () => {
 	afterEach(() => {
 		jest.useRealTimers()
 	})
 
+	describe('retryDelay', () => {
+		it.each([
+			[1, 30_000],
+			[2, 60_000],
+			[3, 120_000],
+			[7, 1_920_000],
+			[8, 3_600_000],
+			[20, 3_600_000],
+		])('after attempt %i waits %i ms', (attempt, delay) => {
+			expect(retryDelay(attempt)).toBe(delay)
+		})
+	})
+
 	describe('when a handler keeps failing', () => {
+		let sqlite: Database
 		let db: TestDb
 		let runner: Runner
 		let run: Handler<object>
 
 		beforeEach(async () => {
 			jest.useFakeTimers({ now: new Date('2026-11-18T12:00:00Z') })
-			;({ db } = await createTestDb())
+			;({ sqlite, db } = await createTestDb())
 			run = mock(async () => {
 				throw new Error('The engine timed out')
 			})
@@ -37,6 +52,7 @@ describe('worker', () => {
 
 		afterEach(async () => {
 			await runner.stop()
+			sqlite.close()
 		})
 
 		it('queues the job again in 30 seconds with the error', () => {
@@ -55,6 +71,17 @@ describe('worker', () => {
 			expect(run).toHaveBeenCalledTimes(1)
 			await advanceBy(runner, 1)
 			expect(run).toHaveBeenCalledTimes(2)
+		})
+
+		it('waits 60 seconds after the second attempt', async () => {
+			await advanceTo(runner, '2026-11-18T12:00:31Z')
+
+			const runAt = jobRows(db)[0]?.runAt.getTime()
+
+			expect(jobRows(db)).toMatchObject([{ status: 'queued', attempts: 2 }])
+			// Bun's fake clock can move a millisecond while the handler settles.
+			expect(runAt).toBeGreaterThanOrEqual(Date.parse('2026-11-18T12:01:30Z'))
+			expect(runAt).toBeLessThan(Date.parse('2026-11-18T12:01:31Z'))
 		})
 
 		it('doubles the delay and marks the job failed after its last attempt', async () => {
@@ -179,12 +206,14 @@ describe('worker', () => {
 	})
 
 	describe('with jobs left running when the process stopped', () => {
+		let sqlite: Database
 		let db: TestDb
+		let runner: Runner
 		let run: Handler<object>
 
 		beforeEach(async () => {
 			jest.useFakeTimers({ now: new Date('2026-11-18T12:00:00Z') })
-			;({ db } = await createTestDb())
+			;({ sqlite, db } = await createTestDb())
 			run = succeedingHandler()
 
 			const research: JobDefinition<object> = { kind: 'research', maxAttempts: 2, run }
@@ -196,10 +225,14 @@ describe('worker', () => {
 			await running.create({ attempts: 1 })
 			await running.create({ attempts: 2 })
 
-			const runner = createRunner({ db, jobs: [research] })
-
+			runner = createRunner({ db, jobs: [research] })
 			runner.start()
 			await advanceBy(runner, 0)
+		})
+
+		afterEach(async () => {
+			await runner.stop()
+			sqlite.close()
 		})
 
 		it('runs an interrupted job again', () => {

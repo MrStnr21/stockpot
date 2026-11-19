@@ -5,13 +5,14 @@ import { $ } from 'bun'
 import type { Database } from 'bun:sqlite'
 import { afterEach, beforeEach, describe, expect, it, jest } from 'bun:test'
 import { join } from 'node:path'
-import { createTestDb, migrationsFolder } from '#tests/setup/db'
-import { advanceBy, succeedingHandler, type Handler } from '#tests/setup/jobs'
+import { createTestDb, migrationsFolder, type TestDb } from '#tests/setup/db'
+import { advanceBy, jobRows, succeedingHandler, type Handler } from '#tests/setup/jobs'
 
 import { openDatabase } from '#/server/db/client'
 
+import type { JobRow } from './queue'
 import { createRunner, startRunner, stopRunner } from './runner'
-import type { JobDefinition } from './types'
+import type { JobDefinition, Runner } from './types'
 
 describe('runner', () => {
 	afterEach(() => {
@@ -21,6 +22,8 @@ describe('runner', () => {
 	describe('with a job queued before a restart', () => {
 		let directory: string
 		let sqlite: Database
+		let db: TestDb
+		let rowsBeforeStart: JobRow[]
 		let run: Handler<{ noteId: number }>
 
 		beforeEach(async () => {
@@ -44,7 +47,8 @@ describe('runner', () => {
 
 			const runner = createRunner({ db: after.db, jobs: [research] })
 
-			;({ sqlite } = after)
+			;({ sqlite, db } = after)
+			rowsBeforeStart = jobRows(db)
 			runner.start()
 			await advanceBy(runner, 0)
 			await runner.stop()
@@ -55,18 +59,26 @@ describe('runner', () => {
 			await $`rm -rf ${directory}`
 		})
 
-		it('runs the job once the database is opened again', () => {
+		it('finds the job queued in the reopened file and runs it', () => {
+			expect(rowsBeforeStart).toMatchObject([{ status: 'queued', payload: { noteId: 7 } }])
 			expect(run).toHaveBeenCalledWith({ noteId: 7 }, expect.objectContaining({ attempt: 1 }))
+			expect(jobRows(db)).toMatchObject([{ status: 'done', attempts: 1 }])
 		})
 	})
 	describe('with batch jobs queued', () => {
+		let sqlite: Database
+		let runner: Runner
 		let order: string[]
 
 		beforeEach(async () => {
 			jest.useFakeTimers({ now: new Date('2026-11-18T12:00:00Z') })
 			order = []
 
-			const { db } = await createTestDb()
+			const opened = await createTestDb()
+
+			const { db } = opened
+
+			;({ sqlite } = opened)
 
 			const research: JobDefinition<{ name: string }> = {
 				kind: 'research',
@@ -79,7 +91,7 @@ describe('runner', () => {
 				},
 			}
 
-			const runner = createRunner({ db, jobs: [research] })
+			runner = createRunner({ db, jobs: [research] })
 
 			for (const name of ['batch 1', 'batch 2', 'batch 3']) {
 				runner.enqueue(research, { name })
@@ -87,6 +99,11 @@ describe('runner', () => {
 
 			runner.start()
 			await advanceBy(runner, 0)
+		})
+
+		afterEach(async () => {
+			await runner.stop()
+			sqlite.close()
 		})
 
 		it('runs a "now" job before the batch jobs queued ahead of it', () => {

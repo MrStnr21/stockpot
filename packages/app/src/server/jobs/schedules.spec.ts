@@ -29,7 +29,7 @@ describe('daily schedules', () => {
 	let runner: Runner
 
 	/** Starts a runner with one schedule; a second call stands for the server after a restart. */
-	function startRunner() {
+	function startScheduled() {
 		runner = createRunner({ db, schedules: [{ job: digest, at }], timeZone: () => timeZone })
 		runner.start()
 
@@ -57,7 +57,7 @@ describe('daily schedules', () => {
 			jest.useFakeTimers({ now: new Date('2026-11-18T12:00:00Z') })
 			timeZone = 'Asia/Tokyo'
 			at = '07:00'
-			startRunner()
+			startScheduled()
 		})
 
 		it('fires at 07:00 local time with that day, not before', async () => {
@@ -102,7 +102,7 @@ describe('daily schedules', () => {
 			await advanceTo(runner, '2026-11-18T23:00:00Z')
 			await runner.stop()
 			at = '09:00'
-			startRunner()
+			startScheduled()
 			await advanceTo(runner, '2026-11-20T00:00:00Z')
 
 			expect(firedDays()).toEqual(['2026-11-19', '2026-11-20'])
@@ -117,7 +117,7 @@ describe('daily schedules', () => {
 		it('does not skip 2026-11-19 after a move from Paris to Tokyo at 23:30Z', async () => {
 			timeZone = 'Europe/Paris'
 			at = '07:00'
-			startRunner()
+			startScheduled()
 			await advanceTo(runner, '2026-11-18T23:30:00Z')
 			timeZone = 'Asia/Tokyo'
 			runner.refreshSchedules()
@@ -129,11 +129,11 @@ describe('daily schedules', () => {
 		it('fires the day at once when the time moves from 09:00 to 07:00 after 07:00', async () => {
 			timeZone = 'Asia/Tokyo'
 			at = '09:00'
-			startRunner()
+			startScheduled()
 			await advanceTo(runner, '2026-11-18T23:00:00Z')
 			await runner.stop()
 			at = '07:00'
-			startRunner()
+			startScheduled()
 			await advanceBy(runner, 0)
 
 			expect(firedDays()).toEqual(['2026-11-19'])
@@ -145,7 +145,7 @@ describe('daily schedules', () => {
 			jest.useFakeTimers({ now: new Date('2026-03-28T12:00:00Z') })
 			timeZone = 'Europe/Berlin'
 			at = '02:30'
-			startRunner()
+			startScheduled()
 		})
 
 		it('fires the skipped 02:30 an hour later, at 03:30 summer time', async () => {
@@ -161,7 +161,7 @@ describe('daily schedules', () => {
 			jest.useFakeTimers({ now: new Date('2026-10-31T12:00:00Z') })
 			timeZone = 'America/New_York'
 			at = '01:30'
-			startRunner()
+			startScheduled()
 		})
 
 		it('fires the repeated 01:30 once, at its first occurrence', async () => {
@@ -182,9 +182,9 @@ describe('daily schedules', () => {
 			jest.useFakeTimers({ now: new Date('2026-11-18T12:00:00Z') })
 			timeZone = 'Asia/Tokyo'
 			at = '07:00'
-			await startRunner().stop()
+			await startScheduled().stop()
 			setSystemTime(new Date('2026-11-21T03:00:00Z'))
-			startRunner()
+			startScheduled()
 			await advanceBy(runner, 0)
 		})
 
@@ -215,7 +215,7 @@ describe('daily schedules', () => {
 
 			timeZone = 'Asia/Tokyo'
 			at = '07:00'
-			startRunner()
+			startScheduled()
 			timeZone = 'Asia/Nowhere'
 			await advanceTo(runner, '2026-11-18T22:00:00Z')
 		})
@@ -244,10 +244,10 @@ describe('daily schedules', () => {
 			jest.useFakeTimers({ now: new Date('2026-11-18T12:00:00Z') })
 			timeZone = 'Asia/Tokyo'
 			at = '07:00'
-			await advanceTo(startRunner(), '2026-11-18T22:00:00Z')
+			await advanceTo(startScheduled(), '2026-11-18T22:00:00Z')
 			await runner.stop()
 			setSystemTime(new Date('2026-11-18T23:00:00Z'))
-			startRunner()
+			startScheduled()
 			await advanceBy(runner, 0)
 		})
 
