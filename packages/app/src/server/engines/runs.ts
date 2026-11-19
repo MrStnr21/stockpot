@@ -65,9 +65,15 @@ export async function recordRun<TOutput>(
 	} finally {
 		const durationMs = Date.now() - startedAt.getTime()
 
-		db.insert(engineRuns)
-			.values({ ...report, jobId, engine, task, outcome, startedAt, durationMs })
-			.run()
+		// The row is bookkeeping: a database error must not replace the call's own answer or error.
+		try {
+			db.insert(engineRuns)
+				.values({ ...report, jobId, engine, task, outcome, startedAt, durationMs })
+				.run()
+		} catch (error) {
+			// oxlint-disable-next-line no-console -- The server has no logger yet, and a lost run must not pass silently.
+			console.error(`Could not record the ${engine} run:`, error)
+		}
 	}
 }
 

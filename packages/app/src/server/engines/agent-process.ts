@@ -223,8 +223,13 @@ export async function runProcess({
 	} finally {
 		clearTimeout(timeout)
 		signal?.removeEventListener('abort', onAbort)
-		// After a stop, the signals keep going until the process is gone, so the next run starts clean.
-		await exited
+		/* After a stop, the signals keep going until the process is gone, so the next run starts clean.
+		 * SIGKILL goes out two grace periods after the stop; one more, and the process is beyond reach. */
+		const { promise: givenUp, resolve: giveUp } = Promise.withResolvers<null>()
+		const bound = setTimeout(giveUp, 3 * graceMs, null)
+
+		await Promise.race([exited, givenUp])
+		clearTimeout(bound)
 
 		for (const escalation of escalations) {
 			clearTimeout(escalation)
