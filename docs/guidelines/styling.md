@@ -2,13 +2,12 @@
 
 ## Start from the design canvas
 
-The design canvas will be the source of truth for the interface: the kit and every screen at 390,
-768 and 1440 px, in light and dark schemes. Once it is exported into `docs/design-canvas/`
-(DES-6), every UI story names the boards it implements, and the code matches them. When the code
-and a board disagree, the board wins. To change the design, change the canvas first, export it
-again, then change the code.
-
-Until the canvas lands, keep UI changes to placeholders that are easy to replace.
+The design canvas is the source of truth for the interface: the kit and every screen at 390, 768
+and 1440 px, in light and dark schemes. Its export is in
+[`docs/design-canvas/`](../design-canvas/README.md): the board images, the kit tokens in `kit.css`
+and the list of boards. Every UI story names the boards it implements in a **Boards** line, and the
+code matches them. When the code and a board disagree, the board wins. To change the design, change
+the canvas first, export it again, then change the code.
 
 ## Tailwind and tokens
 
@@ -16,7 +15,8 @@ Styles are Tailwind CSS 4 utility classes, compiled through the `@tailwindcss/vi
 
 - **Tokens** live in [`packages/ui/src/theme.css`](../../packages/ui/src/theme.css) under
   `@theme`, published as `@stockpot/ui/theme.css`. Colors, fonts, shadows, radii and durations
-  come from there. The current tokens are placeholders until the design kit replaces them.
+  come from there. The current tokens are placeholders until WEB-1 replaces them with the kit
+  tokens from [`docs/design-canvas/kit.css`](../design-canvas/kit.css).
 - **Use a token, not a literal.** Write `text-broth-900`, not `text-[#3b2a1a]` or a default
   Tailwind palette color, whenever a token covers the case. If the design needs a value that has
   no token, add the token to the theme rather than an arbitrary value to the markup.
