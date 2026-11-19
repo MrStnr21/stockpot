@@ -70,6 +70,11 @@ reach it. The code stops working once the owner exists, and a restart replaces i
   regularly stays signed in, and it survives a server restart. Signing out deletes it. A request that
   changes something counts the cookie only when the browser sends `Origin` or `Sec-Fetch-Site`; other
   clients use device tokens.
+- **A copied cookie signs you out everywhere.** A replaced token works for one more minute, for
+  requests already on their way. If it shows up after that, two browsers held the same token, so
+  someone copied it, and stockpot ends every session: whichever browser got the new token first may
+  be the copy. The same happens, rarely, when a response carrying a new token never reaches your
+  browser, for example when the connection drops; then you sign in again.
 - **Backoff.** Three wrong passwords in a row are free. After that each attempt waits twice as long
   as the one before, from 1 second up to 5 minutes, and an hour without a wrong password resets the
   count. The wait never grows further, so you are never locked out for good, and devices that are

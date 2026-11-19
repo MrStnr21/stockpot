@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
-import { and, eq, gt, lte } from 'drizzle-orm'
+import { eq, lte } from 'drizzle-orm'
 
 import type { Db } from '#/server/db/client'
 import { owner, sessions } from '#/server/db/schema/auth'
@@ -29,10 +29,15 @@ const day = 24 * 60 * 60 * 1000
 
 /*
  * A token lasts 30 days, so the owner stays signed in on a phone opened at least once a month. A token
- * older than a day is replaced on the next request that carries it, which keeps an active session
- * going while a stolen cookie stops working once the owner's own browser comes by again. The replaced
- * token keeps working for a minute, so the requests a page sent in parallel with it are not signed out
- * halfway.
+ * older than a day is replaced on the next request that carries it. The replaced token keeps working
+ * for a minute, so the requests a page sent in parallel with it are not signed out halfway; after that
+ * minute it is never accepted again, and presenting it ends every session. Two browsers holding one
+ * token means it was copied, and whichever of them rotated first may be the thief, so both are signed
+ * out. The cost: a browser that never received its new token, because the response was lost, signs the
+ * owner out everywhere on its next request.
+ *
+ * A replaced row is recognised by its cut expiry (`expiresAt < createdAt + sessionLifetime`), and it is
+ * kept until the token would have run out anyway, so reuse is caught for as long as it could matter.
  */
 export const sessionLifetime = 30 * day
 
@@ -97,8 +102,15 @@ function deleteCookieSession(context: SessionContext) {
  */
 export function replaceSession(context: SessionContext, now = new Date()): void {
 	deleteCookieSession(context)
-	context.db.delete(sessions).where(lte(sessions.expiresAt, now)).run()
+	pruneSessions(context.db, now)
 	startSession(context, now)
+}
+
+/** Deletes the rows of tokens past their 30 days, replaced ones included: nothing can reuse them now. */
+function pruneSessions(db: Queryable, now: Date) {
+	const issuedBefore = new Date(now.getTime() - sessionLifetime)
+
+	db.delete(sessions).where(lte(sessions.createdAt, issuedBefore)).run()
 }
 
 /** Ends the session in the request's cookie, if any, and tells the browser to drop the cookie. */
@@ -112,10 +124,34 @@ export function endAllSessions(db: Queryable): void {
 	db.delete(sessions).run()
 }
 
+interface SessionRow {
+	readonly ownerId: number
+	readonly tokenHash: string
+	readonly createdAt: Date
+	readonly expiresAt: Date
+}
+
+/** Replaces a token: its row is cut to the grace period, and a new token goes into the cookie. */
+function rotate(context: SessionContext & { db: Db }, session: SessionRow, now: Date) {
+	// Always below the natural expiry, so the row reads as replaced even in its last minute.
+	const graceEnd = Math.min(
+		now.getTime() + rotationGrace,
+		session.createdAt.getTime() + sessionLifetime - 1,
+	)
+
+	context.db.transaction((tx) => {
+		tx.update(sessions)
+			.set({ expiresAt: new Date(graceEnd) })
+			.where(eq(sessions.tokenHash, session.tokenHash))
+			.run()
+		startSession({ ...context, db: tx }, now)
+	})
+}
+
 /**
- * The owner signed in by the request's cookie, or `null`. A token due for rotation is replaced: the new
- * one goes into the cookie, and the old one runs out after `rotationGrace`. A token already cut to its
- * grace period has been replaced, so it is not replaced again.
+ * The owner signed in by the request's cookie, or `null`. A token due for rotation is replaced, and a
+ * replaced token is accepted only during its grace period, without being replaced again. A replaced
+ * token presented after that has been copied, so every session ends.
  */
 export function resolveSession(
 	context: SessionContext & { db: Db },
@@ -128,31 +164,36 @@ export function resolveSession(
 	}
 
 	const { db } = context
-	const tokenHash = hashToken(token)
 
 	// Joined with the owner, so sessions left over from a deleted owner sign nobody in.
 	const session = db
-		.select({ ownerId: owner.id, createdAt: sessions.createdAt, expiresAt: sessions.expiresAt })
+		.select({
+			ownerId: owner.id,
+			tokenHash: sessions.tokenHash,
+			createdAt: sessions.createdAt,
+			expiresAt: sessions.expiresAt,
+		})
 		.from(sessions)
 		.crossJoin(owner)
-		.where(and(eq(sessions.tokenHash, tokenHash), gt(sessions.expiresAt, now)))
+		.where(eq(sessions.tokenHash, hashToken(token)))
 		.get()
 
 	if (session === undefined) {
 		return null
 	}
 
-	const isDue = now.getTime() - session.createdAt.getTime() >= rotationAge
-	const isReplaced = session.expiresAt.getTime() - now.getTime() <= rotationGrace
+	const isReplaced = session.expiresAt.getTime() < session.createdAt.getTime() + sessionLifetime
 
-	if (isDue && !isReplaced) {
-		db.transaction((tx) => {
-			tx.update(sessions)
-				.set({ expiresAt: new Date(now.getTime() + rotationGrace) })
-				.where(eq(sessions.tokenHash, tokenHash))
-				.run()
-			startSession({ ...context, db: tx }, now)
-		})
+	if (session.expiresAt <= now) {
+		if (isReplaced) {
+			endAllSessions(db)
+		}
+
+		return null
+	}
+
+	if (!isReplaced && now.getTime() - session.createdAt.getTime() >= rotationAge) {
+		rotate(context, session, now)
 	}
 
 	return { id: session.ownerId }

@@ -131,6 +131,43 @@ describe('sessions', () => {
 					resolveSession({ db, cookies: stale, cookie }, later(rotationAge + rotationGrace)),
 				).toBeNull()
 			})
+
+			/* The browser that rotated first may be the thief's: the owner's copy of the old token,
+			 * arriving after the grace period, must sign out the new token too. */
+			it('ends every session when the old token comes back after the grace period', () => {
+				const copy = nextRequestCookies(signedIn)
+				const returning = later(rotationAge + rotationGrace)
+
+				resolveSession({ db, cookies: copy, cookie }, returning)
+
+				expect(resolveSession({ db, cookies: afterRotation, cookie }, returning)).toBeNull()
+			})
+
+			it('keeps the old token row until its 30 days are over, to catch its reuse', () => {
+				const copy = nextRequestCookies(signedIn)
+				const lastDay = later(sessionLifetime - 1)
+
+				resolveSession({ db, cookies: copy, cookie }, lastDay)
+
+				expect(resolveSession({ db, cookies: afterRotation, cookie }, lastDay)).toBeNull()
+			})
+		})
+
+		describe('when the token is used in its last minute', () => {
+			let lastMinute: TestCookieJar
+
+			beforeEach(() => {
+				lastMinute = nextRequestCookies(signedIn)
+				resolveSession({ db, cookies: lastMinute, cookie }, later(sessionLifetime - 30_000))
+			})
+
+			it('rotates it, so the session goes on with the new token', () => {
+				const next = nextRequestCookies(lastMinute)
+
+				expect(resolveSession({ db, cookies: next, cookie }, later(sessionLifetime))).toEqual({
+					id: 1,
+				})
+			})
 		})
 	})
 
