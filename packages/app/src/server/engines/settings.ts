@@ -28,8 +28,28 @@ const secret = textOrNull(4096)
 
 const modelId = textOrNull(200)
 
+/*
+ * An endpoint is returned to clients as it is, so it may not carry a credential: no user name or
+ * password, and no query or fragment, where some proxies take an API key. The key has its own field.
+ */
+function isPlainEndpoint(value: string) {
+	// Valibot runs every check in the pipe; `v.url` already reports one that does not parse.
+	if (!URL.canParse(value)) {
+		return true
+	}
+
+	const url = new URL(value)
+
+	return url.username === '' && url.password === '' && url.search === '' && url.hash === ''
+}
+
 const baseUrl = v.nullable(
-	v.pipe(v.string(), v.url(), v.regex(/^https?:\/\//u, 'Use an http or https URL')),
+	v.pipe(
+		v.string(),
+		v.url(),
+		v.regex(/^https?:\/\//u, 'Use an http or https URL'),
+		v.check(isPlainEndpoint, 'Leave credentials out of the URL; put the key in apiKey'),
+	),
 )
 
 const engineId = v.picklist(engineIds)
