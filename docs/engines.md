@@ -3,7 +3,7 @@
 How stockpot talks to language models: the contract every engine implements, the card formats and
 depth levels an engine must answer in, the suggestion schema, how a prompt is put together, which
 links a card may carry, what leaves the instance for a private note, which engine runs which task,
-and what the agent command must do. The [architecture](architecture.md#the-engine-contract-boundary) explains where these pieces
+and what the agent command and the OpenAI-compatible engine do. The [architecture](architecture.md#the-engine-contract-boundary) explains where these pieces
 live; this page records what they are. Paths are relative to `packages/app/`.
 
 ## The contract
@@ -119,7 +119,9 @@ side. Whatever a provider drops or ignores, an answer that breaks the format fai
 - **OpenAI-compatible, strict mode** (ENG-5): strict mode rejects `minLength`, `maxLength`,
   `$schema`, and any `format` outside its allowed list, which excludes the `uri` our sources use. The
   engine strips those keywords everywhere in the schema, recursing into `properties`, `items` and
-  `anyOf`. The caps stay in the descriptions.
+  `anyOf` (`strictSchema` in
+  [`openai-strict-schema.ts`](../packages/app/src/server/engines/openai-strict-schema.ts)). The caps
+  stay in the descriptions.
 - **Gemini** (ENG-4): Google's
   [structured-output guide](https://aistudio.google.com/docs/structured-output), read on 2026-11-18,
   documents the Interactions API, which takes the schema in `response_format` (an object of type
@@ -275,6 +277,27 @@ single category, and set the fallback order.
 - **Drafts.** A card from a fallback engine is marked a draft and redone by the primary engine once
   its limit resets. Drafts apply to cards only: a suggestion is not stored, so one from a fallback
   engine is simply shown.
+
+## The OpenAI-compatible engine
+
+The OpenAI-compatible engine
+([`src/server/engines/openai-compatible.ts`](../packages/app/src/server/engines/openai-compatible.ts),
+ENG-5) posts to `<base URL>/chat/completions` on any endpoint that speaks that API, hosted or local:
+
+- **Settings only.** The base URL, the key and the model for each tier are read from settings at
+  every call, so switching provider is a settings change. The key is optional, for a local model; a
+  call fails with an ordinary error when the base URL or the tier's model is not set.
+- **Text only.** It cannot search or open pages, so the prompt asks it to leave every list of
+  sources empty, and it writes from what the call carries, such as the earlier cards.
+- **Strict schema.** The format's schema goes in `response_format` as `json_schema` with `strict`,
+  adapted as [Provider schemas](#provider-schemas) says.
+- **One request at a time**, with one `engine_runs` row each, recording the reported model and the
+  prompt and completion tokens.
+- **Errors.** 429 is `rate_limited` until the latest of `retry-after` (seconds or an HTTP date),
+  `x-ratelimit-reset-requests` and `x-ratelimit-reset-tokens` (durations such as `1m30s`), or a
+  minute from now when none is given; 401 and 403 are `auth`; any other failing status is an ordinary
+  error. A reply that is not a chat completion, a refusal or content that breaks the format is
+  `invalid`, and no reply within the timeout is `timeout`.
 
 ## The agent command
 
