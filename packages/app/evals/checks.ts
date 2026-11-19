@@ -131,8 +131,19 @@ export function checkFiller(card: JsonValue, phrases: readonly string[]): CheckR
 
 const fillerHeading = '## Filler phrases'
 
-/** The filler phrases: the list items under the rubric's "Filler phrases" heading. */
-export function parseFillerPhrases(rubric: string): string[] {
+function listItems(text: string): string[] {
+	return text
+		.split('\n')
+		.filter((line) => line.startsWith('- '))
+		.map((line) => line.slice(2).trim())
+		.filter((phrase) => phrase !== '')
+}
+
+/**
+ * The filler phrases for a card language: the list under the rubric's "Filler phrases" subheading
+ * that ends with the language code, such as "### Russian (ru)". Empty for a language without one.
+ */
+export function parseFillerPhrases(rubric: string, language: string): string[] {
 	const start = rubric.indexOf(fillerHeading)
 
 	if (start === -1) {
@@ -145,11 +156,12 @@ export function parseFillerPhrases(rubric: string): string[] {
 			.split(/^## /mu, 1)
 			.at(0) ?? ''
 
-	return section
-		.split('\n')
-		.filter((line) => line.startsWith('- '))
-		.map((line) => line.slice(2).trim().replaceAll(/^"|"$/gu, ''))
-		.filter((phrase) => phrase !== '')
+	const list = section
+		.split(/^### /mu)
+		.slice(1)
+		.find((part) => part.split('\n', 1).at(0)?.trim().endsWith(`(${language})`) === true)
+
+	return list === undefined ? [] : listItems(list)
 }
 
 /** What the engine received for a note: the note and, for a card, the earlier cards. */

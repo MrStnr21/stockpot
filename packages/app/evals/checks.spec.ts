@@ -133,17 +133,36 @@ describe('eval checks', () => {
 	})
 
 	describe('parseFillerPhrases', () => {
-		it('reads the list under its heading only', () => {
-			const rubric =
-				'# Rubric\n\n- not this\n\n## Filler phrases\n\n- delve into\n- "a testament to"\n\n## Next\n\n- nor this\n'
+		const rubric = [
+			'# Rubric',
+			'- not this',
+			'## Filler phrases',
+			'### English (en)',
+			'- delve into',
+			'- a testament to',
+			'### Russian (ru)',
+			'- стоит отметить',
+			'## Next',
+			'- nor this',
+		].join('\n\n')
 
-			expect(parseFillerPhrases(rubric)).toEqual(['delve into', 'a testament to'])
+		it('reads the list for the card language only', () => {
+			expect(parseFillerPhrases(rubric, 'en')).toEqual(['delve into', 'a testament to'])
 		})
 
-		it('reads the committed rubric', async () => {
-			const rubric = await file(join(import.meta.dir, 'rubric.md')).text()
+		it('stops at the next section', () => {
+			expect(parseFillerPhrases(rubric, 'ru')).toEqual(['стоит отметить'])
+		})
 
-			expect(parseFillerPhrases(rubric)).toContain('delve into')
+		it('has no phrases for a language without a list', () => {
+			expect(parseFillerPhrases(rubric, 'de')).toEqual([])
+		})
+
+		it('reads both lists of the committed rubric', async () => {
+			const committed = await file(join(import.meta.dir, 'rubric.md')).text()
+
+			expect(parseFillerPhrases(committed, 'en')).toContain('delve into')
+			expect(parseFillerPhrases(committed, 'ru')).toContain('стоит отметить')
 		})
 	})
 
