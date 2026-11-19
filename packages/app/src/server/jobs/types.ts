@@ -60,6 +60,10 @@ export interface RunnerOptions {
 	timeZone?: () => string
 }
 
+/** What the health check reports: healthy, or the last error the runner hit and when. */
+export type RunnerHealth =
+	{ status: 'healthy' } | { status: 'failing'; lastError: string; failedAt: Date }
+
 export interface Runner {
 	/** Queues a job and returns its id. Request handlers call this and return; they never wait for the job. */
 	enqueue: <Payload>(
@@ -75,4 +79,6 @@ export interface Runner {
 	idle: () => Promise<void>
 	/** Plans each schedule's next run again; call it after the time zone setting changes. */
 	refreshSchedules: () => void
+	/** The runner's own state, for the health check; a handler's errors stay on its job. */
+	health: () => RunnerHealth
 }

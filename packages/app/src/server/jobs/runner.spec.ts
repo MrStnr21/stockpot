@@ -3,7 +3,7 @@
 
 import { $ } from 'bun'
 import type { Database } from 'bun:sqlite'
-import { afterEach, beforeEach, describe, expect, it, jest, mock } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, it, jest, mock, spyOn, type Mock } from 'bun:test'
 import { join } from 'node:path'
 import { jobRowFactory } from '#tests/factories/jobs'
 import { createTestDb, migrationsFolder, type TestDb } from '#tests/setup/db'
@@ -147,6 +147,62 @@ describe('createRunner', () => {
 			expect(jobRows(db)).toMatchObject([
 				{ status: 'failed', attempts: 3, lastError: 'The engine timed out' },
 			])
+		})
+	})
+
+	describe('when the database refuses writes', () => {
+		let sqlite: Database
+		let runner: Runner
+		let run: Handler<object>
+		let logged: Mock<typeof console.error>
+
+		beforeEach(async () => {
+			jest.useFakeTimers({ now: new Date('2026-11-18T12:00:00Z') })
+			logged = spyOn(console, 'error').mockImplementation(() => {
+				// Keeps the expected error out of the spec output.
+			})
+
+			run = succeedingHandler()
+
+			const research: JobDefinition<object> = { kind: 'research', run }
+
+			const opened = await createTestDb()
+
+			;({ sqlite } = opened)
+			runner = createRunner({ db: opened.db, jobs: [research] })
+			runner.enqueue(research, {}, { runAt: new Date('2026-11-18T12:01:00Z') })
+			runner.start()
+			sqlite.run('PRAGMA query_only = 1')
+			await advanceTo(runner, '2026-11-18T12:01:00Z')
+		})
+
+		afterEach(async () => {
+			logged.mockRestore()
+			await runner.stop()
+			sqlite.close()
+		})
+
+		it('logs the error once and waits 30 seconds instead of looping', async () => {
+			await advanceBy(runner, 29_999)
+
+			expect(logged).toHaveBeenCalledTimes(1)
+			expect(run).not.toHaveBeenCalled()
+
+			const health = runner.health()
+
+			expect(health).toMatchObject({
+				status: 'failing',
+				failedAt: new Date('2026-11-18T12:01:00Z'),
+			})
+			expect('lastError' in health ? health.lastError : '').toContain('readonly database')
+		})
+
+		it('runs the job and reports healthy once writes work again', async () => {
+			sqlite.run('PRAGMA query_only = 0')
+			await advanceBy(runner, 30_000)
+
+			expect(run).toHaveBeenCalledTimes(1)
+			expect(runner.health()).toEqual({ status: 'healthy' })
 		})
 	})
 
