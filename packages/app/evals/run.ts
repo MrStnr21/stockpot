@@ -136,7 +136,6 @@ if (import.meta.main) {
 		await write(stdout, `The report is in ${folder}\n`)
 	} catch (error) {
 		await write(stderr, `${error instanceof Error ? error.message : String(error)}\n`)
-		// oxlint-disable-next-line no-undef -- process.exit is allowed by docs/guidelines/runtime.md; the app config declares browser globals only.
 		process.exit(1)
 	}
 }

@@ -152,6 +152,11 @@ export default defineConfig({
 	jsPlugins: [...componentConfig.jsPlugins, 'eslint-plugin-boundaries'],
 	overrides: [
 		...componentConfig.overrides,
+		{
+			// The eval runner is a command-line tool, and process.exit is its exit (docs/guidelines/runtime.md).
+			files: ['evals/**/*.ts'],
+			globals: { process: 'readonly' },
+		},
 		specOverride([
 			'src/**/*.spec.ts',
 			'tests/setup/**/*.spec.ts',
