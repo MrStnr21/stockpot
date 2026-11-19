@@ -12,7 +12,6 @@
 import {
 	ApiError,
 	GoogleGenAI,
-	ThinkingLevel,
 	type GenerateContentConfig,
 	type GenerateContentResponse,
 	type HttpOptions,
@@ -35,6 +34,7 @@ import {
 } from './contract'
 import { geminiFailure } from './gemini-errors'
 import { addUsage, answerText, readFacts, type Facts } from './gemini-response'
+import { suggestionThinking } from './gemini-thinking'
 import {
 	createUsageCounters,
 	pastRequests,
@@ -158,14 +158,21 @@ async function withDeadline<T>(
 	}
 }
 
+/** What one call works with: the tier's model, its requests within the deadline, and its run. */
+interface Call {
+	readonly model: string
+	readonly generate: Generate
+	readonly report: RunReport
+}
+
 async function suggest<TSchema extends v.GenericSchema>(
 	input: Redacted<EngineInput & { readonly output: OutputFormat<TSchema> }>,
-	generate: Generate,
-	report: RunReport,
+	{ model, generate, report }: Call,
 ) {
 	const prompt = buildPrompt(input, { canSearch: false })
-	const thinkingConfig = { thinkingLevel: ThinkingLevel.MINIMAL }
-	const response = await generate(prompt, { ...structured(input.output), thinkingConfig })
+	const thinkingConfig = suggestionThinking(model)
+	const thinking = thinkingConfig === undefined ? {} : { thinkingConfig }
+	const response = await generate(prompt, { ...structured(input.output), ...thinking })
 
 	addUsage(report, response)
 
@@ -174,8 +181,7 @@ async function suggest<TSchema extends v.GenericSchema>(
 
 async function writeCard<TSchema extends v.GenericSchema>(
 	input: Redacted<CardInput & { readonly output: OutputFormat<TSchema> }>,
-	generate: Generate,
-	report: RunReport,
+	{ generate, report }: Call,
 ) {
 	const factsPrompt = `${buildPrompt(input, { canSearch: true })}\n\n${factsStep}`
 	const tools = [{ googleSearch: {} }, { urlContext: {} }]
@@ -246,11 +252,11 @@ export function createGeminiEngine({
 				const client = new GoogleGenAI({ apiKey, httpOptions })
 				const request = { client, model, apiKey, options }
 
-				return withDeadline(request, async (generate) =>
-					input.task === 'suggest'
-						? suggest(input, generate, report)
-						: writeCard(input, generate, report),
-				)
+				return withDeadline(request, async (generate) => {
+					const call = { model, generate, report }
+
+					return input.task === 'suggest' ? suggest(input, call) : writeCard(input, call)
+				})
 			}),
 		)
 	}

@@ -292,9 +292,15 @@ The Gemini engine
   `standard` and `gemini-2.5-pro` for `deep`: the models a free key could use for each task on
   2026-11-19 (see [What the real calls showed](#what-the-real-calls-showed)). A call fails with an
   ordinary error, and records its run, when the key or the tier's model is not set.
-- **Suggestions** are one request with structured output, minimal thinking and no tools. Minimal
-  thinking is the Gemini 3 `thinkingLevel` setting, so the `fast` tier expects a Gemini 3 or later
-  model; a Gemini 2.5 model was not tried with it.
+- **Suggestions** are one request with structured output, as little thinking as the model allows
+  and no tools. The setting depends on the model's generation (`suggestionThinking` in
+  [`gemini-thinking.ts`](../packages/app/src/server/engines/gemini-thinking.ts)): Gemini 3 and
+  later get `thinkingLevel: MINIMAL`; Gemini 2.5 Flash and Flash-Lite, which take `thinkingBudget`
+  rather than `thinkingLevel`, get a budget of 0, which turns thinking off; Gemini 2.5 Pro, which
+  cannot turn thinking off, and any model the engine does not recognize get no thinking setting. So
+  the `fast` tier may be a Gemini 3 or a Gemini 2.5 Flash model; a free key needs the latter, because
+  the tier also writes vocabulary cards, which search (see
+  [What the real calls showed](#what-the-real-calls-showed)).
 - **Cards** (`explain` and `research`) are two requests to the tier's model. The first has Google
   Search and URL context and no schema, and writes down the facts the card needs as plain notes; the
   second writes the card as structured output from those facts, and may cite only the pages the
@@ -359,6 +365,30 @@ free tier. 16 answered, 3 timed out and 1 got 503 ("high demand"). Of the 16 ans
 p95 19.0 s and the fastest 1.5 s; none came within 1.5 s and 7 within the 3 s suggestion timeout.
 The budget (p95 under 1.5 s) is not met on the free tier; when a suggestion misses it, capture
 falls back to history only.
+
+### The first eval on a free key
+
+On 2026-11-19 the eval (`bun run eval -- --engine gemini --limit 30 --language ru`) ran twice on
+the owner's free key. Its reports stay local, in `packages/app/evals/local/reports/`. The second
+run set fast `gemini-2.5-flash-lite`, standard and deep `gemini-2.5-flash`, and a 10 s suggestion
+timeout. It stopped after 22 calls.
+
+- **Gemini 2.5 Flash-Lite is closed to new keys.** Every call to it answered 404, saying the model
+  is no longer available to new users. Every suggestion and every vocabulary card failed for that
+  reason. On a new free key, then, the only model that searches is Gemini 2.5 Flash.
+- **Cards on Gemini 2.5 Flash** passed `schema`, `oneSentence`, `filler` and `private` every time.
+  Latency was 11–18 s at p50 per format, and the one idea report took 46 s.
+- **The daily quota ran out after about 20 Gemini 2.5 Flash requests, counting the day's earlier
+  probes.** That is about ten cards; the next reset is at midnight Pacific. A free key cannot carry
+  a nightly batch.
+- **Search redirect links fail the link check.** The `vertexaisearch.cloud.google.com/grounding-api-redirect/…`
+  sources answered the check's requests with 403 or 404, so only 1 of 7 cards passed `links`. How
+  stockpot treats these links is part of the open decision below.
+- **The invented term got two sources.** The composed note made to be unknowable came back with
+  sources instead of `uncertain`, failing the check that guards against invented facts.
+
+A free key works for trying the engine, but not for running stockpot. A paid key (Gemini 3 search,
+higher quotas), or another engine as the primary, is the way to run it.
 
 ### Search grounding terms
 

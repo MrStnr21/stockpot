@@ -15,13 +15,14 @@ import {
 	type Engine,
 	type EngineNote,
 	type JsonValue,
-	type SuggestCategory,
+	type Task,
 	type Tier,
 } from '#/server/engines/contract'
 import { abortReason } from '#/server/engines/runs'
 import { suggestionFormat } from '#/server/engines/suggestion'
 
 import { attempt, stopReason, type Attempt, type Failure } from './attempt'
+import { builtInCategories } from './categories'
 import {
 	cardLinks,
 	checkCategory,
@@ -38,24 +39,6 @@ import type { Outgoing } from './engines'
 import { checkLinks } from './links'
 import { termOf, type EvalNote } from './notes'
 import type { CallRecord } from './report'
-
-/** The built-in categories (docs/engines.md, "Formats"); each id is its format id. */
-export const builtInCategories = [
-	{
-		id: 'vocabulary',
-		name: 'English',
-		hint: 'A word or phrase in a language the owner is learning',
-	},
-	{ id: 'technology', name: 'Technology', hint: 'A technology or technical term' },
-	{
-		id: 'comparison',
-		name: 'AI',
-		hint: 'A product or model in a crowded field, against its alternatives',
-	},
-	{ id: 'concept', name: 'Concept', hint: 'An idea from any field: a principle, a pattern, a law' },
-	{ id: 'report', name: 'Idea', hint: 'An idea the owner might build' },
-	{ id: 'brief', name: 'Other', hint: 'Anything else: a short explanation with links' },
-] as const satisfies readonly (SuggestCategory & { readonly id: FormatId })[]
 
 const categoryNames = new Map<string, string>(builtInCategories.map(({ id, name }) => [id, name]))
 
@@ -110,6 +93,8 @@ export interface EvalRun {
 	readonly signal?: AbortSignal
 	/** What the engine sends; without it the `private` check is not verifiable. */
 	readonly outgoing?: Outgoing | null
+	/** Each task's timeout; by default the product's, `defaultTimeoutMs`. */
+	readonly timeoutsMs?: Readonly<Record<Task, number>>
 }
 
 type Settings = Required<Omit<EvalRun, 'maxCalls' | 'signal' | 'outgoing'>> & {
@@ -161,7 +146,7 @@ async function suggestFor(note: EvalNote, run: Settings): Promise<Step> {
 		categories: builtInCategories,
 	})
 
-	const options = { tier: 'fast', timeoutMs: defaultTimeoutMs.suggest, ...signalOf(run) } as const
+	const options = { tier: 'fast', timeoutMs: run.timeoutsMs.suggest, ...signalOf(run) } as const
 
 	const sent = await send(run, async () => {
 		const result = await run.engine.suggest(input, options)
@@ -206,7 +191,7 @@ async function cardFor(note: EvalNote, run: Settings): Promise<Step> {
 	} as const
 
 	const task = format === 'report' ? 'research' : 'explain'
-	const options = { tier: tierFor(format), timeoutMs: defaultTimeoutMs[task], ...signalOf(run) }
+	const options = { tier: tierFor(format), timeoutMs: run.timeoutsMs[task], ...signalOf(run) }
 
 	const sent = await send<JsonValue>(run, async () => {
 		const result =
@@ -268,6 +253,7 @@ export async function runEval(run: EvalRun): Promise<EvalOutcome> {
 		now: () => performance.now(),
 		onCall: keepNothing,
 		wait: async (ms) => sleep(ms),
+		timeoutsMs: defaultTimeoutMs,
 		...run,
 		signal: run.signal,
 		outgoing: run.outgoing ?? null,

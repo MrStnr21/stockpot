@@ -10,6 +10,7 @@ import { dirname, join, resolve } from 'node:path'
 import * as v from 'valibot'
 
 import { openDatabase } from '#/server/db/client'
+import { defaultTimeoutMs } from '#/server/engines/contract'
 
 import { parseFillerPhrases } from './checks'
 import {
@@ -22,17 +23,13 @@ import {
 } from './engines'
 import { runEval, type EvalRun } from './evaluate'
 import { loadNotes, sampleOrder } from './notes'
-import {
-	parseCalls,
-	renderMarkdown,
-	renderScoreSheet,
-	summarize,
-	type CallRecord,
-	type EvalReport,
-} from './report'
+import { parseCalls, renderMarkdown, summarize, type CallRecord, type EvalReport } from './report'
+import { renderScoreSheet } from './score-sheet'
 
-export const usage =
-	'Usage: bun run eval -- --engine <id> [--notes <file>] [--limit <n>] [--language <code>] [--out <dir>]'
+export const usage = [
+	'Usage: bun run eval -- --engine <id> [--notes <file>] [--limit <n>] [--language <code>]',
+	'  [--model <tier>=<id>]... [--suggest-timeout <ms>] [--out <dir>]',
+].join('\n')
 
 const positiveNumber = v.pipe(
 	v.string(),
@@ -44,18 +41,91 @@ const languageCode = v.pipe(v.string(), v.regex(/^[a-z]{2}$/u, 'Use an ISO 639-1
 
 const engineHint = `Use one of ${Object.keys(evalEngines).join(', ')}`
 
-const argsSchema = v.strictObject({
+const tierModel = v.pipe(
+	v.string(),
+	v.regex(
+		/^(?:fast|standard|deep)=\S{1,200}$/u,
+		'Use <tier>=<model id>, with the tier fast, standard or deep',
+	),
+)
+
+/** Each `tier=model` as an entry; a model ID may hold `=`, so it splits at the first one only. */
+function tierModels(entries: readonly string[]): Record<string, string> {
+	return Object.fromEntries(
+		entries.map((entry) => {
+			const at = entry.indexOf('=')
+
+			return [entry.slice(0, at), entry.slice(at + 1)] as const
+		}),
+	)
+}
+
+const tierModelsSchema = v.object({
+	fast: v.optional(v.string()),
+	standard: v.optional(v.string()),
+	deep: v.optional(v.string()),
+})
+
+// Every `--model` given, as the model of each tier; a tier given twice takes the last.
+const modelsArg = v.pipe(
+	v.array(tierModel),
+	v.transform((entries) => tierModels(entries)),
+	tierModelsSchema,
+)
+
+const optionsSchema = v.strictObject({
 	engine: v.pipe(v.string(), v.guard(isEvalEngineId, engineHint)),
 	notes: v.optional(v.string(), join(import.meta.dir, 'notes.jsonl')),
 	limit: v.optional(positiveNumber),
 	language: v.optional(languageCode, 'en'),
+	model: v.optional(modelsArg, []),
+	'suggest-timeout': v.optional(positiveNumber),
 	out: v.optional(v.string()),
+})
+
+const argsSchema = v.pipe(
+	optionsSchema,
+	v.transform(({ model, 'suggest-timeout': suggestTimeoutMs, ...rest }) => ({
+		...rest,
+		models: model,
+		...(suggestTimeoutMs !== undefined && { suggestTimeoutMs }),
+	})),
+)
+
+// The environment equivalent of `--suggest-timeout`; the option wins when both are given.
+const envSchema = v.object({
+	STOCKPOT_EVAL_SUGGEST_TIMEOUT_MS: v.optional(positiveNumber),
 })
 
 export type EvalArgs = v.InferOutput<typeof argsSchema>
 
-/** Reads `--name value` pairs; a bare `--`, as `bun run` may pass on, is skipped. */
-export function parseArgs(args: readonly string[]): EvalArgs {
+function issueLines(issues: readonly v.BaseIssue<unknown>[], prefix: string): string[] {
+	return issues.map((issue) => {
+		const name = v.getDotPath(issue)?.split('.').at(0) ?? ''
+
+		return `${prefix}${name}: ${issue.message}`
+	})
+}
+
+function suggestTimeoutFromEnv(environment: EvalEnv): number | undefined {
+	const value = environment.STOCKPOT_EVAL_SUGGEST_TIMEOUT_MS?.trim()
+
+	const result = v.safeParse(envSchema, {
+		STOCKPOT_EVAL_SUGGEST_TIMEOUT_MS: value === '' ? undefined : value,
+	})
+
+	if (!result.success) {
+		throw new Error([...issueLines(result.issues, ''), usage].join('\n'))
+	}
+
+	return result.output.STOCKPOT_EVAL_SUGGEST_TIMEOUT_MS
+}
+
+/**
+ * Reads `--name value` pairs, `--model` as often as it is given; a bare `--`, as `bun run` may pass
+ * on, is skipped. The environment gives the suggestion timeout when the command line does not.
+ */
+export function parseArgs(args: readonly string[], environment: EvalEnv = {}): EvalArgs {
 	const tokens = args.filter((token) => token !== '--')
 
 	const pairs = Array.from({ length: Math.ceil(tokens.length / 2) }, (_, index) => {
@@ -69,15 +139,22 @@ export function parseArgs(args: readonly string[]): EvalArgs {
 		return [name.slice(2), value]
 	})
 
-	const result = v.safeParse(argsSchema, Object.fromEntries(pairs))
+	const models = pairs.filter(([name]) => name === 'model').map(([, value]) => value)
+	const single = pairs.filter(([name]) => name !== 'model')
+
+	const result = v.safeParse(argsSchema, {
+		...Object.fromEntries(single),
+		...(models.length > 0 && { model: models }),
+	})
 
 	if (!result.success) {
-		const issues = result.issues.map((issue) => `--${v.getDotPath(issue) ?? ''}: ${issue.message}`)
-
-		throw new Error([...issues, usage].join('\n'))
+		throw new Error([...issueLines(result.issues, '--'), usage].join('\n'))
 	}
 
-	return result.output
+	const { output } = result
+	const suggestTimeoutMs = output.suggestTimeoutMs ?? suggestTimeoutFromEnv(environment)
+
+	return suggestTimeoutMs === undefined ? output : { ...output, suggestTimeoutMs }
 }
 
 export interface MainOptions {
@@ -93,13 +170,17 @@ const migrationsFolder = join(import.meta.dir, '../src/server/db/migrations')
 
 /** Runs the eval the arguments describe and writes the report; returns the report's folder. */
 export async function main(args: readonly string[], options: MainOptions): Promise<string> {
-	const { engine: engineId, notes: notesFile, limit, language, out } = parseArgs(args)
+	const parsed = parseArgs(args, options.env)
+	const { engine: engineId, notes: notesFile, limit, language, models: overrides, out } = parsed
+	const suggest = parsed.suggestTimeoutMs ?? defaultTimeoutMs.suggest
+	const timeoutsMs = { ...defaultTimeoutMs, suggest }
 	const publicFile = resolve(notesFile)
 	const notes = await loadNotes({ publicFile, localDir: join(dirname(publicFile), 'local') })
 	const rubric = await file(join(import.meta.dir, 'rubric.md')).text()
 	const { sqlite, db } = await openDatabase({ path: ':memory:', migrationsFolder })
 	const createEngine = options.createEngine ?? createEvalEngine
-	const { engine, outgoing, close } = await createEngine(engineId, { env: options.env, db })
+	const context = { env: options.env, db, models: overrides }
+	const { engine, models, outgoing, close } = await createEngine(engineId, context)
 	const startedAt = new Date().toISOString()
 	const stamp = startedAt.slice(0, 19).replaceAll(':', '-')
 	const folder = resolve(out ?? join(import.meta.dir, 'local', 'reports', `${stamp}-${engineId}`))
@@ -122,6 +203,7 @@ export async function main(args: readonly string[], options: MainOptions): Promi
 		language,
 		fillerPhrases: parseFillerPhrases(rubric, language),
 		onCall: save,
+		timeoutsMs,
 		...(limit !== undefined && { maxCalls: limit }),
 		...(options.checkLinks && { checkLinks: options.checkLinks }),
 		...(options.now && { now: options.now }),
@@ -141,6 +223,8 @@ export async function main(args: readonly string[], options: MainOptions): Promi
 		engine: engineId,
 		language,
 		startedAt,
+		models,
+		timeoutsMs,
 		notes: notes
 			.filter(({ id }) => reached.has(id))
 			.map((note) => ({
