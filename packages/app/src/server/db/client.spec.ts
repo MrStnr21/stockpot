@@ -154,8 +154,17 @@ describe('openDatabase', () => {
 			// The -wal and -shm files may stay: macOS builds of SQLite keep them after closing.
 			const backups = await Array.fromAsync(new Glob('*.pre-migration').scan({ cwd: directory }))
 
+			// Every real migration stays applied; only the orphan one is rolled back.
+			const applied = await Array.fromAsync(
+				new Glob('*/migration.sql').scan({ cwd: migrationsFolder }),
+			)
+
 			expect({ state, backups }).toEqual({
-				state: { notes: [{ text: 'Bun' }], digestItems: { rows: 0 }, migrations: { rows: 1 } },
+				state: {
+					notes: [{ text: 'Bun' }],
+					digestItems: { rows: 0 },
+					migrations: { rows: applied.length },
+				},
 				backups: [],
 			})
 		})

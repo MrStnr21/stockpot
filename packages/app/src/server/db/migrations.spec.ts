@@ -11,8 +11,9 @@ import { explanations } from './schema/explanations'
 import { jobs } from './schema/jobs'
 import { aliases, notes, terms } from './schema/notes'
 
-const schemaV1Tables = [
+const schemaTables = [
 	'aliases',
+	'browsers',
 	'categories',
 	'devices',
 	'digest_items',
@@ -40,7 +41,7 @@ describe('migrations', () => {
 			;({ sqlite } = await createTestDb())
 		})
 
-		it('create every table of schema v1', () => {
+		it('create every table of the schema', () => {
 			// FTS5 keeps note_search in shadow tables named after it; drizzle keeps its own log.
 			const tables = sqlite
 				.query<{ name: string }, []>(
@@ -50,7 +51,7 @@ describe('migrations', () => {
 				)
 				.all()
 
-			expect(tables.map(({ name }) => name)).toEqual(schemaV1Tables)
+			expect(tables.map(({ name }) => name)).toEqual(schemaTables)
 		})
 
 		it('keep the instance to one owner', () => {

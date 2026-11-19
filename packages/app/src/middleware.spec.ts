@@ -2,7 +2,11 @@
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
 import { afterEach, beforeEach, describe, expect, it, mock, spyOn, type Mock } from 'bun:test'
+import { faker } from '@faker-js/faker'
+import { createCookieJar, nextRequestCookies, type TestCookieJar } from '#tests/setup/cookies'
+import { createTestDb } from '#tests/setup/db'
 
+import { createAuth } from '#/server/auth'
 import { route, type RouteContext } from '#/server/http'
 import type { Owner, OwnerResolver } from '#/server/policy'
 
@@ -43,7 +47,7 @@ describe('middleware', () => {
 	async function run(request: Request) {
 		const middleware = createMiddleware({ resolveOwner, publicOrigin })
 
-		return middleware({ request, locals, isPrerendered: false }, next)
+		return middleware({ request, locals, cookies: createCookieJar(), isPrerendered: false }, next)
 	}
 
 	describe('with a cross-site form post', () => {
@@ -92,7 +96,12 @@ describe('middleware', () => {
 		beforeEach(async () => {
 			locals = {}
 			await createMiddleware({ resolveOwner, publicOrigin })(
-				{ request: new Request(publicOrigin), locals, isPrerendered: true },
+				{
+					request: new Request(publicOrigin),
+					locals,
+					cookies: createCookieJar(),
+					isPrerendered: true,
+				},
 				next,
 			)
 		})
@@ -201,6 +210,53 @@ describe('middleware', () => {
 			const failure = await run(new Request(`${publicOrigin}/today`)).then(() => '', String)
 
 			expect(failure).toBe('Error: render failed')
+		})
+	})
+
+	describe('with the session resolver and a signed-in owner', () => {
+		let signedIn: TestCookieJar
+		let middleware: ReturnType<typeof createMiddleware>
+
+		beforeEach(async () => {
+			const { db } = await createTestDb()
+			const announce = mock<(message: string) => void>()
+			const auth = createAuth({ db, publicOrigin, announce })
+
+			auth.needsSetup()
+
+			const [message] = announce.mock.calls[0] ?? ['']
+			const code = /setup code (?<code>\S+)\./u.exec(message)?.groups?.code ?? ''
+
+			const cookies = createCookieJar()
+
+			await auth.setUp(cookies, { code, password: faker.internet.password({ length: 16 }) })
+			signedIn = nextRequestCookies(cookies)
+			middleware = createMiddleware({ resolveOwner: auth.resolveOwner, publicOrigin })
+		})
+
+		/** The status of a POST to an authorized route that carries the owner's cookie. */
+		async function postStatus(headers: Record<string, string>) {
+			const request = new Request(`${publicOrigin}/api/notes`, { method: 'POST', headers })
+
+			const context = {
+				request,
+				locals: { owner: null },
+				cookies: nextRequestCookies(signedIn),
+				isPrerendered: false,
+			}
+
+			const authorizedRoute = route.authorized<RouteContext>(() => new Response('saved'))
+			const response = await middleware(context, async () => authorizedRoute(context))
+
+			return response.status
+		}
+
+		it('answers 401 to a cookie-only POST with neither Origin nor Sec-Fetch-Site', async () => {
+			expect(await postStatus({})).toBe(401)
+		})
+
+		it('lets the same POST through when it carries Origin', async () => {
+			expect(await postStatus({ origin: publicOrigin })).toBe(200)
 		})
 	})
 })

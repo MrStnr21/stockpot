@@ -186,10 +186,30 @@ function describeIssue(issue: v.BaseIssue<unknown>) {
 }
 
 /** The media type, compared without case and without parameters such as `charset`. */
-function isJsonBody(request: Request) {
+function hasMediaType(request: Request, expected: string) {
 	const [mediaType = ''] = (request.headers.get('content-type') ?? '').split(';')
 
-	return mediaType.trim().toLowerCase() === 'application/json'
+	return mediaType.trim().toLowerCase() === expected
+}
+
+function isJsonBody(request: Request) {
+	return hasMediaType(request, 'application/json')
+}
+
+/**
+ * Reads a form post as an HTML form sends it (`application/x-www-form-urlencoded`) and validates its
+ * fields, for a page to show what is wrong. A body of another type, or one past `maxBytes`, reads as
+ * an empty form, which fails any schema with a required field.
+ */
+export async function readForm<TSchema extends v.GenericSchema>(
+	request: Request,
+	schema: TSchema,
+	maxBytes = defaultBodyLimit,
+): Promise<v.SafeParseResult<TSchema>> {
+	const isForm = hasMediaType(request, 'application/x-www-form-urlencoded')
+	const text = isForm ? await readCapped(request, maxBytes).catch(() => '') : ''
+
+	return v.safeParse(schema, Object.fromEntries(new URLSearchParams(text)))
 }
 
 /**

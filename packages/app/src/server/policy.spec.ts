@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from 'bun:test'
 
-import { isAllowed, isCrossSite, resolveNobody } from './policy'
+import { isAllowed, isCrossSite, mayUseCookie } from './policy'
 
 const publicOrigin = 'https://stockpot.example.ts.net'
 
@@ -73,9 +73,24 @@ describe('policy', () => {
 		})
 	})
 
-	describe('resolveNobody', () => {
-		it('finds no owner until sign-in lands', async () => {
-			expect(await resolveNobody()).toBeNull()
+	describe('mayUseCookie', () => {
+		it.each<{ name: string; method: string; headers: Record<string, string>; counts: boolean }>([
+			{ name: 'a GET with neither header', method: 'GET', headers: {}, counts: true },
+			{
+				name: 'a POST with Origin',
+				method: 'POST',
+				headers: { origin: publicOrigin },
+				counts: true,
+			},
+			{
+				name: 'a DELETE with Sec-Fetch-Site',
+				method: 'DELETE',
+				headers: { 'sec-fetch-site': 'same-origin' },
+				counts: true,
+			},
+			{ name: 'a POST with neither header', method: 'POST', headers: {}, counts: false },
+		])('judges the cookie on $name', ({ method, headers, counts }) => {
+			expect(mayUseCookie(request(method, headers))).toBe(counts)
 		})
 	})
 })

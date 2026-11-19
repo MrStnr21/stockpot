@@ -14,16 +14,34 @@ export interface Owner {
 
 export type Access = 'public' | 'authorized'
 
+/** Cookie attributes: the subset of Astro's cookie options that sessions use. */
+export interface CookieOptions {
+	readonly path?: string
+	readonly httpOnly?: boolean
+	readonly secure?: boolean
+	readonly sameSite?: 'lax' | 'strict'
+	/** Seconds until the browser drops the cookie. */
+	readonly maxAge?: number
+}
+
+/** The cookies of a request and its response; `Astro.cookies` is one. */
+export interface CookieJar {
+	readonly get: (name: string) => { readonly value: string } | undefined
+	readonly set: (name: string, value: string, options: CookieOptions) => void
+	readonly delete: (name: string, options: Omit<CookieOptions, 'maxAge'>) => void
+}
+
+export interface ResolverContext {
+	readonly request: Request
+	/** Read for the session cookie, and written when the resolver replaces it. */
+	readonly cookies: CookieJar
+}
+
 /**
  * Finds the owner behind a request (a session cookie, later a device token). `null` or `undefined`
  * means nobody; the middleware stores either as `null`.
  */
-export type OwnerResolver = (request: Request) => Promise<Owner | null | undefined>
-
-/** The stub until sign-in lands (SRV-4): nobody is signed in, so authorized routes answer 401. */
-export async function resolveNobody(): Promise<Owner | null> {
-	return null
-}
+export type OwnerResolver = (context: ResolverContext) => Promise<Owner | null | undefined>
 
 /** Anything but an owner with an id, `undefined` and `{}` included, counts as signed out. */
 export function isAllowed(access: Access, owner: Owner | null | undefined): boolean {
@@ -31,6 +49,21 @@ export function isAllowed(access: Access, owner: Owner | null | undefined): bool
 }
 
 const safeMethods = new Set(['GET', 'HEAD', 'OPTIONS'])
+
+/**
+ * Whether a session cookie may sign this request in. On a request that changes something it counts
+ * only when the browser says where the request comes from (`Origin` or `Sec-Fetch-Site`), the headers
+ * `isCrossSite` judges. A request with neither passes that check as a client that is not a browser,
+ * so it must bring a device token (SRV-5): its cookie could have been attached by a browser that sent
+ * no header to judge it by.
+ */
+export function mayUseCookie(request: Request): boolean {
+	return (
+		safeMethods.has(request.method) ||
+		request.headers.has('origin') ||
+		request.headers.has('sec-fetch-site')
+	)
+}
 
 /**
  * Whether a request that changes something comes from another site and must be refused (CSRF, D6).
