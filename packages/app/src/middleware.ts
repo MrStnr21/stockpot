@@ -4,6 +4,7 @@
 import { instanceAuth } from '#/server/auth'
 import { config } from '#/server/config'
 import { jsonError, type RouteContext } from '#/server/http'
+import { log } from '#/server/log'
 import {
 	isCrossSite,
 	type CookieJar,
@@ -81,8 +82,14 @@ export function createMiddleware({ resolveOwner, publicOrigin }: MiddlewareOptio
 				throw error
 			}
 
-			// oxlint-disable-next-line no-console -- The server has no logger yet (SRV-7), and this error must not pass silently.
-			console.error(`${context.request.method} ${context.request.url} failed:`, error)
+			// The path without its query, which could carry something private.
+			const { pathname } = new URL(context.request.url)
+
+			log.error('A request failed', {
+				method: context.request.method,
+				path: pathname,
+				error: error instanceof Error ? error : String(error),
+			})
 
 			return jsonError(500, internalError)
 		}

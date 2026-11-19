@@ -9,6 +9,7 @@
 import { config } from '#/server/config'
 import type { Db } from '#/server/db/client'
 import { instanceDb } from '#/server/db/instance'
+import { log } from '#/server/log'
 import { mayUseCookie, type CookieJar, type Owner, type ResolverContext } from '#/server/policy'
 
 import { createBackoff, type Backoff } from './backoff'
@@ -79,9 +80,9 @@ interface PendingSetup {
 	code?: string
 }
 
+// The owner reads the setup code in the server log; it is in the message, which is never redacted.
 function printToLog(message: string) {
-	// oxlint-disable-next-line no-console -- The server has no logger yet (SRV-7); the owner reads the setup code on the console.
-	console.log(message)
+	log.info(message)
 }
 
 export function createAuth({ db, publicOrigin, announce = printToLog }: AuthOptions): Auth {

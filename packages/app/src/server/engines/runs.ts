@@ -7,6 +7,7 @@
  */
 import type { Db } from '#/server/db/client'
 import { engineRuns, type engineOutcomes } from '#/server/db/schema/jobs'
+import { log } from '#/server/log'
 
 import { EngineError, type EngineResult, type Task } from './contract'
 
@@ -85,8 +86,10 @@ export async function recordRun<TOutput>(
 				.values({ ...usage, jobId, engine, task, outcome, startedAt, durationMs })
 				.run()
 		} catch (error) {
-			// oxlint-disable-next-line no-console -- The server has no logger yet, and a lost run must not pass silently.
-			console.error(`Could not record the ${engine} run:`, error)
+			log.error(`Could not record the ${engine} run`, {
+				engine,
+				error: error instanceof Error ? error : String(error),
+			})
 		}
 	}
 }

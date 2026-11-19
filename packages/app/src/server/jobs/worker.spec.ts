@@ -7,6 +7,8 @@ import { jobRowFactory } from '#tests/factories/jobs'
 import { createTestDb, type TestDb } from '#tests/setup/db'
 import { advanceBy, advanceTo, jobRows, succeedingHandler, type Handler } from '#tests/setup/jobs'
 
+import { log, type Logger } from '#/server/log'
+
 import { createRunner } from './runner'
 import type { JobDefinition, Runner } from './types'
 import { retryDelay } from './worker'
@@ -99,11 +101,11 @@ describe('worker', () => {
 		let sqlite: Database
 		let runner: Runner
 		let run: Handler<object>
-		let logged: Mock<typeof console.error>
+		let logged: Mock<Logger['error']>
 
 		beforeEach(async () => {
 			jest.useFakeTimers({ now: new Date('2026-11-18T12:00:00Z') })
-			logged = spyOn(console, 'error').mockImplementation(() => {
+			logged = spyOn(log, 'error').mockImplementation(() => {
 				// Keeps the expected error out of the spec output.
 			})
 
