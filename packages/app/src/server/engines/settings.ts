@@ -123,14 +123,24 @@ export const routingPatchSchema = v.partial(routingSchema)
 
 const noModels = { fast: null, standard: null, deep: null }
 
+/*
+ * Gemini's tiers start on the models the owner's free key could use for each task on 2026-11-19
+ * (docs/engines.md, "The Gemini engine"): search works only on Gemini 2.5 there. Settings change them.
+ */
+const geminiModels = {
+	fast: 'gemini-3.1-flash-lite',
+	standard: 'gemini-2.5-flash',
+	deep: 'gemini-2.5-pro',
+}
+
 const noLimit = { perMinute: null, perDay: null }
 
 const noLimits = { fast: noLimit, standard: noLimit, deep: noLimit }
 
-/** No engine is configured on a new instance. */
+/** No engine is configured on a new instance: Gemini has its models, but no key. */
 export function defaultEngines(): EngineSettings {
 	return {
-		gemini: { apiKey: null, models: noModels, limits: noLimits },
+		gemini: { apiKey: null, models: geminiModels, limits: noLimits },
 		'openai-compatible': { baseUrl: null, apiKey: null, models: noModels },
 	}
 }

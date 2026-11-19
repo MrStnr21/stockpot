@@ -1,0 +1,34 @@
+{
+	"status": 200,
+	"body": {
+		"candidates": [
+			{
+				"content": {
+					"parts": [
+						{
+							"text": "{\n  \"sense\": \"A low-level binary instruction format for high-performance web applications\",\n  \"aliases\": [\"Wasm\"],\n  \"summary\": \"WebAssembly is a W3C standard, assembly-like binary format that enables high-performance code, compiled from languages like C, C++, Rust, or C#, to run on the web at near-native speed in a sandboxed environment, complementing JavaScript.\",\n  \"analogy\": \"Think of it like Java bytecode or .NET's Common Intermediate Language (CIL), but for web browsers, allowing compiled code from various languages to run efficiently and securely alongside JavaScript.\",\n  \"relevance\": \"If you're developing web applications that require high computational performance, like games, video editing, or complex simulations, WebAssembly allows you to leverage existing codebases or write new code in languages other than JavaScript to achieve near-native speeds in the browser.\",\n  \"sources\": [\n    {\n      \"title\": \"WebAssembly\",\n      \"url\": \"https://webassembly.org/\"\n    }\n  ],\n  \"uncertain\": false\n}"
+						}
+					],
+					"role": "model"
+				},
+				"finishReason": "STOP",
+				"index": 0
+			}
+		],
+		"usageMetadata": {
+			"promptTokenCount": 1077,
+			"candidatesTokenCount": 236,
+			"totalTokenCount": 1704,
+			"promptTokensDetails": [
+				{
+					"modality": "TEXT",
+					"tokenCount": 1077
+				}
+			],
+			"thoughtsTokenCount": 391,
+			"serviceTier": "standard"
+		},
+		"modelVersion": "gemini-2.5-flash",
+		"responseId": "4Pb-au7XG8GivdIPss65iAo"
+	}
+}

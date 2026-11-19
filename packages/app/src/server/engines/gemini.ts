@@ -195,8 +195,9 @@ export function createGeminiEngine({
 }: GeminiOptions): Engine {
 	const inTurn = oneAtATime()
 
-	// Retries are the job runner's, which knows the error kinds; the SDK would retry a 429 itself.
-	const httpOptions: HttpOptions = { retryOptions: { attempts: 1 } }
+	/* Retries are the job runner's, which knows the error kinds; the SDK would retry a 429 itself.
+	 * Search needs v1beta: on v1, the SDK's default, Gemini refuses it (recorded 2026-11-19). */
+	const httpOptions: HttpOptions = { apiVersion: 'v1beta', retryOptions: { attempts: 1 } }
 
 	if (fetch !== undefined) {
 		httpOptions.fetch = fetch
