@@ -66,7 +66,7 @@ src/
 │   ├── db/             Drizzle schema, migrations and the SQLite connection
 │   ├── jobs/           the job runner and daily schedules
 │   ├── auth/           the owner account, sessions and device tokens
-│   ├── engines/        the engine contract, concrete engines and the router
+│   ├── engines/        the engine contract and settings, concrete engines, the router
 │   ├── http.ts         route helpers, JSON errors, body limits
 │   ├── config.ts       the validated environment
 │   └── metrics.ts      Prometheus metrics, next to health and logs
@@ -152,6 +152,9 @@ in `src/server/engines/`:
   report for an idea. A failure is one of four error kinds: `rate_limited` (with the time the limit
   resets), `auth`, `timeout` and `invalid` (output that does not match the schema). The answer
   to `suggest` has its schema next to it, in `suggestion.ts`, because it is not a card.
+- **Engine settings** (`settings.ts`, SRV-2): each engine's key and the model ID behind each tier,
+  per-category routing overrides and the fallback order. The settings feature stores them, and the
+  router and the engines read their types from here, since `server/` cannot import a feature.
 - **Concrete engines** implement the contract: the agent command engine (`agent-cli.ts`), Gemini
   (`gemini.ts`) and any OpenAI-compatible endpoint (`openai-compatible.ts`). Provider SDKs and
   command-line details stay inside these files.
