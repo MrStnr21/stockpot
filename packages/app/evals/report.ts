@@ -3,7 +3,7 @@
 
 /*
  * The eval report: pass rate and latency per format and per check, rendered as Markdown for people and
- * kept whole as JSON, plus the manual score sheet (evals/rubric.md).
+ * kept whole as JSON. The manual score sheet is in score-sheet.ts.
  */
 import * as v from 'valibot'
 
@@ -11,6 +11,7 @@ import { formatIds } from '#/lib/format-ids'
 import type { JsonValue, Task } from '#/server/engines/contract'
 
 import { checkIds, type CheckId, type CheckResult } from './checks'
+import type { TierModels } from './engines'
 
 /** One engine call and what the checks found. */
 export interface CallRecord {
@@ -67,6 +68,9 @@ export interface EvalReport {
 	readonly engine: string
 	readonly language: string
 	readonly startedAt: string
+	/** The model behind each tier, or `null` for an engine that picks its own. */
+	readonly models: TierModels | null
+	readonly timeoutsMs: Readonly<Record<Task, number>>
 	readonly notes: readonly ReportNote[]
 	readonly calls: readonly CallRecord[]
 	readonly summary: Summary
@@ -184,7 +188,7 @@ function tableRow(cells: readonly string[]): string {
 	return `| ${cells.map((text) => cell(text)).join(' | ')} |`
 }
 
-function table(header: readonly string[], rows: readonly (readonly string[])[]): string {
+export function table(header: readonly string[], rows: readonly (readonly string[])[]): string {
 	const divider = header.map(() => '---')
 
 	return [tableRow(header), tableRow(divider), ...rows.map((row) => tableRow(row))].join('\n')
@@ -200,6 +204,24 @@ function failures(calls: readonly CallRecord[]): string[][] {
 			...failed.map(({ check, detail }) => [call.noteId, call.format, check, detail ?? '']),
 		]
 	})
+}
+
+function modelsLine(models: TierModels | null): string {
+	if (models === null) {
+		return 'Models: the engine picks the model for each tier.'
+	}
+
+	const named = Object.entries(models).map(
+		([tier, model]) => `${tier} ${model === null ? 'not set' : `\`${model}\``}`,
+	)
+
+	return `Models: ${named.join(', ')}.`
+}
+
+function timeoutsLine(timeoutsMs: Readonly<Record<Task, number>>): string {
+	const named = Object.entries(timeoutsMs).map(([task, ms]) => `${task} ${formatDuration(ms)}`)
+
+	return `Timeouts: ${named.join(', ')}.`
 }
 
 export function renderMarkdown(report: EvalReport): string {
@@ -236,6 +258,7 @@ export function renderMarkdown(report: EvalReport): string {
 					`**Stopped early:** ${report.stopped}. The report covers the ${report.calls.length} calls made before that.`,
 				]),
 		`Started ${report.startedAt}, card language \`${report.language}\`, ${report.notes.length} notes (${owner} from the owner, ${report.notes.length - owner} composed, ${privateNotes} private). Compare the numbers with the thresholds in evals/rubric.md.`,
+		`${modelsLine(report.models)} ${timeoutsLine(report.timeoutsMs)}`,
 		'## By format',
 		'Latency counts only the calls that answered; the calls that failed are in Errors.',
 		table(['Format', 'Calls', 'Pass rate', 'Answered', 'Errors', 'p50', 'p95'], formatRows),
@@ -243,50 +266,6 @@ export function renderMarkdown(report: EvalReport): string {
 		table(['Check', 'Applied', 'Passed', 'Failed', 'Not verifiable', 'Pass rate'], checkRows),
 		'## Failures',
 		failureRows.length === 0 ? 'None.' : table(['Note', 'Format', 'Check', 'Detail'], failureRows),
-		'',
-	].join('\n\n')
-}
-
-const senseField = v.looseObject({ sense: v.optional(v.string(), '') })
-
-function senseOf(answer: JsonValue | null): string {
-	const result = v.safeParse(senseField, answer)
-
-	return result.success ? result.output.sense : ''
-}
-
-/** The manual score sheet: a row per card, with the scores of evals/rubric.md left blank. */
-export function renderScoreSheet(report: EvalReport): string {
-	const cards = new Map(
-		report.calls.filter(({ task }) => task !== 'suggest').map((call) => [call.noteId, call]),
-	)
-
-	const rows = report.notes.map((note) => {
-		const card = cards.get(note.id)
-
-		const answered =
-			card?.answer === null || card === undefined ? 'no answer' : senseOf(card.answer)
-
-		return [note.id, note.source, note.text, note.format, answered, '', '', '', '']
-	})
-
-	return [
-		`# Score sheet: ${report.engine}, ${report.startedAt}`,
-		'Score each card as evals/rubric.md says: Accurate and Clear from 1 to 5, Right sense yes or no. The cards are in report.json.',
-		table(
-			[
-				'Note',
-				'Source',
-				'Text',
-				'Format',
-				'Sense explained',
-				'Accurate',
-				'Clear',
-				'Right sense',
-				'Comment',
-			],
-			rows,
-		),
 		'',
 	].join('\n\n')
 }

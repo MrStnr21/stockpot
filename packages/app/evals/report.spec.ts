@@ -8,7 +8,6 @@ import {
 	parseCalls,
 	percentile,
 	renderMarkdown,
-	renderScoreSheet,
 	summarize,
 	type CallRecord,
 	type EvalReport,
@@ -43,6 +42,8 @@ const report: EvalReport = {
 	engine: 'fake',
 	language: 'en',
 	startedAt: '2026-11-19T08:00:00.000Z',
+	models: { fast: 'gemini-2.5-flash-lite', standard: 'gemini-2.5-flash', deep: null },
+	timeoutsMs: { suggest: 10_000, explain: 180_000, research: 900_000 },
 	notes: [
 		{ id: 'a', text: 'bun', source: 'owner', private: false, format: 'technology', local: false },
 		{
@@ -108,6 +109,18 @@ describe('the eval report', () => {
 			expect(markdown).toContain('| suggestion | 2 | 50% | 1 | 1 | 300 ms | 300 ms |')
 		})
 
+		it('records the model of each tier and the timeout of each task', () => {
+			expect(markdown).toContain(
+				'Models: fast `gemini-2.5-flash-lite`, standard `gemini-2.5-flash`, deep not set. Timeouts: suggest 10.0 s, explain 3.0 min, research 15.0 min.',
+			)
+		})
+
+		it('says when the engine picks its own models', () => {
+			expect(renderMarkdown({ ...report, models: null })).toContain(
+				'Models: the engine picks the model for each tier.',
+			)
+		})
+
 		it('lists every failure and error', () => {
 			expect(markdown).toContain('| b | technology | filler | "delve into" |')
 			expect(markdown).toContain('| b | suggestion | error | timeout |')
@@ -128,14 +141,6 @@ describe('the eval report', () => {
 
 			expect(markdown).toContain(
 				'**Stopped early:** the engine rejected its key. The report covers the 4 calls made before that.',
-			)
-		})
-	})
-
-	describe('renderScoreSheet', () => {
-		it('has a row per note with blank scores and escaped text', () => {
-			expect(renderScoreSheet(report)).toContain(
-				String.raw`| b | composed | a \| b | technology | x |  |  |  |  |`,
 			)
 		})
 	})

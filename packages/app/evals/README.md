@@ -11,8 +11,10 @@ the [rubric](rubric.md). The engines themselves are described in [docs/engines.m
 | `rubric.md`       | The automatic checks, the filler phrases, the manual score sheet and the thresholds |
 | `run.ts`          | The command line                                                                    |
 | `evaluate.ts`     | One run: the calls and the checks                                                   |
+| `categories.ts`   | The built-in categories a suggestion picks from                                     |
 | `checks.ts`       | The automatic checks, as pure functions; `links.ts` holds the one that opens links  |
-| `report.ts`       | The summary, the Markdown report and the score sheet                                |
+| `report.ts`       | The summary and the Markdown report                                                 |
+| `score-sheet.ts`  | The manual score sheet                                                              |
 | `engines.ts`      | The engines the eval can run and the variables each reads                           |
 | `record-agent.ts` | Records what the agent command receives, then runs it                               |
 
@@ -21,21 +23,32 @@ the [rubric](rubric.md). The engines themselves are described in [docs/engines.m
 From the repository root:
 
 ```sh
-bun run eval -- --engine <id> [--notes <file>] [--limit <n>] [--language <code>] [--out <dir>]
+bun run eval -- --engine <id> [--notes <file>] [--limit <n>] [--language <code>] \
+  [--model <tier>=<id>]... [--suggest-timeout <ms>] [--out <dir>]
 ```
 
-| Option       | Default                                             | Meaning                                                                                               |
-| ------------ | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `--engine`   | required                                            | The engine to measure, by its id below                                                                |
-| `--notes`    | `packages/app/evals/notes.jsonl`                    | The public notes; the `local/` folder next to the file joins them                                     |
-| `--limit`    | every call                                          | Stop after `n` engine calls, for a quick try; notes are taken one format at a time, local notes first |
-| `--language` | `en`                                                | The card language, as an ISO 639-1 code                                                               |
-| `--out`      | `packages/app/evals/local/reports/<time>-<engine>/` | Where the report goes                                                                                 |
+| Option              | Default                                             | Meaning                                                                                                                        |
+| ------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `--engine`          | required                                            | The engine to measure, by its id below                                                                                         |
+| `--notes`           | `packages/app/evals/notes.jsonl`                    | The public notes; the `local/` folder next to the file joins them                                                              |
+| `--limit`           | every call                                          | Stop after `n` engine calls, for a quick try; notes are taken one format at a time, local notes first                          |
+| `--language`        | `en`                                                | The card language, as an ISO 639-1 code                                                                                        |
+| `--model`           | the engine's tier models                            | The model for one tier (`fast`, `standard` or `deep`), such as `fast=gemini-2.5-flash-lite`; repeat it for each tier to change |
+| `--suggest-timeout` | 3000                                                | How long a suggestion may take, in milliseconds; cards keep the product's timeouts                                             |
+| `--out`             | `packages/app/evals/local/reports/<time>-<engine>/` | Where the report goes                                                                                                          |
 
 For each note the runner asks the engine for a suggestion among the built-in categories, then for
 a first-level card in the note's expected format (a report for an idea), on the tier the routing
 table in docs/engines.md gives that format. Calls run one at a time, so each latency is the call's
 own. A real run calls a real engine: it takes time and spends the provider's usage.
+
+`--model` applies to the engines that map tiers to models themselves, Gemini and the
+OpenAI-compatible engine; the agent command's script picks its own models, so the runner refuses
+`--model` for it. `--suggest-timeout` applies to every engine. Variables give the same settings
+when the options are left out, and an option wins over its variable:
+`STOCKPOT_EVAL_SUGGEST_TIMEOUT_MS` for the suggestion timeout, and `STOCKPOT_EVAL_GEMINI_FAST`,
+`STOCKPOT_EVAL_GEMINI_STANDARD` and `STOCKPOT_EVAL_GEMINI_DEEP` for Gemini's tiers. The report's
+header records the model of each tier and the timeout of each task the run used.
 
 ### Stopping early
 
@@ -60,11 +73,11 @@ not from an instance's database, so put them in a file outside the repository an
 bun --env-file ~/.config/stockpot/dev.env run eval -- --engine openai-compatible
 ```
 
-| Engine id           | Variables                                                                                                                              |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `gemini`            | `GEMINI_API_KEY`; the tier models are the defaults from engine settings                                                                |
-| `agent-command`     | `STOCKPOT_AGENT_COMMAND`, the same template the server uses                                                                            |
-| `openai-compatible` | `STOCKPOT_EVAL_OPENAI_BASE_URL`, `STOCKPOT_EVAL_OPENAI_MODEL` (every tier), and `STOCKPOT_EVAL_OPENAI_KEY` when the endpoint needs one |
+| Engine id           | Variables                                                                                                                                                           |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `gemini`            | `GEMINI_API_KEY`; the tier models are the defaults from engine settings, unless `STOCKPOT_EVAL_GEMINI_FAST`, `_STANDARD`, `_DEEP` or `--model` change them          |
+| `agent-command`     | `STOCKPOT_AGENT_COMMAND`, the same template the server uses                                                                                                         |
+| `openai-compatible` | `STOCKPOT_EVAL_OPENAI_BASE_URL`, `STOCKPOT_EVAL_OPENAI_MODEL` (every tier unless `--model` changes one), and `STOCKPOT_EVAL_OPENAI_KEY` when the endpoint needs one |
 
 To check what a private note sends, the runner records each payload through a setting the engine
 already takes: Gemini's `fetch` records each request body, the OpenAI-compatible base URL points at a proxy on this machine that records each
@@ -109,8 +122,8 @@ Each run writes four files to its folder:
 
 - `calls.jsonl`: every call and its checks, appended as soon as the call is done, so stopping a
   run loses nothing; the other files are built from it;
-- `report.md`: the pass rate and the p50 and p95 latency for suggestions and for each format, the
-  pass rate of each check, and every failure;
+- `report.md`: the models and timeouts the run used, the pass rate and the p50 and p95 latency for
+  suggestions and for each format, the pass rate of each check, and every failure;
 - `report.json`: the same, with every answer;
 - `score-sheet.md`: a row per card to score by hand, as the rubric says.
 

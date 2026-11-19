@@ -10,6 +10,8 @@
  * `private` check can test the payload rather than our own input: Gemini's `fetch` records each
  * request body, the OpenAI-compatible base URL points at a recording proxy on this machine, and the
  * agent command runs behind record-agent.ts.
+ *
+ * A run may override the model of each tier, for an engine that maps tiers to models itself.
  */
 import { $, file, Glob, serve } from 'bun'
 import { tmpdir } from 'node:os'
@@ -18,17 +20,24 @@ import * as v from 'valibot'
 
 import type { Db } from '#/server/db/client'
 import { createAgentCommandEngine } from '#/server/engines/agent-cli'
-import type { Engine } from '#/server/engines/contract'
+import type { Engine, Tier } from '#/server/engines/contract'
 import { createGeminiEngine } from '#/server/engines/gemini'
 import { createOpenAiCompatibleEngine } from '#/server/engines/openai-compatible'
 import { defaultEngines, enginesSchema } from '#/server/engines/settings'
 
 export type EvalEnv = Readonly<Record<string, string | undefined>>
 
+/** The model ID behind each tier, as engine settings hold it. */
+export type TierModels = Readonly<Record<Tier, string | null>>
+
+export type ModelOverrides = Readonly<Partial<Record<Tier, string>>>
+
 export interface EngineContext {
 	readonly env: EvalEnv
 	/** Where the engine records its `engine_runs` rows: an in-memory database for the run. */
 	readonly db: Db
+	/** The run's `--model` overrides, ahead of any the engine reads from the environment. */
+	readonly models?: ModelOverrides
 	/** Sends an HTTP engine's requests that use `fetch`; specs answer from recorded responses. */
 	readonly fetch?: typeof fetch
 }
@@ -56,6 +65,8 @@ export interface Outgoing {
 
 export interface EvalEngine {
 	readonly engine: Engine
+	/** The model behind each tier, for the report; `null` for an engine that picks its own. */
+	readonly models: TierModels | null
 	/** `null` for an engine whose payload cannot be recorded: its `private` check is not verifiable. */
 	readonly outgoing: Outgoing | null
 	readonly close: () => Promise<void>
@@ -92,17 +103,44 @@ function recordingFetch(send: typeof fetch): RecordingFetch {
 	}
 }
 
-async function gemini({ env, db, fetch: send = fetch }: EngineContext): Promise<EvalEngine> {
-	// The tier models and limits are the defaults from engine settings; only the key is the owner's.
+const geminiModelVariables = {
+	fast: 'STOCKPOT_EVAL_GEMINI_FAST',
+	standard: 'STOCKPOT_EVAL_GEMINI_STANDARD',
+	deep: 'STOCKPOT_EVAL_GEMINI_DEEP',
+} as const satisfies Record<Tier, string>
+
+/** The models of the tiers whose variable is set. */
+function modelsFromEnv(env: EvalEnv, variables: Record<Tier, string>): ModelOverrides {
+	return Object.fromEntries(
+		Object.entries(variables).flatMap(([tier, name]) => {
+			const model = optional(env, name)
+
+			return model === null ? [] : [[tier, model]]
+		}),
+	)
+}
+
+async function gemini({
+	env,
+	db,
+	models = {},
+	fetch: send = fetch,
+}: EngineContext): Promise<EvalEngine> {
+	/* The limits are the defaults from engine settings, and so are the tier models unless the
+	 * environment or the run overrides them; the key is the owner's. */
+	const defaults = defaultEngines().gemini
+
 	const settings = v.parse(geminiSettings, {
-		...defaultEngines().gemini,
+		...defaults,
 		apiKey: required(env, 'GEMINI_API_KEY'),
+		models: { ...defaults.models, ...modelsFromEnv(env, geminiModelVariables), ...models },
 	})
 
 	const recorder = recordingFetch(send)
 
 	return {
 		engine: createGeminiEngine({ db, settings: () => settings, fetch: recorder.fetch }),
+		models: settings.models,
 		outgoing: recorder.outgoing,
 		close: closeNothing,
 	}
@@ -163,8 +201,13 @@ function quoted(path: string): string {
 	return `'${path}'`
 }
 
-async function agentCommand({ env, db }: EngineContext): Promise<EvalEngine> {
+async function agentCommand({ env, db, models = {} }: EngineContext): Promise<EvalEngine> {
 	const template = required(env, 'STOCKPOT_AGENT_COMMAND')
+
+	if (Object.keys(models).length > 0) {
+		throw new Error('The agent command picks the model for each tier itself; it takes no model')
+	}
+
 	const captureDir = join(tmpdir(), `stockpot-eval-agent-${crypto.randomUUID()}`)
 	const recorder = join(import.meta.dir, 'record-agent.ts')
 
@@ -184,6 +227,7 @@ async function agentCommand({ env, db }: EngineContext): Promise<EvalEngine> {
 
 	return {
 		engine: createAgentCommandEngine({ command: `${command} ${template}`, db }),
+		models: null,
 		outgoing: { take },
 		close: async () => {
 			await $`rm -rf ${captureDir}`
@@ -191,14 +235,14 @@ async function agentCommand({ env, db }: EngineContext): Promise<EvalEngine> {
 	}
 }
 
-async function openAiCompatible({ env, db }: EngineContext): Promise<EvalEngine> {
-	// One model serves every tier: the eval measures an engine, not a tier mapping.
+async function openAiCompatible({ env, db, models = {} }: EngineContext): Promise<EvalEngine> {
+	// One model serves every tier unless the run overrides one: the eval measures an engine.
 	const model = required(env, 'STOCKPOT_EVAL_OPENAI_MODEL')
 
 	const upstream = v.parse(openAiCompatibleSettings, {
 		baseUrl: required(env, 'STOCKPOT_EVAL_OPENAI_BASE_URL'),
 		apiKey: optional(env, 'STOCKPOT_EVAL_OPENAI_KEY'),
-		models: { fast: model, standard: model, deep: model },
+		models: { fast: model, standard: model, deep: model, ...models },
 	})
 
 	const proxy = recordingProxy(upstream.baseUrl ?? '')
@@ -206,6 +250,7 @@ async function openAiCompatible({ env, db }: EngineContext): Promise<EvalEngine>
 
 	return {
 		engine: createOpenAiCompatibleEngine({ db, settings: () => settings }),
+		models: settings.models,
 		outgoing: proxy.outgoing,
 		close: proxy.close,
 	}

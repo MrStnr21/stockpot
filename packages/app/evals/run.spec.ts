@@ -41,6 +41,7 @@ function briefEvalEngine(failAfter = Number.POSITIVE_INFINITY): () => Promise<Ev
 
 		return {
 			engine: fakeEngine({ clock: { ms: 0 }, received: [], reply }),
+			models: null,
 			outgoing: null,
 			close: closeNothing,
 		}
@@ -83,6 +84,39 @@ describe('the eval command', () => {
 				engine: 'agent-command',
 				notes: join(import.meta.dir, 'notes.jsonl'),
 				language: 'en',
+				models: {},
+			})
+		})
+
+		it('takes a model for each tier from every --model, and the suggestion timeout', () => {
+			const args = ['--engine', 'gemini', '--model', 'fast=gemini-2.5-flash-lite']
+			const more = ['--model', 'deep=tuned=v2', '--suggest-timeout', '10000']
+
+			expect(parseArgs([...args, ...more])).toMatchObject({
+				models: { fast: 'gemini-2.5-flash-lite', deep: 'tuned=v2' },
+				suggestTimeoutMs: 10_000,
+			})
+		})
+
+		describe('with STOCKPOT_EVAL_SUGGEST_TIMEOUT_MS', () => {
+			const env = { STOCKPOT_EVAL_SUGGEST_TIMEOUT_MS: '8000' }
+
+			it('takes the suggestion timeout from it', () => {
+				expect(parseArgs(['--engine', 'gemini'], env)).toMatchObject({ suggestTimeoutMs: 8000 })
+			})
+
+			it('lets --suggest-timeout win', () => {
+				const args = ['--engine', 'gemini', '--suggest-timeout', '9000']
+
+				expect(parseArgs(args, env)).toMatchObject({ suggestTimeoutMs: 9000 })
+			})
+
+			it('rejects a value that is not a positive number, naming the variable', () => {
+				const invalid = { STOCKPOT_EVAL_SUGGEST_TIMEOUT_MS: '10s' }
+
+				expect(() => parseArgs(['--engine', 'gemini'], invalid)).toThrow(
+					'STOCKPOT_EVAL_SUGGEST_TIMEOUT_MS: Use a positive number',
+				)
 			})
 		})
 
@@ -91,8 +125,18 @@ describe('the eval command', () => {
 			[['--engine', 'agent-command', '--limit', '0']],
 			[['--engine', 'agent-command', '--colour', 'red']],
 			[['--engine']],
+			[['--engine', 'gemini', '--model', 'turbo=gemini-2.5-flash']],
+			[['--engine', 'gemini', '--model', 'gemini-2.5-flash']],
+			[['--engine', 'gemini', '--model', 'fast=']],
+			[['--engine', 'gemini', '--suggest-timeout', '1.5']],
 		])('rejects %p with the usage', (args) => {
 			expect(() => parseArgs(args)).toThrow('Usage: bun run eval')
+		})
+
+		it('names the option and the expected form of a bad --model', () => {
+			expect(() => parseArgs(['--engine', 'gemini', '--model', 'turbo=x'])).toThrow(
+				'--model: Use <tier>=<model id>, with the tier fast, standard or deep',
+			)
 		})
 	})
 
@@ -157,6 +201,19 @@ describe('the eval command', () => {
 			expect(report.stopped).toBe('the engine rejected its key or login (auth)')
 			expect(saved.trim().split('\n').length).toBe(3)
 			expect(await file(join(out, 'report.md')).text()).toContain('**Stopped early:**')
+		})
+
+		it('records the timeouts it ran with', async () => {
+			const out = join(folder, 'out-timeouts')
+
+			const { report } = await runOn(join(folder, 'public-only'), out, {
+				extra: ['--suggest-timeout', '10000'],
+			})
+
+			expect(report).toMatchObject({
+				models: null,
+				timeoutsMs: { suggest: 10_000, explain: 180_000, research: 900_000 },
+			})
 		})
 
 		it('writes the report, its pass rates and the score sheet', async () => {
