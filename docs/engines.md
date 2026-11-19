@@ -307,8 +307,11 @@ The Gemini engine
   request, as `rate_limited` until the window has room again (the next Pacific midnight for the daily
   limit), and records its run; a card counts as two requests. The counters live in memory, in the one
   server process, behind `UsageCounters` in
-  [`gemini-usage.ts`](../packages/app/src/server/engines/gemini-usage.ts): a restart forgets the
-  day's counts, and Google's own quota still applies.
+  [`gemini-usage.ts`](../packages/app/src/server/engines/gemini-usage.ts): they start from the engine's runs in `engine_runs`
+  since the last Pacific midnight and in the last minute (a card counts two requests, and a run
+  refused as `rate_limited` none), so a restart keeps the day's count. A run counts against the model
+  Gemini reported, so a tier set to an alias such as `gemini-flash-latest` is seeded under the model
+  the alias pointed to. Google's own quota still applies.
 - **Errors**
   ([`gemini-errors.ts`](../packages/app/src/server/engines/gemini-errors.ts)). 429 is
   `rate_limited` until the later of the `RetryInfo` delay and the next Pacific midnight when a

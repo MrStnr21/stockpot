@@ -35,7 +35,12 @@ import {
 } from './contract'
 import { geminiFailure } from './gemini-errors'
 import { addUsage, answerText, readFacts, type Facts } from './gemini-response'
-import { createUsageCounters, type UsageCounters } from './gemini-usage'
+import {
+	createUsageCounters,
+	pastRequests,
+	requestsPerCall,
+	type UsageCounters,
+} from './gemini-usage'
 import { buildPrompt } from './prompt'
 import { abortReason, oneAtATime, recordRun, type RunReport } from './runs'
 import type { EngineId, EngineSettings } from './settings'
@@ -180,7 +185,7 @@ export interface GeminiOptions {
 	readonly db: Db
 	/** The engine's settings, read at every call so that a change applies to the next one. */
 	readonly settings: () => Settings
-	/** The process's usage counters; a new engine starts its own. */
+	/** The process's usage counters; by default the engine starts its own from `engine_runs`. */
 	readonly counters?: UsageCounters
 	/** Replaces `fetch` for the SDK's requests: specs answer from recorded responses. */
 	readonly fetch?: typeof fetch
@@ -190,7 +195,7 @@ export interface GeminiOptions {
 export function createGeminiEngine({
 	db,
 	settings,
-	counters = createUsageCounters(),
+	counters = createUsageCounters(pastRequests(db, engineId)),
 	fetch,
 }: GeminiOptions): Engine {
 	const inTurn = oneAtATime()
@@ -225,7 +230,7 @@ export function createGeminiEngine({
 				}
 
 				// A card takes two requests, and both must fit before the first is sent.
-				counters.take(model, limits[options.tier], input.task === 'suggest' ? 1 : 2)
+				counters.take(model, limits[options.tier], requestsPerCall(input.task))
 
 				const client = new GoogleGenAI({ apiKey, httpOptions })
 				const request = { client, model, apiKey, options }

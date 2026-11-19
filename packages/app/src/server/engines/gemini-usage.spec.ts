@@ -2,11 +2,14 @@
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
 import { afterEach, beforeEach, describe, expect, it, setSystemTime } from 'bun:test'
+import { engineRunRowFactory } from '#tests/factories/jobs'
+import { createTestDb, type TestDb } from '#tests/setup/db'
 
 import { EngineError } from './contract'
 import {
 	createUsageCounters,
 	nextPacificMidnight,
+	pastRequests,
 	type UsageCounters,
 	type UsageLimit,
 } from './gemini-usage'
@@ -108,6 +111,44 @@ describe('gemini-usage', () => {
 			expect(error?.message).toBe(
 				'A call of 2 requests never fits the configured limit of 1 for model-a',
 			)
+		})
+
+		describe('after a restart', () => {
+			const daily = { perMinute: null, perDay: 250 }
+			const today = new Date('2026-11-19T14:00:00Z')
+			let db: TestDb
+
+			beforeEach(async () => {
+				;({ db } = await createTestDb())
+
+				const runs = engineRunRowFactory.transient({ db })
+
+				// 240 requests today: 200 suggestions and 20 two-request cards.
+				await runs.createList(200, { startedAt: today })
+				await runs.createList(20, { task: 'explain', startedAt: today })
+				// Neither counts: a run before midnight Pacific, and a refused one.
+				await runs.create({ startedAt: new Date('2026-11-19T07:59:00Z') })
+				await runs.create({ outcome: 'rate_limited', startedAt: today })
+				counters = createUsageCounters(pastRequests(db, 'gemini'))
+			})
+
+			it('refuses the 11th request of the 250 a day allows', () => {
+				const taken = Array.from({ length: 10 }, () => refusal('gemini-3.1-flash-lite', daily))
+
+				expect(taken.every((error) => error === null)).toBe(true)
+				expect(refusal('gemini-3.1-flash-lite', daily)).toMatchObject({
+					failure: { kind: 'rate_limited' },
+				})
+			})
+
+			it('counts the last minute too', async () => {
+				await engineRunRowFactory.transient({ db }).create({ task: 'research' })
+				counters = createUsageCounters(pastRequests(db, 'gemini'))
+
+				expect(refusal('gemini-3.1-flash-lite', { perMinute: 2, perDay: null })).toMatchObject({
+					failure: { kind: 'rate_limited', resetsAt: new Date('2026-11-19T15:01:00Z') },
+				})
+			})
 		})
 
 		describe('with a per-minute limit', () => {

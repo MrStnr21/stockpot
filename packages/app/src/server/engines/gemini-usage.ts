@@ -5,9 +5,15 @@
  * Gemini usage counters (docs/engines.md, "The Gemini engine"): requests per model in the last minute
  * and since midnight Pacific time, when Google resets its daily quotas. They live in memory, in the one
  * server process, behind `UsageCounters`, so they could move to a shared store if that ever became
- * necessary (docs/architecture.md). Only `gemini.ts` uses them.
+ * necessary (docs/architecture.md); they start from the runs in `engine_runs`, so a restart keeps the
+ * day's count. Only `gemini.ts` uses them.
  */
-import { EngineError } from './contract'
+import { and, eq, gte, ne } from 'drizzle-orm'
+
+import type { Db } from '#/server/db/client'
+import { engineRuns } from '#/server/db/schema/jobs'
+
+import { EngineError, type Task } from './contract'
 
 /** The owner's limits for one tier's model; `null` sets no limit. */
 export interface UsageLimit {
@@ -26,6 +32,53 @@ export interface UsageCounters {
 }
 
 const minuteMs = 60_000
+
+// Long enough to hold a whole Pacific day, even the 25-hour one when daylight saving time ends.
+const pacificDayMs = 25 * 3_600_000
+
+/** How many requests a call takes: a card is the facts, then the card. */
+export function requestsPerCall(task: Task): number {
+	return task === 'suggest' ? 1 : 2
+}
+
+/** Requests an engine made before the counters started: when, to which model and how many. */
+export interface PastRequests {
+	readonly model: string
+	readonly at: number
+	readonly requests: number
+}
+
+/**
+ * The engine's runs of the last Pacific day, as requests. A run refused as `rate_limited`, by the
+ * counters or by Google, is left out; any other run counts in full, even one that failed before a
+ * request, which errs on the side of the limit. A run counts against the model it records, which is
+ * the model Gemini reported.
+ */
+export function pastRequests(db: Db, engine: string): PastRequests[] {
+	const since = new Date(Date.now() - pacificDayMs)
+
+	const columns = {
+		model: engineRuns.model,
+		task: engineRuns.task,
+		startedAt: engineRuns.startedAt,
+	}
+
+	const runs = db
+		.select(columns)
+		.from(engineRuns)
+		.where(
+			and(
+				eq(engineRuns.engine, engine),
+				gte(engineRuns.startedAt, since),
+				ne(engineRuns.outcome, 'rate_limited'),
+			),
+		)
+		.all()
+
+	return runs.flatMap(({ model, task, startedAt }) =>
+		model === null ? [] : [{ model, at: startedAt.getTime(), requests: requestsPerCall(task) }],
+	)
+}
 
 const pacific = new Intl.DateTimeFormat('en-US', {
 	timeZone: 'America/Los_Angeles',
@@ -96,9 +149,30 @@ function refuse(model: string, resetsAt: number, window: string): never {
 	)
 }
 
-/** Counters that start at zero; the engine creates them once per process. */
-export function createUsageCounters(): UsageCounters {
+/** Counts the past requests of today and of the last minute into each model's usage. */
+function seed(past: readonly PastRequests[]): Map<string, ModelUsage> {
+	const now = Date.now()
+	const today = pacificDay(now)
 	const usage = new Map<string, ModelUsage>()
+
+	for (const { model, at, requests } of past) {
+		const current = usage.get(model) ?? { minute: [], day: today, dayCount: 0 }
+		const times = at > now - minuteMs ? Array.from({ length: requests }, () => at) : []
+		const dayCount = pacificDay(at) === today ? current.dayCount + requests : current.dayCount
+
+		usage.set(model, { minute: [...current.minute, ...times], day: today, dayCount })
+	}
+
+	for (const current of usage.values()) {
+		current.minute.sort((a, b) => a - b)
+	}
+
+	return usage
+}
+
+/** Counters that start from `past`; the engine creates them once, from its runs in `engine_runs`. */
+export function createUsageCounters(past: readonly PastRequests[] = []): UsageCounters {
+	const usage = seed(past)
 
 	return {
 		take(model, { perMinute, perDay }, requests) {
