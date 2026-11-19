@@ -6,6 +6,7 @@ import type { TestDb } from '#tests/setup/db'
 import { asc } from 'drizzle-orm'
 
 import { jobs } from '#/server/db/schema/jobs'
+import type { JobRow } from '#/server/jobs/queue'
 import type { JobContext, Runner } from '#/server/jobs/types'
 
 /** A mocked job handler. */
@@ -19,8 +20,7 @@ export function succeedingHandler<Payload>(): Handler<Payload> {
 }
 
 /** Every row of the jobs table, oldest first. */
-// oxlint-disable-next-line typescript/explicit-module-boundary-types -- The row type comes from the schema.
-export function jobRows(db: TestDb) {
+export function jobRows(db: TestDb): JobRow[] {
 	return db.select().from(jobs).orderBy(asc(jobs.id)).all()
 }
 

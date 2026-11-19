@@ -99,8 +99,7 @@ async function execute(worker: Worker, job: JobRow) {
 	}, timeout)
 
 	try {
-		// SAFETY: enqueue stored this payload for this kind, typed by the same definition.
-		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- See the SAFETY note above.
+		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- SAFETY: enqueue stored this payload for this kind.
 		const run = handler.run(job.payload as never, { id: job.id, attempt: job.attempts, signal })
 
 		await Promise.race([run, expired])
@@ -163,7 +162,10 @@ async function drain(worker: Worker) {
 	}
 }
 
-/** Sets the one timer for the earliest queued job. While the worker drains, it plans when it is done. */
+/**
+ * Sets the one timer for the earliest queued job. It does nothing while the worker drains or backs off
+ * after an error: the worker plans its next wake-up itself when it is done.
+ */
 export function planWake(worker: Worker): void {
 	if (!worker.running || worker.draining !== undefined || worker.failure !== undefined) {
 		return

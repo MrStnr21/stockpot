@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
-import { and, asc, desc, eq, inArray, lte, min, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, lte, min, sql, type SQLWrapper } from 'drizzle-orm'
 
 import type { Db } from '#/server/db/client'
 import { jobs } from '#/server/db/schema/jobs'
@@ -38,8 +38,7 @@ export function insertJob(db: Queryable, { kind, payload, priority, runAt }: New
  * The next due job: queued, highest priority first, then the earliest run time, then the oldest row.
  * `jobs_queue_idx` serves both the filter and the order, so no sort runs; a spec checks the plan.
  */
-// oxlint-disable-next-line typescript/explicit-module-boundary-types -- The Drizzle query type is long; the spec reads its SQL.
-export function nextDueJob(db: Queryable, now: Date) {
+export function nextDueJob(db: Queryable, now: Date): SQLWrapper {
 	return db
 		.select({ id: jobs.id })
 		.from(jobs)
