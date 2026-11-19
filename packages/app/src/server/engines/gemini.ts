@@ -6,7 +6,7 @@
  * no other module imports. A suggestion is one structured call without search. A card is two calls:
  * facts from Google Search and the note's link, then the card as structured output from those facts,
  * because Gemini 2.5 rejects structured output together with tools and the owner's free tier allows
- * search only on Gemini 2.5 (recorded 2026-11-19). The key, the models and the limits are read from
+ * search only on Gemini 2.5 (observed in probes on 2026-11-19). The key, the models and the limits are read from
  * settings at every call.
  */
 import {
@@ -48,10 +48,10 @@ import type { EngineId, EngineSettings } from './settings'
 const engineId = 'gemini' satisfies EngineId
 
 /**
- * The derived JSON Schema as `responseJsonSchema` takes it. Real calls on 2026-11-19 showed that it
- * accepts draft-07 as derived, `pattern`, `format: uri`, `anyOf` and nullable types included, so only
- * `$schema`, which it does not use, is left out. `responseSchema` is not used: it rejects `$schema`
- * and `additionalProperties`.
+ * The derived JSON Schema as `responseJsonSchema` takes it. The recorded responses show it taking
+ * `pattern`, `format: uri`, `anyOf` and nullable types as derived; probes on 2026-11-19 saw it take
+ * `$schema` too, which it does not use, so only that is left out. `responseSchema` is not used:
+ * probes saw it reject `$schema` and `additionalProperties`.
  */
 export function geminiSchema(schema: JsonSchema): JsonSchema {
 	// oxlint-disable-next-line no-unused-vars -- The stripped keyword is named only to leave it out.
@@ -201,7 +201,7 @@ export function createGeminiEngine({
 	const inTurn = oneAtATime()
 
 	/* Retries are the job runner's, which knows the error kinds; the SDK would retry a 429 itself.
-	 * Search needs v1beta: on v1, the SDK's default, Gemini refuses it (recorded 2026-11-19). */
+	 * Search needs v1beta: on v1, the SDK's default, Gemini refused it (observed 2026-11-19). */
 	const httpOptions: HttpOptions = { apiVersion: 'v1beta', retryOptions: { attempts: 1 } }
 
 	if (fetch !== undefined) {

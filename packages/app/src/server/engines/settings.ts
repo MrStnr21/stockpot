@@ -130,8 +130,9 @@ export const routingPatchSchema = v.partial(routingSchema)
 const noModels = { fast: null, standard: null, deep: null }
 
 /*
- * Gemini's tiers start on the models the owner's free key could use for each task on 2026-11-19
- * (docs/engines.md, "The Gemini engine"): search works only on Gemini 2.5 there. Settings change them.
+ * Gemini's tiers start on the models the owner's free key could use for each task in probes on
+ * 2026-11-19 (docs/engines.md, "The Gemini engine"): search worked only on Gemini 2.5 there.
+ * Settings change them.
  */
 const geminiModels = {
 	fast: 'gemini-3.1-flash-lite',

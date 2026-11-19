@@ -122,15 +122,16 @@ side. Whatever a provider drops or ignores, an answer that breaks the format fai
   engine strips those keywords everywhere in the schema, recursing into `properties`, `$defs`, `items`, `additionalProperties`, `anyOf`, `allOf` and `oneOf` (`strictSchema` in
   [`openai-strict-schema.ts`](../packages/app/src/server/engines/openai-strict-schema.ts)). The caps
   stay in the descriptions.
-- **Gemini** (ENG-4): the schema goes in `responseJsonSchema`. Real calls on 2026-11-19 showed that
-  it accepts the derived draft-07 schema as it is, `pattern`, `format: uri`, `anyOf` and nullable
-  types included, on gemini-3.1-flash-lite, gemini-3.5-flash-lite, gemini-3.5-flash and
-  gemini-2.5-flash. The engine leaves out only `$schema`, which Gemini does not use (`geminiSchema`
-  in [`gemini.ts`](../packages/app/src/server/engines/gemini.ts)). `responseSchema` rejects the same
-  schema with `400 INVALID_ARGUMENT` (unknown fields `$schema` and `additionalProperties`) and is not
-  used; the Interactions API's `response_format` was not tried, because the engine uses
-  `generateContent`. Google's structured-output guide says `minLength` and `maxLength` are ignored,
-  so the caps stay in the descriptions. See [The Gemini engine](#the-gemini-engine).
+- **Gemini** (ENG-4): the schema goes in `responseJsonSchema`. The recorded responses show it taking
+  the derived schema without `$schema`, `pattern`, `format: uri`, `anyOf` and nullable types
+  included, on gemini-3.1-flash-lite and gemini-2.5-flash. Probes on 2026-11-19, not recorded, saw
+  it take `$schema` too, and saw `responseSchema` reject the same schema with
+  `400 INVALID_ARGUMENT` (unknown fields `$schema` and `additionalProperties`), so `responseSchema`
+  is not used. The engine leaves out only `$schema`, which Gemini does not use (`geminiSchema` in
+  [`gemini.ts`](../packages/app/src/server/engines/gemini.ts)). The Interactions API's
+  `response_format` was not tried, because the engine uses `generateContent`. Google's
+  structured-output guide says `minLength` and `maxLength` are ignored, so the caps stay in the
+  descriptions. See [The Gemini engine](#the-gemini-engine).
 - **Agent command** (ENG-3): the schema goes to the command unchanged, as its template says (see
   [The agent command](#the-agent-command)); what the agent enforces depends on the agent, so
   validation on our side is the only guarantee.
@@ -295,8 +296,8 @@ The Gemini engine
 - **Cards** (`explain` and `research`) are two requests to the tier's model. The first has Google
   Search and URL context and no schema, and writes down the facts the card needs as plain notes; the
   second writes the card as structured output from those facts, and may cite only the pages the
-  first searched or opened. Two requests, because the models a free key can search with refuse
-  structured output together with search.
+  first searched or opened. Two requests, because the models a free key could search with refused
+  structured output together with search (see [What the real calls showed](#what-the-real-calls-showed)).
 - **One request at a time**, with one `engine_runs` row per call (a card's two requests share it):
   the reported model, the input tokens (the prompt and the tool prompts), the output tokens (the
   answer and the thinking) and the searches (the queries the facts step ran). Gemini reports no
@@ -326,33 +327,36 @@ The Gemini engine
 
 ### What the real calls showed
 
-Recorded on 2026-11-19 with the owner's key, on Google's free tier, by
-[`tests/recordings/gemini.ts`](../packages/app/tests/recordings/gemini.ts), which also writes the
-response fixtures the specs answer from:
+On 2026-11-19, with the owner's key on Google's free tier. What is marked _recorded_ has a fixture
+in [`tests/recordings/gemini/`](../packages/app/tests/recordings/gemini/suggest.json), written by
+[`tests/recordings/gemini.ts`](../packages/app/tests/recordings/gemini.ts), except
+`quota-exceeded.json`, which an earlier probe wrote. Everything else was observed in probes on
+2026-11-19, not recorded.
 
-| Question                                                     | What the calls showed                                                                                                                                                                                                                              |
-| ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `responseJsonSchema` or `responseSchema`                     | `responseJsonSchema` takes the derived schema as it is, on gemini-3.1-flash-lite, gemini-3.5-flash-lite, gemini-3.5-flash and gemini-2.5-flash. `responseSchema` rejects it with 400 (unknown fields `$schema` and `additionalProperties`).        |
-| `pattern`, `format: uri`, `anyOf`, nullable types, `$schema` | `responseJsonSchema` accepts all of them. The engine leaves out `$schema` only. Whether Gemini enforces `pattern` and `format` was not tested; the Valibot schema checks them.                                                                     |
-| Structured output with Google Search                         | gemini-2.5-flash refuses it: 400 "Tool use with a response mime type: 'application/json' is unsupported". It could not be tried on Gemini 3 or later with this key (next row).                                                                     |
-| Structured output with URL context                           | Works on gemini-3.1-flash-lite.                                                                                                                                                                                                                    |
-| Search on the free tier                                      | Every Gemini 3 or later model tried (gemini-3.8-flash, gemini-3.5-flash, gemini-3.1-flash-lite, gemini-3-flash-preview) answered a request with Google Search with 429 `RESOURCE_EXHAUSTED`. gemini-2.5-flash searched and returned its grounding. |
-| API version                                                  | The SDK defaults to `v1`, where Gemini refuses the search tool ("Search as tool is not enabled for api version v1"), so the engine asks for `v1beta`.                                                                                              |
+| Question                             | What the calls showed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `responseJsonSchema`                 | _Recorded:_ it took the derived schema without `$schema` on gemini-3.1-flash-lite (the suggestion, with `pattern`; `suggest.json`) and on gemini-2.5-flash (a technology card, with `pattern`, `format: uri`, `anyOf` and nullable types; `explain-card.json`). _Observed in probes, not recorded:_ it took the schema with `$schema` on gemini-3.5-flash-lite, and a card schema on gemini-3.5-flash.                                                                                                      |
+| `responseSchema`                     | _Observed in probes, not recorded:_ 400 on gemini-3.5-flash-lite, with unknown fields `$schema` and `additionalProperties`.                                                                                                                                                                                                                                                                                                                                                                                 |
+| Enforcing `pattern` and `format`     | Not tested; the Valibot schema checks them.                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Structured output with Google Search | _Observed in probes, not recorded:_ gemini-2.5-flash refused it with 400 "Tool use with a response mime type: 'application/json' is unsupported".                                                                                                                                                                                                                                                                                                                                                           |
+| Structured output with URL context   | _Observed in probes, not recorded:_ it worked on gemini-3.1-flash-lite.                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| Search on the free tier              | _Recorded:_ gemini-2.5-flash searched with Google Search and URL context and returned its grounding (`explain-facts.json`); gemini-3-flash-preview, asked to search with structured output, answered 429 `RESOURCE_EXHAUSTED` whose only detail is a help link (`quota-exceeded.json`). _Observed in probes, not recorded:_ gemini-3.8-flash, gemini-3.5-flash and gemini-3.1-flash-lite answered the same 429 to a request with Google Search and structured output, and answered without the search tool. |
+| API version                          | _Observed, not recorded:_ on `v1`, the SDK's default, Gemini answered a request with the search tool with 400 "Search as tool is not enabled for api version v1", so the engine asks for `v1beta`.                                                                                                                                                                                                                                                                                                          |
+| A bad key                            | _Recorded:_ 400 with the reason `API_KEY_INVALID` (`bad-key.json`).                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| An overloaded model                  | _Recorded:_ 503 `UNAVAILABLE` from gemini-3.1-flash-lite (`unavailable.json`).                                                                                                                                                                                                                                                                                                                                                                                                                              |
 
-On a free key, then, search works only on Gemini 2.5, and Gemini 2.5 cannot combine it with
-structured output: hence the two-request card. Google documents structured output together with
-built-in tools for Gemini 3 and later, which on a paid key could make a card one request; that is
-not verified and not built.
+On this free key, then, Google Search worked only on Gemini 2.5, which refuses it together with
+structured output: hence the two-request card. Search without structured output on Gemini 3 or
+later was not tried, and neither was a paid key.
 
 ### Suggestion latency
 
-20 suggestions on gemini-3.1-flash-lite with minimal thinking, one at a time with a 30 s timeout,
-on 2026-11-19 on the free tier: 16 answered, 3 timed out and 1 got 503 ("high demand"). Of the 16
-answers, p50 was 3.1 s, p95 19.0 s and the fastest 1.5 s; none came within 1.5 s and 7 within the
-3 s suggestion timeout. A single suggestion earlier that day took 1.0 s. The responses reported no
-thinking tokens and the 503 named high demand, which points at load on Google's side rather than
-the request. The budget (p95 under 1.5 s) is not met on the free tier; when a suggestion misses
-it, capture falls back to history only.
+Observed on 2026-11-19, not recorded: 20 suggestions on gemini-3.1-flash-lite with minimal
+thinking, run one at a time by `tests/recordings/gemini.ts latency` with a 30 s timeout, on the
+free tier. 16 answered, 3 timed out and 1 got 503 ("high demand"). Of the 16 answers, p50 was 3.1 s,
+p95 19.0 s and the fastest 1.5 s; none came within 1.5 s and 7 within the 3 s suggestion timeout.
+The budget (p95 under 1.5 s) is not met on the free tier; when a suggestion misses it, capture
+falls back to history only.
 
 ### Search grounding terms
 
