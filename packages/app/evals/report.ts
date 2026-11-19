@@ -50,7 +50,10 @@ export interface CheckStats {
 	readonly applied: number
 	readonly passed: number
 	readonly failed: number
-	readonly passRate: number
+	/** Applied but not verifiable, as the private check for an engine whose payload is not recorded. */
+	readonly unverifiable: number
+	/** Of the verified results; `null` when none was verified. */
+	readonly passRate: number | null
 }
 
 export interface Summary {
@@ -71,7 +74,7 @@ export interface EvalReport {
 
 const checkResultSchema = v.strictObject({
 	check: v.picklist(checkIds),
-	passed: v.boolean(),
+	passed: v.nullable(v.boolean()),
 	detail: v.nullable(v.string()),
 })
 
@@ -105,7 +108,7 @@ export function percentile(values: readonly number[], p: number): number | null 
 }
 
 function hasPassed(call: CallRecord): boolean {
-	return call.error === null && call.checks.every(({ passed }) => passed)
+	return call.error === null && call.checks.every(({ passed }) => passed !== false)
 }
 
 function groupStats(calls: readonly CallRecord[]): GroupStats {
@@ -139,23 +142,25 @@ export function summarize(calls: readonly CallRecord[]): Summary {
 	const byCheck = Object.fromEntries(
 		checkIds.flatMap((id) => {
 			const applied = results.filter(({ check }) => check === id)
-			const passed = applied.filter((result) => result.passed).length
+			const passed = applied.filter((result) => result.passed === true).length
+			const failed = applied.filter((result) => result.passed === false).length
 
 			if (applied.length === 0) {
 				return []
 			}
 
-			const stats = { applied: applied.length, passed, failed: applied.length - passed }
+			const unverifiable = applied.length - passed - failed
+			const passRate = passed + failed === 0 ? null : passed / (passed + failed)
 
-			return [[id, { ...stats, passRate: passed / applied.length }]]
+			return [[id, { applied: applied.length, passed, failed, unverifiable, passRate }]]
 		}),
 	)
 
 	return { byFormat, byCheck }
 }
 
-function percent(rate: number): string {
-	return `${Math.round(rate * 100)}%`
+function percent(rate: number | null): string {
+	return rate === null ? '—' : `${Math.round(rate * 100)}%`
 }
 
 /** A duration short enough to read: milliseconds, seconds or minutes. */
@@ -187,7 +192,7 @@ function table(header: readonly string[], rows: readonly (readonly string[])[]):
 
 function failures(calls: readonly CallRecord[]): string[][] {
 	return calls.flatMap((call) => {
-		const failed = call.checks.filter(({ passed }) => !passed)
+		const failed = call.checks.filter(({ passed }) => passed === false)
 		const error = call.error === null ? [] : [[call.noteId, call.format, 'error', call.error]]
 
 		return [
@@ -217,6 +222,7 @@ export function renderMarkdown(report: EvalReport): string {
 		String(stats.applied),
 		String(stats.passed),
 		String(stats.failed),
+		String(stats.unverifiable),
 		percent(stats.passRate),
 	])
 
@@ -234,7 +240,7 @@ export function renderMarkdown(report: EvalReport): string {
 		'Latency counts only the calls that answered; the calls that failed are in Errors.',
 		table(['Format', 'Calls', 'Pass rate', 'Answered', 'Errors', 'p50', 'p95'], formatRows),
 		'## By check',
-		table(['Check', 'Applied', 'Passed', 'Failed', 'Pass rate'], checkRows),
+		table(['Check', 'Applied', 'Passed', 'Failed', 'Not verifiable', 'Pass rate'], checkRows),
 		'## Failures',
 		failureRows.length === 0 ? 'None.' : table(['Note', 'Format', 'Check', 'Detail'], failureRows),
 		'',

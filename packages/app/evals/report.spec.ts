@@ -83,8 +83,8 @@ describe('the eval report', () => {
 
 		it('counts failures per check', () => {
 			expect(report.summary.byCheck).toEqual({
-				schema: { applied: 3, passed: 3, failed: 0, passRate: 1 },
-				filler: { applied: 1, passed: 0, failed: 1, passRate: 0 },
+				schema: { applied: 3, passed: 3, failed: 0, unverifiable: 0, passRate: 1 },
+				filler: { applied: 1, passed: 0, failed: 1, unverifiable: 0, passRate: 0 },
 			})
 		})
 	})

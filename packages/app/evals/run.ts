@@ -10,7 +10,6 @@ import { dirname, join, resolve } from 'node:path'
 import * as v from 'valibot'
 
 import { openDatabase } from '#/server/db/client'
-import type { Engine } from '#/server/engines/contract'
 
 import { parseFillerPhrases } from './checks'
 import {
@@ -18,6 +17,7 @@ import {
 	evalEngines,
 	isEvalEngineId,
 	type EngineContext,
+	type EvalEngine,
 	type EvalEnv,
 } from './engines'
 import { runEval, type EvalRun } from './evaluate'
@@ -82,7 +82,7 @@ export function parseArgs(args: readonly string[]): EvalArgs {
 
 export interface MainOptions {
 	readonly env: EvalEnv
-	readonly createEngine?: (id: EvalArgs['engine'], context: EngineContext) => Engine
+	readonly createEngine?: (id: EvalArgs['engine'], context: EngineContext) => Promise<EvalEngine>
 	readonly checkLinks?: EvalRun['checkLinks']
 	readonly now?: () => number
 	readonly wait?: EvalRun['wait']
@@ -98,7 +98,8 @@ export async function main(args: readonly string[], options: MainOptions): Promi
 	const notes = await loadNotes({ publicFile, localDir: join(dirname(publicFile), 'local') })
 	const rubric = await file(join(import.meta.dir, 'rubric.md')).text()
 	const { sqlite, db } = await openDatabase({ path: ':memory:', migrationsFolder })
-	const engine = (options.createEngine ?? createEvalEngine)(engineId, { env: options.env, db })
+	const createEngine = options.createEngine ?? createEvalEngine
+	const { engine, outgoing, close } = await createEngine(engineId, { env: options.env, db })
 	const startedAt = new Date().toISOString()
 	const stamp = startedAt.slice(0, 19).replaceAll(':', '-')
 	const folder = resolve(out ?? join(import.meta.dir, 'local', 'reports', `${stamp}-${engineId}`))
@@ -116,6 +117,7 @@ export async function main(args: readonly string[], options: MainOptions): Promi
 
 	const { stopped } = await runEval({
 		engine,
+		outgoing,
 		notes: sampleOrder(notes),
 		language,
 		fillerPhrases: parseFillerPhrases(rubric, language),
@@ -128,6 +130,7 @@ export async function main(args: readonly string[], options: MainOptions): Promi
 	})
 
 	await calls.end()
+	await close()
 	sqlite.close()
 
 	const saved = parseCalls(await file(callsFile).text())

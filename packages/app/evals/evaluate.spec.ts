@@ -8,54 +8,17 @@ import {
 	privateEvalNoteFactory,
 	unknowableEvalNoteFactory,
 } from '#tests/factories/eval-notes'
-import type * as v from 'valibot'
+import { fakeEngine, type Reply } from '#tests/setup/fake-engine'
 
 import {
 	EngineError,
-	parseOutput,
-	type Engine,
 	type EngineInput,
 	type EngineNote,
-	type EngineResult,
-	type JsonValue,
-	type OutputFormat,
 	type Redacted,
 } from '#/server/engines/contract'
 
 import { runEval } from './evaluate'
 import type { CallRecord } from './report'
-
-interface Reply {
-	readonly delayMs: number
-	readonly answer: JsonValue | EngineError
-}
-
-interface Script {
-	readonly clock: { ms: number }
-	readonly received: EngineNote[]
-	readonly reply: (input: Redacted<EngineInput>) => Reply
-}
-
-/** An engine that answers from a script and moves a fake clock by each reply's delay. */
-function fakeEngine(script: Script): Engine {
-	async function run<TSchema extends v.GenericSchema>(
-		input: Redacted<EngineInput & { readonly output: OutputFormat<TSchema> }>,
-	): Promise<EngineResult<v.InferOutput<TSchema>>> {
-		script.received.push(input.note)
-
-		const { delayMs, answer } = script.reply(input)
-
-		script.clock.ms += delayMs
-
-		if (answer instanceof EngineError) {
-			throw answer
-		}
-
-		return { output: parseOutput(input.output, answer), engine: 'fake', model: null, elapsedMs: 0 }
-	}
-
-	return { id: 'fake', suggest: run, explain: run, research: run }
-}
 
 const suggestion = { categories: ['technology'], senses: [], language: 'en' }
 
@@ -88,7 +51,7 @@ function answerBadly(input: Redacted<EngineInput>): Reply {
 	return { delayMs: 1000, answer: invalid }
 }
 
-function checksOf(call: CallRecord | undefined): Record<string, boolean> {
+function checksOf(call: CallRecord | undefined): Record<string, boolean | null> {
 	return Object.fromEntries(call?.checks.map(({ check, passed }) => [check, passed]) ?? [])
 }
 
@@ -116,17 +79,35 @@ describe('runEval', () => {
 	const unknowableNote = unknowableEvalNoteFactory.build({ id: 'unknowable-note' })
 	const notes = [technologyNote, privateNote, unknowableNote]
 
+	async function privateChecks(outgoing?: { take: () => Promise<string[]> }) {
+		const clock = { ms: 0 }
+
+		const { calls } = await runEval({
+			engine: fakeEngine({ clock, received: [], reply: answerWell }),
+			notes: [privateNote],
+			language: 'en',
+			fillerPhrases: [],
+			checkLinks: async () => null,
+			now: () => clock.ms,
+			...(outgoing && { outgoing }),
+		})
+
+		return calls.map((call) => checksOf(call).private)
+	}
+
 	describe('with an engine that answers', () => {
 		let received: EngineNote[]
 		let calls: readonly CallRecord[]
 
 		beforeEach(async () => {
 			const clock = { ms: 0 }
+			const sent: string[] = []
 
 			received = []
 
 			const outcome = await runEval({
-				engine: fakeEngine({ clock, received, reply: answerWell }),
+				engine: fakeEngine({ clock, received, sent, reply: answerWell }),
+				outgoing: { take: async () => sent.splice(0) },
 				notes,
 				language: 'en',
 				fillerPhrases: ['delve into'],
@@ -183,7 +164,8 @@ describe('runEval', () => {
 
 			const outcome = await runEval({
 				engine: fakeEngine({ clock, received: [], reply: answerBadly }),
-				notes: [technologyNote],
+				outgoing: { take: async () => [] },
+				notes: [privateNote],
 				language: 'en',
 				fillerPhrases: [],
 				now: () => clock.ms,
@@ -196,11 +178,26 @@ describe('runEval', () => {
 			expect(calls.at(0)).toMatchObject({ error: 'timeout', checks: [], elapsedMs: 3000 })
 		})
 
-		it('counts an invalid answer as a schema failure', () => {
+		it('counts an invalid answer as a schema failure, and checks what it sent', () => {
 			expect(calls.at(1)).toMatchObject({
 				error: null,
-				checks: [{ check: 'schema', passed: false, detail: 'summary: Invalid length' }],
+				checks: [
+					{ check: 'schema', passed: false, detail: 'summary: Invalid length' },
+					{ check: 'private', passed: true },
+				],
 			})
+		})
+	})
+
+	describe('the private check', () => {
+		it('fails when a payload carries the private context', async () => {
+			const leaky = { take: async () => [`Note: ferritin. Context: ${privateNote.context}`] }
+
+			expect(await privateChecks(leaky)).toEqual([false, false])
+		})
+
+		it('is not verifiable for an engine whose payload is not recorded', async () => {
+			expect(await privateChecks()).toEqual([null, null])
 		})
 	})
 

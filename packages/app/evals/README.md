@@ -4,16 +4,17 @@ The eval set, the rubric and the runner that measure how well an engine answers.
 (ENG-3, ENG-4, ENG-5) is accepted on a report from this runner, measured against the thresholds in
 the [rubric](rubric.md). The engines themselves are described in [docs/engines.md](../../../docs/engines.md).
 
-| File          | What it holds                                                                       |
-| ------------- | ----------------------------------------------------------------------------------- |
-| `notes.jsonl` | The public notes, one JSON object per line                                          |
-| `local/`      | Each owner's private notes and every report; ignored by Git, never committed        |
-| `rubric.md`   | The automatic checks, the filler phrases, the manual score sheet and the thresholds |
-| `run.ts`      | The command line                                                                    |
-| `evaluate.ts` | One run: the calls and the checks                                                   |
-| `checks.ts`   | The automatic checks, as pure functions; `links.ts` holds the one that opens links  |
-| `report.ts`   | The summary, the Markdown report and the score sheet                                |
-| `engines.ts`  | The engines the eval can run and the variables each reads                           |
+| File              | What it holds                                                                       |
+| ----------------- | ----------------------------------------------------------------------------------- |
+| `notes.jsonl`     | The public notes, one JSON object per line                                          |
+| `local/`          | Each owner's private notes and every report; ignored by Git, never committed        |
+| `rubric.md`       | The automatic checks, the filler phrases, the manual score sheet and the thresholds |
+| `run.ts`          | The command line                                                                    |
+| `evaluate.ts`     | One run: the calls and the checks                                                   |
+| `checks.ts`       | The automatic checks, as pure functions; `links.ts` holds the one that opens links  |
+| `report.ts`       | The summary, the Markdown report and the score sheet                                |
+| `engines.ts`      | The engines the eval can run and the variables each reads                           |
+| `record-agent.ts` | Records what the agent command receives, then runs it                               |
 
 ## Running an eval
 
@@ -64,7 +65,10 @@ bun --env-file ~/.config/stockpot/dev.env run eval -- --engine openai-compatible
 | `agent-command`     | `STOCKPOT_AGENT_COMMAND`, the same template the server uses                                                                            |
 | `openai-compatible` | `STOCKPOT_EVAL_OPENAI_BASE_URL`, `STOCKPOT_EVAL_OPENAI_MODEL` (every tier), and `STOCKPOT_EVAL_OPENAI_KEY` when the endpoint needs one |
 
-Gemini arrives with its engine in ENG-4, as one more entry in `engines.ts`. Each run records its
+To check what a private note sends, the runner records each payload through a setting the engine
+already takes: the OpenAI-compatible base URL points at a proxy on this machine that records each
+request body and forwards it, and the agent command runs behind `record-agent.ts`, which records
+the arguments, stdin and the files they name, then runs the agent. Gemini arrives with its engine in ENG-4, as one more entry in `engines.ts`. Each run records its
 `engine_runs` rows in an in-memory database, so nothing is written to an instance.
 
 ## Notes

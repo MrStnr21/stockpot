@@ -21,7 +21,7 @@ import {
 import { abortReason } from '#/server/engines/runs'
 import { suggestionFormat } from '#/server/engines/suggestion'
 
-import { attempt, stopReason, type Failure } from './attempt'
+import { attempt, stopReason, type Attempt, type Failure } from './attempt'
 import {
 	cardLinks,
 	checkCategory,
@@ -34,8 +34,9 @@ import {
 	invalidAnswer,
 	type CheckResult,
 } from './checks'
+import type { Outgoing } from './engines'
 import { checkLinks } from './links'
-import type { EvalNote } from './notes'
+import { termOf, type EvalNote } from './notes'
 import type { CallRecord } from './report'
 
 /** The built-in categories (docs/engines.md, "Formats"); each id is its format id. */
@@ -67,12 +68,6 @@ function tierFor(format: FormatId): Tier {
 	}
 
 	return format === 'report' ? 'deep' : 'standard'
-}
-
-/* Lowercase with single spaces, close enough to capture's term for the eval; the normalization
- * that capture will use (CAP) can replace it once it exists. */
-function termOf(text: string): string {
-	return text.trim().replaceAll(/\s+/gu, ' ').toLowerCase()
 }
 
 function engineNote(note: EvalNote): EngineNote {
@@ -113,10 +108,34 @@ export interface EvalRun {
 	readonly wait?: (ms: number) => Promise<void>
 	/** Stops the run, and the call in flight, as Ctrl-C does. */
 	readonly signal?: AbortSignal
+	/** What the engine sends; without it the `private` check is not verifiable. */
+	readonly outgoing?: Outgoing | null
 }
 
-type Settings = Required<Omit<EvalRun, 'maxCalls' | 'signal'>> & {
+type Settings = Required<Omit<EvalRun, 'maxCalls' | 'signal' | 'outgoing'>> & {
 	readonly signal: AbortSignal | undefined
+	readonly outgoing: Outgoing | null
+}
+
+interface Sent<T> {
+	readonly call: Attempt<T>
+	/** The payloads the call sent, or `null` when the engine's are not recorded. */
+	readonly payloads: readonly string[] | null
+}
+
+/** Makes a call and collects what it sent; anything sent before belongs to an earlier call. */
+async function send<T>(run: Settings, call: () => Promise<T>): Promise<Sent<T>> {
+	await run.outgoing?.take()
+
+	const made = await attempt(run, call)
+	const payloads = run.outgoing === null ? null : await run.outgoing.take()
+
+	return { call: made, payloads }
+}
+
+/** The private check, for a call that reached the engine; an error may have sent nothing. */
+function privateCheck<T>(note: EvalNote, { call, payloads }: Sent<T>): CheckResult | null {
+	return call.failure?.kind === 'error' ? null : checkPrivate(note, payloads)
 }
 
 /** A checked call, and why the run must stop after it, if it must. */
@@ -144,13 +163,13 @@ async function suggestFor(note: EvalNote, run: Settings): Promise<Step> {
 
 	const options = { tier: 'fast', timeoutMs: defaultTimeoutMs.suggest, ...signalOf(run) } as const
 
-	const call = await attempt(run, async () => {
+	const sent = await send(run, async () => {
 		const result = await run.engine.suggest(input, options)
 
 		return result.output
 	})
 
-	const sent = checkPrivate(note, { note: input.note, previous: [] })
+	const { call } = sent
 
 	const checks =
 		call.failure === null
@@ -167,7 +186,7 @@ async function suggestFor(note: EvalNote, run: Settings): Promise<Step> {
 		format: 'suggestion',
 		elapsedMs: call.elapsedMs,
 		error: call.failure?.kind === 'error' ? call.failure.message : null,
-		checks: [...checks, sent].filter((result) => present(result)),
+		checks: [...checks, privateCheck(note, sent)].filter((result) => present(result)),
 		answer: call.answer,
 	}
 
@@ -189,7 +208,7 @@ async function cardFor(note: EvalNote, run: Settings): Promise<Step> {
 	const task = format === 'report' ? 'research' : 'explain'
 	const options = { tier: tierFor(format), timeoutMs: defaultTimeoutMs[task], ...signalOf(run) }
 
-	const call = await attempt<JsonValue>(run, async () => {
+	const sent = await send<JsonValue>(run, async () => {
 		const result =
 			task === 'research'
 				? await run.engine.research(redactPrivate({ ...base, task }), options)
@@ -198,7 +217,7 @@ async function cardFor(note: EvalNote, run: Settings): Promise<Step> {
 		return result.output
 	})
 
-	const sent = checkPrivate(note, { note: redactPrivate({ ...base, task }).note, previous: [] })
+	const { call } = sent
 
 	const checks =
 		call.failure === null
@@ -217,7 +236,7 @@ async function cardFor(note: EvalNote, run: Settings): Promise<Step> {
 		format,
 		elapsedMs: call.elapsedMs,
 		error: call.failure?.kind === 'error' ? call.failure.message : null,
-		checks: [...checks, sent].filter((result) => present(result)),
+		checks: [...checks, privateCheck(note, sent)].filter((result) => present(result)),
 		answer: call.answer,
 	}
 
@@ -251,6 +270,7 @@ export async function runEval(run: EvalRun): Promise<EvalOutcome> {
 		wait: async (ms) => sleep(ms),
 		...run,
 		signal: run.signal,
+		outgoing: run.outgoing ?? null,
 	}
 
 	const calls: CallRecord[] = []

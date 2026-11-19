@@ -174,26 +174,41 @@ describe('eval checks', () => {
 	})
 
 	describe('checkPrivate', () => {
-		const privateNote = evalNote({ private: true, context: 'from a lab report' })
-		const termOnly = { term: 'note', text: null, context: null, url: null, isPrivate: true }
+		const privateNote = evalNote({
+			private: true,
+			text: 'Ferritin level',
+			context: 'said "low" in a lab report',
+			url: 'https://example.com/report',
+		})
 
-		it('passes when the engine received the term alone', () => {
-			expect(checkPrivate(privateNote, { note: termOnly, previous: [] })).toMatchObject({
-				passed: true,
+		it('passes when no payload holds the private details', () => {
+			const payloads = [JSON.stringify({ prompt: 'Explain: ferritin level' })]
+
+			expect(checkPrivate(privateNote, payloads)).toMatchObject({ passed: true })
+		})
+
+		it('names every detail that left the machine, JSON-escaped or not', () => {
+			const payloads = [
+				JSON.stringify({ prompt: 'Ferritin level, said "low" in a lab report' }),
+				'see https://example.com/report',
+			]
+
+			expect(checkPrivate(privateNote, payloads)).toMatchObject({
+				passed: false,
+				detail: 'sent text, context, link',
 			})
 		})
 
-		it('names every field that leaked', () => {
-			const sent = { note: { ...termOnly, context: 'from a lab report' }, previous: [briefCard] }
-
-			expect(checkPrivate(privateNote, sent)).toMatchObject({
-				passed: false,
-				detail: 'sent context, earlier cards',
+		it('is not verifiable without the payloads', () => {
+			expect(checkPrivate(privateNote, null)).toEqual({
+				check: 'private',
+				passed: null,
+				detail: 'not verifiable for this engine',
 			})
 		})
 
 		it('does not apply to a public note', () => {
-			expect(checkPrivate(evalNote(), { note: termOnly, previous: [] })).toBeNull()
+			expect(checkPrivate(evalNote(), [])).toBeNull()
 		})
 	})
 

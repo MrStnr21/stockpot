@@ -8,9 +8,9 @@
  */
 import * as v from 'valibot'
 
-import type { EngineNote, JsonValue, OutputFormat } from '#/server/engines/contract'
+import type { JsonValue, OutputFormat } from '#/server/engines/contract'
 
-import type { EvalNote } from './notes'
+import { termOf, type EvalNote } from './notes'
 
 export const checkIds = [
 	'schema',
@@ -27,7 +27,8 @@ export type CheckId = (typeof checkIds)[number]
 
 export interface CheckResult {
 	readonly check: CheckId
-	readonly passed: boolean
+	/** `null` when the check applies but could not be verified, as for an engine it cannot observe. */
+	readonly passed: boolean | null
 	/** Why it failed, for the report. */
 	readonly detail: string | null
 }
@@ -214,26 +215,40 @@ export function parseFillerPhrases(rubric: string, language: string): string[] {
 	return list === undefined ? [] : listItems(list)
 }
 
-/** What the engine received for a note: the note and, for a card, the earlier cards. */
-export interface SentInput {
-	readonly note: EngineNote
-	readonly previous: readonly JsonValue[]
+// A value inside a JSON payload has its quotes, backslashes and line breaks escaped.
+function appearsIn(payload: string, value: string): boolean {
+	return payload.includes(value) || payload.includes(JSON.stringify(value).slice(1, -1))
 }
 
-/** A private note reaches the engine as its term alone: no text, context, link or earlier cards. */
-export function checkPrivate(note: EvalNote, sent: SentInput): CheckResult | null {
+/**
+ * A private note leaves the machine as its term alone: no payload the engine sent holds its text as
+ * typed, its context or its link. `payloads` is `null` for an engine whose payload is not recorded.
+ */
+export function checkPrivate(
+	note: EvalNote,
+	payloads: readonly string[] | null,
+): CheckResult | null {
 	if (!note.private) {
 		return null
 	}
 
-	const leaked = [
-		sent.note.text === null ? null : 'text',
-		sent.note.context === null ? null : 'context',
-		sent.note.url === null ? null : 'link',
-		sent.previous.length === 0 ? null : 'earlier cards',
-	].filter((field) => field !== null)
+	if (payloads === null) {
+		return { check: 'private', passed: null, detail: 'not verifiable for this engine' }
+	}
 
-	return leaked.length === 0 ? pass('private') : fail('private', `sent ${leaked.join(', ')}`)
+	const details = [
+		{ name: 'text', value: note.text === termOf(note.text) ? null : note.text },
+		{ name: 'context', value: note.context },
+		{ name: 'link', value: note.url },
+	]
+
+	const leaked = details.filter(
+		({ value }) => value !== null && payloads.some((payload) => appearsIn(payload, value)),
+	)
+
+	return leaked.length === 0
+		? pass('private')
+		: fail('private', `sent ${leaked.map(({ name }) => name).join(', ')}`)
 }
 
 function acceptedFormats(note: EvalNote): string[] {

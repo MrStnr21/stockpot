@@ -219,3 +219,9 @@ export function sampleOrder(notes: readonly LoadedNote[]): LoadedNote[] {
 		groups.flatMap((group) => group.slice(round, round + 1)),
 	).flat()
 }
+
+/* The note's term: lowercase with single spaces, close enough to capture's for the eval. Capture's
+ * own normalization (CAP) can replace it once it exists. */
+export function termOf(text: string): string {
+	return text.trim().replaceAll(/\s+/gu, ' ').toLowerCase()
+}

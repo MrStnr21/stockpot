@@ -18,6 +18,7 @@ import {
 	type Redacted,
 } from '#/server/engines/contract'
 
+import type { EvalEngine } from './engines'
 import type { EvalReport } from './report'
 import { main, parseArgs } from './run'
 
@@ -37,6 +38,14 @@ function briefEngine(): Engine {
 	return { id: 'fake', suggest: answerBrief, explain: answerBrief, research: answerBrief }
 }
 
+async function closeNothing(): Promise<void> {
+	// The fake engine holds nothing open.
+}
+
+async function briefEvalEngine(): Promise<EvalEngine> {
+	return { engine: briefEngine(), outgoing: null, close: closeNothing }
+}
+
 function lines(notes: readonly object[]): string {
 	return notes.map((note) => `${JSON.stringify(note)}\n`).join('')
 }
@@ -44,7 +53,7 @@ function lines(notes: readonly object[]): string {
 async function runOn(notesFolder: string, out: string): Promise<EvalReport> {
 	const args = ['--engine', 'agent-command', '--notes', join(notesFolder, 'notes.jsonl')]
 
-	await main([...args, '--out', out], { env: {}, createEngine: briefEngine, now: () => 0 })
+	await main([...args, '--out', out], { env: {}, createEngine: briefEvalEngine, now: () => 0 })
 
 	return readReport(out)
 }
