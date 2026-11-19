@@ -236,8 +236,8 @@ prompt changes.
   without sources is flagged `uncertain`.
 - Links the app can build itself, such as a word's pronunciation page, are not asked of the engine.
 - Gemini's search sources are Google redirect URLs (`https://vertexaisearch.cloud.google.com/grounding-api-redirect/…`).
-  The link check (RES-2) must resolve each one to its final URL, and keep that, before a card is
-  saved.
+  A card keeps them as given until the owner decides whether the link check may resolve them (see
+  [Search grounding terms](#search-grounding-terms)).
 
 ## Privacy
 
@@ -359,31 +359,60 @@ it, capture falls back to history only.
 Google's [Gemini API terms](https://aistudio.google.com/docs/terms), read on 2026-11-19, set rules
 for results grounded with Google Search. Those that affect stockpot:
 
-- **Search Suggestions go with grounded results.** Grounded results may be shown only with their
-  Search Suggestions and links, and only to the end user who sent the prompt. The engine returns the
-  suggestions' HTML as `searchSuggestions` on the result, from the facts step's
-  `groundingMetadata.searchEntryPoint.renderedContent`. Rendering it is the card interface's job, a
+- **Search Suggestions go with grounded results.** A grounded result may be shown only with its
+  Search Suggestions or other links, and only to the end user who sent the prompt. The engine
+  returns the suggestions' HTML as `searchSuggestions` on the result, from the facts request's
+  `groundingMetadata.searchEntryPoint.renderedContent`. Showing it is the card interface's job, a
   later story; nothing renders it yet.
 - **Storing is limited.** Grounded results may not be cached, syndicated, analysed or used for
-  training, and their text may be stored for up to two years, only for the purposes the terms list.
-- **No modification.** Grounded results may not be modified or have other content interspersed
-  with them, nothing may be placed between a link or a Search Suggestion, and clicks on a Search
-  Suggestion may not be tracked.
+  training. Their text may be stored for up to two years, and only to evaluate and improve how the
+  app displays it, in an end user's chat history so that they can view it, or temporarily to
+  resubmit it (next rule); otherwise grounded results and Search Suggestions may be kept only as
+  long as the law requires.
+- **Resubmitting grounded text.** The terms allow sending a grounded result's text back,
+  temporarily and through a function call, in a later prompt for a refined result, on three
+  conditions. The two-request card relies on this clause:
+  - _The interim result is used for nothing else._ The facts exist only in memory during the call:
+    the engine passes them to the card request and returns the card alone. They are not stored,
+    logged or written to `engine_runs`.
+  - _An interim result the end user never sees is deleted once the final result exists._ The facts
+    are never shown, and nothing keeps them after the call ends.
+  - _The final result is shown with its Search Suggestions or other links_ (at most five Search
+    Suggestions). The engine returns `searchSuggestions` with the card; storing them with the card
+    and showing them next to it are left to later stories, the research feature and the card
+    interface.
+  - The clause names a function call; the engine puts the facts in the text of an ordinary second
+    request instead. Whether that counts is part of the open decision below.
+- **No modification, interstitials or redirection.** Grounded results and Search Suggestions may
+  not be modified or have other content interspersed with them. Nothing may be placed between a
+  link or Search Suggestion and its destination page, end users may not be redirected away from the
+  destination page or kept from seeing it in full, and clicks on a Search Suggestion may not be
+  tracked.
+- **No collecting links.** Links and Search Suggestions may not be extracted or collected for
+  another purpose, which includes collecting links by automated means, building an index from them
+  and using them to pick pages to crawl or scrape.
 
-**Open decision for the owner.** A Gemini card is written by a second request from grounded facts,
-and kept in Base for as long as the owner wants it. Does that fit these terms: is the card a modified
-grounded result, does keeping it count as storage the terms do not allow, and must its Search
-Suggestions stay next to it? If it does not fit, the options include: Gemini keeps search only for
-fallback drafts, which another engine redoes later; cards from Gemini keep their Search Suggestions
-next to them for as long as they are kept; or cards that need search route to the agent command.
-The engine returns `searchSuggestions` either way.
+**Open decision for the owner.** Two questions, and the engine returns `searchSuggestions` whatever
+the answers:
+
+- **Cards in Base.** A Gemini card is the final result of a resubmission, kept in Base for as long
+  as the owner wants it. Does keeping it fit the purposes the terms allow storage for, must its
+  Search Suggestions be stored and shown next to it for as long as it is kept, and does an ordinary
+  second request count as the function call the clause names? If it does not fit, the options
+  include: Gemini keeps search only for fallback drafts, which another engine redoes later; cards
+  from Gemini keep their Search Suggestions next to them for as long as they are kept; or cards that
+  need search route to the agent command.
+- **Redirect URLs.** A card's search sources are Google's redirect URLs (see
+  [Sources](#sources)). Resolving them to their final address before a card is saved, as RES-2's
+  link check would, may count as collecting links by automated means. Until the owner decides, a
+  card keeps each redirect URL as given.
 
 ### Sources
 
-The facts step's sources are the pages URL context opened and Google's redirect URLs for the search
-results (`https://vertexaisearch.cloud.google.com/grounding-api-redirect/…`), titled with the site's
-domain. The card cites them as given; RES-2's link check must resolve each redirect to its final URL
-before the card is saved (see [Links](#links)).
+The facts request's sources are the pages URL context opened and Google's redirect URLs for the
+search results (`https://vertexaisearch.cloud.google.com/grounding-api-redirect/…`), titled with the
+site's domain. The card cites them as given; whether they may be resolved to their final address is
+part of the open decision above.
 
 ## The OpenAI-compatible engine
 
