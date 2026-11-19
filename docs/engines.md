@@ -366,6 +366,30 @@ p95 19.0 s and the fastest 1.5 s; none came within 1.5 s and 7 within the 3 s su
 The budget (p95 under 1.5 s) is not met on the free tier; when a suggestion misses it, capture
 falls back to history only.
 
+### The first eval on a free key
+
+On 2026-11-19 the eval (`bun run eval -- --engine gemini --limit 30 --language ru`) ran twice on
+the owner's free key. Its reports stay local, in `packages/app/evals/local/reports/`. The second
+run set fast `gemini-2.5-flash-lite`, standard and deep `gemini-2.5-flash`, and a 10 s suggestion
+timeout. It stopped after 22 calls.
+
+- **Gemini 2.5 Flash-Lite is closed to new keys.** Every call to it answered 404, saying the model
+  is no longer available to new users. Every suggestion and every vocabulary card failed for that
+  reason. On a new free key, then, the only model that searches is Gemini 2.5 Flash.
+- **Cards on Gemini 2.5 Flash** passed `schema`, `oneSentence`, `filler` and `private` every time.
+  Latency was 11–18 s at p50 per format, and the one idea report took 46 s.
+- **The daily quota ran out after about 20 Gemini 2.5 Flash requests, counting the day's earlier
+  probes.** That is about ten cards; the next reset is at midnight Pacific. A free key cannot carry
+  a nightly batch.
+- **Search redirect links fail the link check.** The `vertexaisearch.cloud.google.com/grounding-api-redirect/…`
+  sources answered the check's requests with 403 or 404, so only 1 of 7 cards passed `links`. How
+  stockpot treats these links is part of the open decision below.
+- **The invented term got two sources.** The composed note made to be unknowable came back with
+  sources instead of `uncertain`, failing the check that guards against invented facts.
+
+A free key works for trying the engine, but not for running stockpot. A paid key (Gemini 3 search,
+higher quotas), or another engine as the primary, is the way to run it.
+
 ### Search grounding terms
 
 Google's [Gemini API terms](https://aistudio.google.com/docs/terms), read on 2026-11-19, set rules

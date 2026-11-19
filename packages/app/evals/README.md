@@ -90,19 +90,22 @@ the arguments, stdin and the files they name, then runs the agent. Each run reco
 The Gemini defaults do not suit a free key, so override them for the run:
 
 ```sh
-bun --env-file ~/.config/stockpot/dev.env run eval -- --engine gemini \
-  --model fast=gemini-2.5-flash-lite --model standard=gemini-2.5-flash \
+bun --env-file ~/.config/stockpot/dev.env run eval -- --engine gemini --limit 20 \
+  --model fast=gemini-2.5-flash --model standard=gemini-2.5-flash \
   --model deep=gemini-2.5-flash --suggest-timeout 10000
 ```
 
-- **Every tier on Gemini 2.5.** On the free tier, Google Search works only on Gemini 2.5 models:
-  the default `fast` model, a Gemini 3 model, answers a search with 429 (see
+- **Every tier on Gemini 2.5 Flash.** On the free tier, Google Search works only on Gemini 2.5
+  models: the default `fast` model, a Gemini 3 model, answers a search with 429 (see
   [What the real calls showed](../../../docs/engines.md#what-the-real-calls-showed)). Every tier's
-  cards search, `fast` included: it writes the vocabulary cards.
-- **`fast=gemini-2.5-flash-lite`**, the quickest Gemini 2.5 model for suggestions, which the engine
-  sends with thinking turned off (`thinkingBudget: 0`).
+  cards search, `fast` included, because it writes the vocabulary cards. Gemini 2.5 Flash-Lite
+  would be quicker, but on 2026-11-19 it answered 404 to new keys (see
+  [The first eval on a free key](../../../docs/engines.md#the-first-eval-on-a-free-key)). The
+  engine sends Gemini 2.5 Flash suggestions with thinking turned off (`thinkingBudget: 0`).
 - **`deep=gemini-2.5-flash`** rather than the default `gemini-2.5-pro`, whose free quota is smaller
   than Flash's, so that the idea reports do not stop the run on a limit.
+- **`--limit 20`**, because a free key's daily quota for Gemini 2.5 Flash ran out after about 20
+  requests, and a card takes two.
 - **`--suggest-timeout 10000`**, because the product's 3 s suggestion timeout cuts off most
   free-tier answers: of 20 suggestions measured on the free tier, 7 answered within 3 s, and the
   answers had a p95 of 19 s (see
