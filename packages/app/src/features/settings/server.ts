@@ -146,26 +146,51 @@ function describeIssue(issue: v.BaseIssue<unknown>) {
 /** The database or a transaction on it: both run the same synchronous queries. */
 type Queries = Db | Parameters<Parameters<Db['transaction']>[0]>[0]
 
+interface StoredSettings {
+	/** Every stored section that validates, as a patch over the defaults. */
+	readonly sections: SettingsPatch
+	/** One line per field of a stored section that no longer validates. */
+	readonly issues: readonly string[]
+}
+
+/** Parses each stored section on its own, so one invalid section leaves the others readable. */
+function readStored(db: Queries): StoredSettings {
+	return db
+		.select()
+		.from(settingsTable)
+		.all()
+		.reduce<StoredSettings>(
+			({ sections, issues }, row) => {
+				const result = v.safeParse(settingsPatchSchema, { [row.key]: row.value })
+
+				return result.success
+					? { sections: { ...sections, ...result.output }, issues }
+					: { sections, issues: [...issues, ...result.issues.map(describeIssue)] }
+			},
+			{ sections: {}, issues: [] },
+		)
+}
+
 /** Reads every section, falling back to the defaults; a stored value that no longer validates throws. */
 export function readSettings(db: Queries): Settings {
-	const rows = db.select().from(settingsTable).all()
-	const stored = Object.fromEntries(rows.map((row) => [row.key, row.value]))
-	const result = v.safeParse(settingsPatchSchema, stored)
+	const { sections, issues } = readStored(db)
 
-	if (!result.success) {
-		throw new Error(`Stored settings are invalid: ${result.issues.map(describeIssue).join('; ')}`)
+	if (issues.length > 0) {
+		throw new Error(`Stored settings are invalid: ${issues.join('; ')}`)
 	}
 
-	return applyPatch(defaultSettings(), result.output)
+	return applyPatch(defaultSettings(), sections)
 }
 
 /**
  * Applies a validated patch and stores the sections it touches. Reading, merging and writing share
  * one synchronous transaction, so two patches to the same section cannot drop each other's fields.
+ * A stored section that no longer validates counts as its defaults here, so a patch can repair it;
+ * a section the patch leaves out is not written.
  */
 export function updateSettings(db: Db, patch: SettingsPatch): Settings {
 	return db.transaction((tx) => {
-		const next = applyPatch(readSettings(tx), patch)
+		const next = applyPatch(applyPatch(defaultSettings(), readStored(tx).sections), patch)
 
 		const rows = sectionKeys.flatMap((key) =>
 			patch[key] === undefined ? [] : [{ key, value: next[key] }],

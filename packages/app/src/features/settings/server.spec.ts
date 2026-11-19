@@ -124,6 +124,19 @@ describe('settings', () => {
 		it('refuses to read it', () => {
 			expect(() => readSettings(db)).toThrow('Stored settings are invalid: digest.limit')
 		})
+
+		it('lets a patch replace it', () => {
+			updateSettings(db, { digest: { limit: 3 } })
+
+			expect(readSettings(db).digest).toEqual({ ...defaultSettings().digest, limit: 3 })
+		})
+
+		it('keeps the other sections apart from it', () => {
+			updateSettings(db, { cardLanguage: 'fr' })
+			updateSettings(db, { digest: { time: '06:00' } })
+
+			expect(readSettings(db)).toMatchObject({ cardLanguage: 'fr', digest: { time: '06:00' } })
+		})
 	})
 
 	describe('the time zone', () => {
