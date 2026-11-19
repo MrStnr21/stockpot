@@ -2,9 +2,9 @@
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
 /*
- * The owner account and web sessions (D5). This is the only module that reads the session cookie or
- * the sessions table: the middleware resolves the owner through it, and the setup, sign-in and
- * sign-out handlers call it.
+ * The owner account, web sessions and device tokens (D5). This is the only module that reads the
+ * session cookie, a device token or their tables: the middleware resolves the owner through it, and
+ * the setup, sign-in, sign-out and device handlers call it.
  */
 import { config } from '#/server/config'
 import type { Db } from '#/server/db/client'
@@ -14,6 +14,15 @@ import { mayUseCookie, type CookieJar, type Owner, type ResolverContext } from '
 
 import { createBackoff, type Backoff } from './backoff'
 import { knownBrowser, rememberBrowser } from './browsers'
+import {
+	createDevice,
+	listDevices,
+	presentedDeviceToken,
+	resolveDevice,
+	revokeDevice,
+	type CreatedDevice,
+	type Device,
+} from './devices'
 import {
 	createSetupCode,
 	hashPassword,
@@ -31,6 +40,8 @@ import {
 	sessionCookie,
 } from './sessions'
 import { secretsMatch } from './tokens'
+
+export { newDeviceSchema, type CreatedDevice, type Device } from './devices'
 
 export { setupFormSchema, signInFormSchema } from './owner'
 
@@ -60,6 +71,15 @@ export interface CheckedSignIn {
 
 export type SignInResult = CheckedSignIn | ThrottledSignIn
 
+/** The owner's devices and their tokens. Routes that call these accept a session only. */
+export interface DeviceTokens {
+	/** Creates a device; the answer holds its token, which is never readable again. */
+	readonly create: (name: string) => CreatedDevice
+	readonly list: () => Device[]
+	/** Returns whether the device existed. */
+	readonly revoke: (id: number) => boolean
+}
+
 export interface Auth {
 	/**
 	 * Whether the instance still waits for its owner. While it does, a setup code exists and has been
@@ -73,6 +93,7 @@ export interface Auth {
 	/** Ends the request's session and drops its cookie. */
 	readonly signOut: (context: ResolverContext) => void
 	readonly resolveOwner: (context: ResolverContext) => Promise<Owner | null>
+	readonly devices: DeviceTokens
 }
 
 /** The setup code of an instance without an owner, once one has been printed. */
@@ -196,6 +217,15 @@ export function createAuth({ db, publicOrigin, announce = printToLog }: AuthOpti
 		},
 
 		async resolveOwner({ request, cookies }) {
+			const deviceToken = presentedDeviceToken(request)
+
+			/* A device token decides alone, and the cookie is not read, so a revoked token is refused even
+			 * next to a session cookie. Browsers never attach a bearer token by themselves, so unlike the
+			 * cookie it needs no `Origin` or `Sec-Fetch-Site`. */
+			if (deviceToken !== undefined) {
+				return deviceToken === null ? null : resolveDevice(db, deviceToken)
+			}
+
 			if (!mayUseCookie(request)) {
 				return null
 			}
@@ -208,6 +238,12 @@ export function createAuth({ db, publicOrigin, announce = printToLog }: AuthOpti
 					rememberBrowser({ db: tx, cookies, cookie: browser }, now)
 				},
 			})
+		},
+
+		devices: {
+			create: (name) => createDevice(db, name),
+			list: () => listDevices(db),
+			revoke: (id) => revokeDevice(db, id),
 		},
 	}
 }

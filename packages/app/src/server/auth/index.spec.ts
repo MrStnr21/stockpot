@@ -101,7 +101,7 @@ describe('createAuth', () => {
 				result,
 				row?.passwordHash.startsWith('$argon2id$'),
 				await auth.resolveOwner(pageRequest(afterSetup)),
-			]).toEqual(['created', true, { id: 1 }])
+			]).toEqual(['created', true, { id: 1, via: 'session' }])
 		})
 	})
 
@@ -139,7 +139,7 @@ describe('createAuth', () => {
 				result,
 				await auth.resolveOwner(pageRequest(signedIn)),
 				await auth.resolveOwner(pageRequest(afterSignIn)),
-			]).toEqual([{ status: 'signed_in' }, null, { id: 1 }])
+			]).toEqual([{ status: 'signed_in' }, null, { id: 1, via: 'session' }])
 		})
 
 		it('refuses a wrong password', async () => {
@@ -273,7 +273,7 @@ describe('createAuth', () => {
 			})
 
 			it('leaves the session, as the cookie does not count', async () => {
-				expect(await auth.resolveOwner(pageRequest(signedIn))).toEqual({ id: 1 })
+				expect(await auth.resolveOwner(pageRequest(signedIn))).toEqual({ id: 1, via: 'session' })
 			})
 		})
 	})

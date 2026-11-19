@@ -7,9 +7,11 @@
  * `route` from ./http, pages read `Astro.locals.owner`, and nothing else reads cookies or tokens.
  */
 
-/** The person the instance belongs to (D5). */
+/** The person the instance belongs to (D5), and how the request signed them in. */
 export interface Owner {
 	readonly id: number
+	/** `session` for the web app's session cookie, `device` for a device token (SRV-5). */
+	readonly via: 'session' | 'device'
 }
 
 export type Access = 'public' | 'authorized'
@@ -38,7 +40,7 @@ export interface ResolverContext {
 }
 
 /**
- * Finds the owner behind a request (a session cookie, later a device token). `null` or `undefined`
+ * Finds the owner behind a request (a device token or a session cookie). `null` or `undefined`
  * means nobody; the middleware stores either as `null`.
  */
 export type OwnerResolver = (context: ResolverContext) => Promise<Owner | null | undefined>

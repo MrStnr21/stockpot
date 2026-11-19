@@ -15,7 +15,7 @@ import { createMiddleware } from './middleware'
 
 const publicOrigin = 'https://stockpot.example.ts.net'
 
-const owner: Owner = { id: 1 }
+const owner: Owner = { id: 1, via: 'session' }
 
 function formPost(origin: string) {
 	return new Request(`${publicOrigin}/settings`, {
