@@ -36,10 +36,12 @@ const layerFiles = [
 	layer('entry', 'src/**'),
 	// Setup, factories and end-to-end specs: only specs and other test support may import them.
 	layer('test-support', 'tests/**'),
+	// The eval set and runner: a tool that drives engines the way the research feature will.
+	layer('evals', 'evals/**'),
 ]
 
 const appLayers = layerFiles.flatMap(({ category }) =>
-	category === 'test-support' ? [] : [category],
+	category === 'test-support' || category === 'evals' ? [] : [category],
 )
 
 function layers(...categories: string[]) {
@@ -128,6 +130,11 @@ const policies = [
 		message: 'isomorphic code must not import runtime built-ins',
 	},
 	{ from: layers('test-support'), allow: { to: layers(...appLayers, 'test-support') } },
+	{
+		from: layers('evals'),
+		allow: { to: layers('server', 'lib', 'feature-shared', 'evals') },
+		message: 'evals/ may import only server/, lib/, feature shared/ and evals/',
+	},
 	// Specs import `bun:test` and the helpers in tests/, whatever layer they sit in. Later policies win.
 	{
 		from: layers('test'),
@@ -145,7 +152,12 @@ export default defineConfig({
 	jsPlugins: [...componentConfig.jsPlugins, 'eslint-plugin-boundaries'],
 	overrides: [
 		...componentConfig.overrides,
-		specOverride(['src/**/*.spec.ts', 'tests/setup/**/*.spec.ts', 'tests/factories/**/*.spec.ts']),
+		specOverride([
+			'src/**/*.spec.ts',
+			'tests/setup/**/*.spec.ts',
+			'tests/factories/**/*.spec.ts',
+			'evals/**/*.spec.ts',
+		]),
 		{
 			// Playwright has no `it`: e2e specs keep `test`, inside one top-level `test.describe`.
 			files: ['tests/e2e/**/*.ts'],
