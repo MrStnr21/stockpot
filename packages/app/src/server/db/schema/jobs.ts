@@ -37,7 +37,8 @@ export const jobs = sqliteTable(
 
 export const engineTasks = ['suggest', 'explain', 'research'] as const
 
-export const engineOutcomes = ['ok', 'rate_limited', 'auth', 'timeout', 'invalid'] as const
+/** The four `EngineError` kinds, and `error` for any other failure: a crash, or a call its caller aborted. */
+export const engineOutcomes = ['ok', 'rate_limited', 'auth', 'timeout', 'invalid', 'error'] as const
 
 /** One call to an engine, for usage limits and cost; a suggestion runs outside any job. */
 export const engineRuns = sqliteTable(

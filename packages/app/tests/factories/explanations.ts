@@ -25,7 +25,7 @@ export const explanationRowFactory = Factory.define<
 		format: 'technology',
 		language: 'en',
 		body: { summary: faker.lorem.sentence(), analogy: faker.lorem.sentence() },
-		engine: 'agent-cli',
+		engine: 'agent-command',
 		promptVersion: 'v1',
 	}
 })
