@@ -99,5 +99,8 @@ export function readFacts(response: GenerateContentResponse, report: RunReport):
 		},
 	)
 
-	return { text, sources: [...opened, ...searched] }
+	// URL context's page also comes back as a grounding chunk, with a better title, which wins.
+	const byUri = new Map([...opened, ...searched].map((source) => [source.uri, source]))
+
+	return { text, sources: [...byUri.values()] }
 }

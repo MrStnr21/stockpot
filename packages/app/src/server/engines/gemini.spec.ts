@@ -144,7 +144,8 @@ describe('gemini', () => {
 				])
 				expect(sent[0]?.body).not.toHaveProperty('generationConfig.responseMimeType')
 				expect(sent[1]?.body).not.toHaveProperty('tools')
-				expect(sent[1]?.text).toContain('- https://webassembly.org/: https://webassembly.org/')
+				expect(sent[1]?.text).toContain('- WebAssembly: https://webassembly.org/')
+				expect(sent[1]?.text).not.toContain('- https://webassembly.org/: https://webassembly.org/')
 				expect(sent[1]?.text).toContain('vertexaisearch.cloud.google.com/grounding-api-redirect')
 			})
 
@@ -214,6 +215,18 @@ describe('gemini', () => {
 				}, 5)
 
 				expect(await call).toBe(reason)
+			})
+
+			it('never passes the key on in an error from the network', async () => {
+				answers = [
+					async () => {
+						throw new TypeError('Could not connect with key test-key-a')
+					},
+				]
+
+				const error = await errorOf(engine.suggest(suggestInput, fast))
+
+				expect(error.message).toBe('Could not connect with key [key]')
 			})
 
 			it('fails without a key, sending nothing', async () => {

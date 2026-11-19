@@ -134,7 +134,17 @@ async function withDeadline<T>(
 				throw abortReason(controller.signal)
 			}
 
-			throw error instanceof ApiError ? geminiFailure(error, apiKey) : error
+			if (error instanceof ApiError) {
+				throw geminiFailure(error, apiKey)
+			}
+
+			// A network error may quote the request, key included; the job keeps its message.
+			if (error instanceof Error && error.message.includes(apiKey)) {
+				// oxlint-disable-next-line preserve-caught-error -- The cause quotes the key, which must not reach the job.
+				throw new Error(error.message.replaceAll(apiKey, '[key]'))
+			}
+
+			throw error
 		}
 	}
 
@@ -200,9 +210,10 @@ export function createGeminiEngine({
 }: GeminiOptions): Engine {
 	const inTurn = oneAtATime()
 
-	/* Retries are the job runner's, which knows the error kinds; the SDK would retry a 429 itself.
-	 * Search needs v1beta: on v1, the SDK's default, Gemini refused it (observed 2026-11-19). */
-	const httpOptions: HttpOptions = { apiVersion: 'v1beta', retryOptions: { attempts: 1 } }
+	/* No `retryOptions`: the SDK retries only when given them, and retries are the job runner's,
+	 * which knows the error kinds. Search needs v1beta: on v1, the SDK's default, Gemini refused it
+	 * (observed 2026-11-19). */
+	const httpOptions: HttpOptions = { apiVersion: 'v1beta' }
 
 	if (fetch !== undefined) {
 		httpOptions.fetch = fetch

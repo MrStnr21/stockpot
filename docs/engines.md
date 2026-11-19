@@ -292,7 +292,9 @@ The Gemini engine
   `standard` and `gemini-2.5-pro` for `deep`: the models a free key could use for each task on
   2026-11-19 (see [What the real calls showed](#what-the-real-calls-showed)). A call fails with an
   ordinary error, and records its run, when the key or the tier's model is not set.
-- **Suggestions** are one request with structured output, minimal thinking and no tools.
+- **Suggestions** are one request with structured output, minimal thinking and no tools. Minimal
+  thinking is the Gemini 3 `thinkingLevel` setting, so the `fast` tier expects a Gemini 3 or later
+  model; a Gemini 2.5 model was not tried with it.
 - **Cards** (`explain` and `research`) are two requests to the tier's model. The first has Google
   Search and URL context and no schema, and writes down the facts the card needs as plain notes; the
   second writes the card as structured output from those facts, and may cite only the pages the
