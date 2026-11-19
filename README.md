@@ -51,6 +51,34 @@ runs on (its `TZ`), or UTC when that is not a named zone.
 Engine keys are stored in the database as plain text and never sent back to a browser, so keep the
 data directory readable only by the account that runs stockpot, and treat its backups the same way.
 
+## First run and signing in
+
+An instance belongs to one owner. Until you create that owner, the server prints a one-time setup
+code to its log every time it starts:
+
+```text
+stockpot has no owner yet. To claim this instance, open https://stockpot.example.ts.net/setup and enter the setup code 7K2M-Q9XD-4PRT-H8WN. ...
+```
+
+Open `/setup`, enter the code and choose a password of at least 12 characters. Only someone who can
+read the server's log can claim the instance, so it is safe to start stockpot where others can
+reach it. The code stops working once the owner exists, and a restart replaces it with a new one.
+
+- **Sessions.** Signing in sets a cookie that is `HttpOnly`, `SameSite=Lax`, and `Secure` with the
+  `__Host-` prefix when `STOCKPOT_PUBLIC_ORIGIN` is HTTPS. The database stores only a hash of its
+  token. A session lasts 30 days and its token is replaced after a day of use, so a phone you open
+  regularly stays signed in, and it survives a server restart. Signing out deletes it. A request that
+  changes something counts the cookie only when the browser sends `Origin` or `Sec-Fetch-Site`; other
+  clients use device tokens.
+- **Backoff.** Three wrong passwords in a row are free. After that each attempt waits twice as long
+  as the one before, from 1 second up to 5 minutes, and an hour without a wrong password resets the
+  count. The wait never grows further, so you are never locked out for good, and devices that are
+  already signed in are not affected. The count is kept in memory for the whole instance and starts
+  again when the server restarts.
+- **A forgotten password.** Stop stockpot, delete the owner with
+  `sqlite3 <data directory>/stockpot.db "DELETE FROM owner"`, and start it again: it prints a new
+  setup code, and creating the owner again ends every old session.
+
 ## License
 
 stockpot is free software, licensed under the GNU Affero General Public License, version 3 or any
