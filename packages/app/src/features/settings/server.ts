@@ -143,9 +143,12 @@ function describeIssue(issue: v.BaseIssue<unknown>) {
 	return `${v.getDotPath(issue) ?? 'settings'}: ${issue.message}`
 }
 
+/** The database or a transaction on it: both run the same synchronous queries. */
+type Queries = Db | Parameters<Parameters<Db['transaction']>[0]>[0]
+
 /** Reads every section, falling back to the defaults; a stored value that no longer validates throws. */
-export async function readSettings(db: Db): Promise<Settings> {
-	const rows = await db.select().from(settingsTable)
+export function readSettings(db: Queries): Settings {
+	const rows = db.select().from(settingsTable).all()
 	const stored = Object.fromEntries(rows.map((row) => [row.key, row.value]))
 	const result = v.safeParse(settingsPatchSchema, stored)
 
@@ -156,35 +159,38 @@ export async function readSettings(db: Db): Promise<Settings> {
 	return applyPatch(defaultSettings(), result.output)
 }
 
-/** Applies a validated patch and stores the sections it touches, in one statement. */
-export async function updateSettings(db: Db, patch: SettingsPatch): Promise<Settings> {
-	const next = applyPatch(await readSettings(db), patch)
+/**
+ * Applies a validated patch and stores the sections it touches. Reading, merging and writing share
+ * one synchronous transaction, so two patches to the same section cannot drop each other's fields.
+ */
+export function updateSettings(db: Db, patch: SettingsPatch): Settings {
+	return db.transaction((tx) => {
+		const next = applyPatch(readSettings(tx), patch)
 
-	const rows = sectionKeys.flatMap((key) =>
-		patch[key] === undefined ? [] : [{ key, value: next[key] }],
-	)
+		const rows = sectionKeys.flatMap((key) =>
+			patch[key] === undefined ? [] : [{ key, value: next[key] }],
+		)
 
-	if (rows.length > 0) {
-		await db
-			.insert(settingsTable)
-			.values(rows)
-			.onConflictDoUpdate({
-				target: settingsTable.key,
-				set: { value: sql`excluded.value`, updatedAt: new Date() },
-			})
-	}
+		if (rows.length > 0) {
+			tx.insert(settingsTable)
+				.values(rows)
+				.onConflictDoUpdate({
+					target: settingsTable.key,
+					set: { value: sql`excluded.value`, updatedAt: new Date() },
+				})
+				.run()
+		}
 
-	return next
+		return next
+	})
 }
 
 /**
  * The time zone daily schedules fire in. `server/` cannot import a feature, so whatever starts the
  * job runner (SRV-6) hands it `() => readTimeZone(db)`.
  */
-export async function readTimeZone(db: Db): Promise<string> {
-	const { digest } = await readSettings(db)
-
-	return digest.timeZone
+export function readTimeZone(db: Db): string {
+	return readSettings(db).digest.timeZone
 }
 
 /** Settings as they may leave the server: every key and the agent command reduced to its state. */

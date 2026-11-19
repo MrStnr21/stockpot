@@ -37,12 +37,12 @@ describe('settings', () => {
 	})
 
 	describe('on a new instance', () => {
-		it('reads the defaults', async () => {
-			expect(await readSettings(db)).toEqual(defaultSettings())
+		it('reads the defaults', () => {
+			expect(readSettings(db)).toEqual(defaultSettings())
 		})
 
-		it('defaults the time zone to the server', async () => {
-			expect(await readTimeZone(db)).toBe(new Intl.DateTimeFormat().resolvedOptions().timeZone)
+		it('defaults the time zone to the server', () => {
+			expect(readTimeZone(db)).toBe(new Intl.DateTimeFormat().resolvedOptions().timeZone)
 		})
 
 		it('ships no engine configured', () => {
@@ -51,25 +51,25 @@ describe('settings', () => {
 	})
 
 	describe('updateSettings', () => {
-		it('reads back what it stored', async () => {
+		it('reads back what it stored', () => {
 			const configured = configuredSettingsFactory.build()
 
-			const returned = await updateSettings(db, configured)
+			const returned = updateSettings(db, configured)
 
 			expect(returned).toEqual(configured)
-			expect(await readSettings(db)).toEqual(configured)
+			expect(readSettings(db)).toEqual(configured)
 		})
 
-		it('keeps what a patch leaves out', async () => {
+		it('keeps what a patch leaves out', () => {
 			const configured = configuredSettingsFactory.build()
 
-			await updateSettings(db, configured)
-			await updateSettings(db, {
+			updateSettings(db, configured)
+			updateSettings(db, {
 				digest: { limit: 3 },
 				engines: { gemini: { models: { fast: 'faster' } } },
 			})
 
-			expect(await readSettings(db)).toEqual({
+			expect(readSettings(db)).toEqual({
 				...configured,
 				digest: { ...configured.digest, limit: 3 },
 				engines: {
@@ -82,19 +82,37 @@ describe('settings', () => {
 			})
 		})
 
-		it('clears a key set to null', async () => {
-			await updateSettings(db, configuredSettingsFactory.build())
-			await updateSettings(db, { engines: { gemini: { apiKey: null } } })
+		it('keeps both of two concurrent patches to one section', async () => {
+			await Promise.all([
+				Promise.resolve().then(() =>
+					updateSettings(db, { engines: { gemini: { apiKey: 'gemini-key' } } }),
+				),
+				Promise.resolve().then(() =>
+					updateSettings(db, {
+						engines: { 'openai-compatible': { baseUrl: 'http://localhost:11434/v1' } },
+					}),
+				),
+			])
 
-			const { engines } = await readSettings(db)
+			expect(readSettings(db).engines).toMatchObject({
+				gemini: { apiKey: 'gemini-key' },
+				'openai-compatible': { baseUrl: 'http://localhost:11434/v1' },
+			})
+		})
+
+		it('clears a key set to null', () => {
+			updateSettings(db, configuredSettingsFactory.build())
+			updateSettings(db, { engines: { gemini: { apiKey: null } } })
+
+			const { engines } = readSettings(db)
 
 			expect(engines.gemini.apiKey).toBeNull()
 		})
 
-		it('feeds the time zone getter', async () => {
-			await updateSettings(db, { digest: { timeZone: 'America/New_York' } })
+		it('feeds the time zone getter', () => {
+			updateSettings(db, { digest: { timeZone: 'America/New_York' } })
 
-			expect(await readTimeZone(db)).toBe('America/New_York')
+			expect(readTimeZone(db)).toBe('America/New_York')
 		})
 	})
 
@@ -103,10 +121,8 @@ describe('settings', () => {
 			await db.insert(settingsTable).values({ key: 'digest', value: { limit: 0 } })
 		})
 
-		it('refuses to read it', async () => {
-			const failure = await readSettings(db).then(() => '', String)
-
-			expect(failure).toContain('Stored settings are invalid: digest.limit')
+		it('refuses to read it', () => {
+			expect(() => readSettings(db)).toThrow('Stored settings are invalid: digest.limit')
 		})
 	})
 
@@ -135,10 +151,8 @@ describe('settings', () => {
 				await db.insert(settingsTable).values({ key: 'digest', value: { timeZone: '+05:00' } })
 			})
 
-			it('is never returned', async () => {
-				const failure = await readTimeZone(db).then(() => '', String)
-
-				expect(failure).toContain('Stored settings are invalid: digest.timeZone')
+			it('is never returned', () => {
+				expect(() => readTimeZone(db)).toThrow('Stored settings are invalid: digest.timeZone')
 			})
 		})
 	})
@@ -166,9 +180,9 @@ describe('settings', () => {
 		let configured: Settings
 		let command: string
 
-		beforeEach(async () => {
-			await updateSettings(db, configuredSettingsFactory.build())
-			configured = await readSettings(db)
+		beforeEach(() => {
+			updateSettings(db, configuredSettingsFactory.build())
+			configured = readSettings(db)
 			command = agentCommand()
 		})
 
