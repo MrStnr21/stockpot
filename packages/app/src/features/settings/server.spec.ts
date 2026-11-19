@@ -25,6 +25,10 @@ function secretsOf({ engines }: Settings) {
 	)
 }
 
+function parseZone(timeZone: string) {
+	return v.safeParse(settingsPatchSchema, { digest: { timeZone } })
+}
+
 describe('settings', () => {
 	let db: TestDb
 
@@ -103,6 +107,39 @@ describe('settings', () => {
 			const failure = await readSettings(db).then(() => '', String)
 
 			expect(failure).toContain('Stored settings are invalid: digest.limit')
+		})
+	})
+
+	describe('the time zone', () => {
+		it.each(['Europe/Berlin', 'America/New_York', 'UTC', 'Europe/Kyiv', 'Asia/Kolkata'])(
+			'accepts %s',
+			(zone) => {
+				expect(parseZone(zone).output).toEqual({ digest: { timeZone: zone } })
+			},
+		)
+
+		it('takes the runtime spelling of a zone', () => {
+			expect(parseZone('europe/berlin').output).toEqual({ digest: { timeZone: 'Europe/Berlin' } })
+		})
+
+		it.each(['Mars/Olympus', '+05:00', '-03:30', 'Europe/', 'local'])('rejects %s', (zone) => {
+			const result = parseZone(zone)
+
+			expect(result.issues?.map((issue) => [v.getDotPath(issue), issue.message])).toEqual([
+				['digest.timeZone', 'Use an IANA time zone, such as Europe/Berlin'],
+			])
+		})
+
+		describe('when a stored zone is invalid', () => {
+			beforeEach(async () => {
+				await db.insert(settingsTable).values({ key: 'digest', value: { timeZone: '+05:00' } })
+			})
+
+			it('is never returned', async () => {
+				const failure = await readTimeZone(db).then(() => '', String)
+
+				expect(failure).toContain('Stored settings are invalid: digest.timeZone')
+			})
 		})
 	})
 

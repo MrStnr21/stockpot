@@ -31,12 +31,34 @@ import {
 	type PublicEngines,
 } from '#/server/engines/settings'
 
+/** The runtime's spelling of a zone, such as `Europe/Berlin` for `europe/berlin`; throws on an unknown one. */
+function canonicalTimeZone(value: string) {
+	return new Intl.DateTimeFormat('en-US', { timeZone: value }).resolvedOptions().timeZone
+}
+
+/*
+ * A named IANA zone that both Intl and Temporal accept, so the job runner (SRV-6) can schedule in it.
+ * Offsets such as +05:00 are zones to Intl and Temporal but not IANA names, and ignore daylight saving.
+ * `Intl.supportedValuesOf('timeZone')` is not the test: Bun 1.4's list lacks current names such as
+ * Europe/Kyiv and Asia/Kolkata, which both APIs accept (checked 2026-11-19).
+ */
 function isTimeZone(value: string) {
+	if (/^[+-]/u.test(value)) {
+		return false
+	}
+
 	try {
-		return new Intl.DateTimeFormat('en-US', { timeZone: value }).resolvedOptions().timeZone !== ''
+		return Temporal.Now.zonedDateTimeISO(canonicalTimeZone(value)).timeZoneId !== ''
 	} catch {
 		return false
 	}
+}
+
+/** The server's own zone, or UTC when the runtime reports one that is not a named IANA zone. */
+function serverTimeZone() {
+	const zone = new Intl.DateTimeFormat().resolvedOptions().timeZone
+
+	return isTimeZone(zone) ? canonicalTimeZone(zone) : 'UTC'
 }
 
 const clockTime = v.pipe(
@@ -49,6 +71,7 @@ const digestLimit = v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(50
 const timeZone = v.pipe(
 	v.string(),
 	v.check(isTimeZone, 'Use an IANA time zone, such as Europe/Berlin'),
+	v.transform(canonicalTimeZone),
 )
 
 const languageCode = v.pipe(
@@ -93,13 +116,13 @@ type SectionKey = keyof Settings
 
 const sectionKeys: readonly SectionKey[] = ['digest', 'cardLanguage', 'engines', 'routing']
 
-/** The settings of a new instance. The time zone defaults to the server's own. */
+/** The settings of a new instance. The time zone defaults to the server's own, or UTC. */
 export function defaultSettings(): Settings {
 	return {
 		digest: {
 			time: '08:30',
 			limit: 5,
-			timeZone: new Intl.DateTimeFormat().resolvedOptions().timeZone,
+			timeZone: serverTimeZone(),
 		},
 		cardLanguage: 'en',
 		engines: defaultEngines(),
