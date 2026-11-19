@@ -38,3 +38,6 @@ test-results
 *.db
 *.db-shm
 *.db-wal
+
+# private eval notes and eval reports, kept by each owner and never committed
+packages/app/evals/local/

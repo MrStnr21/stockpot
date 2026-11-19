@@ -31,11 +31,11 @@ stockpot/
 │   ├── app/            @stockpot/app: the Astro server, pages and the web app
 │   │   ├── src/        see below
 │   │   ├── tests/      setup/ (seeded Faker, createTestDb), factories/, e2e/
-│   │   └── evals/      the eval set and rubric for card quality (upcoming, ENG-2)
+│   │   └── evals/      the eval set, the rubric and the runner that measure engines
 │   ├── ui/             @stockpot/ui: shared primitives and theme tokens, source exports, no build step
 │   └── website/        the documentation site (M9)
 ├── tools/              @stockpot/tools: lint plugins, the license header check, third-party
-│                       notices, the docs link check and the migration check; later evals
+│                       notices, the docs link check and the migration check
 ├── docs/               principles, architecture, engines, guidelines, ADRs, the design canvas;
 │                       later install and privacy
 ├── deploy/             launchd service for a Mac, Docker image and compose file (M8, M9)
@@ -43,7 +43,7 @@ stockpot/
 └── .github/            workflows, issue forms, pull request template
 ```
 
-`packages/app/evals/`, `packages/website`, `deploy/` and `skills/` do not exist yet; they arrive
+`packages/website`, `deploy/` and `skills/` do not exist yet; they arrive
 with the story and milestones named above.
 
 ## The app: `packages/app/src/`
@@ -91,7 +91,7 @@ a single file or a folder of these parts:
 [`packages/app/oxlint.config.ts`](../packages/app/oxlint.config.ts) enforces this table through
 `eslint-plugin-boundaries`, and `bun run lint` fails on any import that breaks it. Relative and
 `#/` imports are checked alike. The first row that matches a file decides its layer. Paths are
-relative to `packages/app/src/`, except `tests/`, which sits next to `src/`.
+relative to `packages/app/src/`, except `tests/` and `evals/`, which sit next to `src/`.
 
 | Layer                          | Files                                                                | May import                                                                      |
 | ------------------------------ | -------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
@@ -106,7 +106,8 @@ relative to `packages/app/src/`, except `tests/`, which sits next to `src/`.
 | Feature root                   | any other file in `features/X/`                                      | same as feature server                                                          |
 | Service worker                 | `sw.ts`                                                              | `lib/`, any feature's shared                                                    |
 | Entry                          | everything else in `src/`: `pages/`, `layouts/`, `middleware.ts`     | every layer above, including any feature                                        |
-| Test support                   | `tests/**`: setup, factories and end-to-end specs                    | every layer above, and `tests/`                                                 |
+| Test support                   | `tests/**`: setup, factories and end-to-end specs                    | every layer above, `evals/` and `tests/`                                        |
+| Evals                          | `evals/**`: the eval set and its runner                              | `server/`, `lib/`, any feature's shared, and `evals/`                           |
 
 Four rules apply across the table:
 
