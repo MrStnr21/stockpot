@@ -66,7 +66,17 @@ const fallbackOrder = v.pipe(
 /** The model ID behind each tier; model IDs change often, so they live in settings, never in code. */
 const modelsSchema = v.object({ fast: modelId, standard: modelId, deep: modelId })
 
-const geminiSchema = v.object({ apiKey: secret, models: modelsSchema })
+const requestCount = v.nullable(v.pipe(v.number(), v.integer(), v.minValue(1)))
+
+const limitSchema = v.object({ perMinute: requestCount, perDay: requestCount })
+
+/*
+ * Gemini's request limits for each tier's model, below the quota Google sets for the key: the engine
+ * refuses a call that would pass one (docs/engines.md, "The Gemini engine"). `null` sets no limit.
+ */
+const limitsSchema = v.object({ fast: limitSchema, standard: limitSchema, deep: limitSchema })
+
+const geminiSchema = v.object({ apiKey: secret, models: modelsSchema, limits: limitsSchema })
 
 const openAiCompatibleSchema = v.object({ baseUrl, apiKey: secret, models: modelsSchema })
 
@@ -89,13 +99,18 @@ export type Routing = v.InferOutput<typeof routingSchema>
 const modelsPatch = v.partial(modelsSchema)
 
 // A patch may name only some of an engine's models.
-const geminiPatch = v.partial(v.object({ ...geminiSchema.entries, models: modelsPatch }))
+const geminiPatch = v.partial(
+	v.object({ ...geminiSchema.entries, models: modelsPatch, limits: v.partial(limitsSchema) }),
+)
 
 const openAiCompatiblePatch = v.partial(
 	v.object({ ...openAiCompatibleSchema.entries, models: modelsPatch }),
 )
 
-/** A change to the engines: a field left out keeps its value, `null` clears a key or a model. */
+/**
+ * A change to the engines: a field left out keeps its value, `null` clears a key or a model, and a
+ * tier named in Gemini's `limits` replaces that tier's limits.
+ */
 export const enginesPatchSchema = v.object({
 	gemini: v.optional(geminiPatch),
 	'openai-compatible': v.optional(openAiCompatiblePatch),
@@ -108,10 +123,14 @@ export const routingPatchSchema = v.partial(routingSchema)
 
 const noModels = { fast: null, standard: null, deep: null }
 
+const noLimit = { perMinute: null, perDay: null }
+
+const noLimits = { fast: noLimit, standard: noLimit, deep: noLimit }
+
 /** No engine is configured on a new instance. */
 export function defaultEngines(): EngineSettings {
 	return {
-		gemini: { apiKey: null, models: noModels },
+		gemini: { apiKey: null, models: noModels, limits: noLimits },
 		'openai-compatible': { baseUrl: null, apiKey: null, models: noModels },
 	}
 }
@@ -123,16 +142,21 @@ export function defaultRouting(): Routing {
 
 type Models = v.InferOutput<typeof modelsSchema>
 
+type Limits = v.InferOutput<typeof limitsSchema>
+
 function mergeEngine<TEngine extends { models: Models }>(
 	engine: TEngine,
-	patch: (Partial<Omit<TEngine, 'models'>> & { models?: Partial<Models> }) | undefined,
+	patch: (Partial<Omit<TEngine, 'models' | 'limits'>> & { models?: Partial<Models> }) | undefined,
 ): TEngine {
 	return { ...engine, ...patch, models: { ...engine.models, ...patch?.models } }
 }
 
 export function applyEnginesPatch(engines: EngineSettings, patch: EnginesPatch): EngineSettings {
 	return {
-		gemini: mergeEngine(engines.gemini, patch.gemini),
+		gemini: {
+			...mergeEngine(engines.gemini, patch.gemini),
+			limits: { ...engines.gemini.limits, ...patch.gemini?.limits },
+		},
 		'openai-compatible': mergeEngine(engines['openai-compatible'], patch['openai-compatible']),
 	}
 }
@@ -160,7 +184,7 @@ export function configuredEngines(
 /** Engine settings as they may leave the server: each key, and the agent command, as its state. */
 export interface PublicEngines {
 	'agent-command': { command: SecretState }
-	gemini: { apiKey: SecretState; models: Models }
+	gemini: { apiKey: SecretState; models: Models; limits: Limits }
 	'openai-compatible': { baseUrl: string | null; apiKey: SecretState; models: Models }
 }
 
@@ -181,7 +205,7 @@ export function toPublicEngines(
 
 	return {
 		'agent-command': { command: stateOf(agentCommand) },
-		gemini: { apiKey: stateOf(gemini.apiKey), models: gemini.models },
+		gemini: { apiKey: stateOf(gemini.apiKey), models: gemini.models, limits: gemini.limits },
 		'openai-compatible': {
 			baseUrl: openAiCompatible.baseUrl,
 			apiKey: stateOf(openAiCompatible.apiKey),
