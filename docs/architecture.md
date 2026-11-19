@@ -69,6 +69,8 @@ src/
 │   ├── engines/        the engine contract and settings, concrete engines, the router
 │   ├── http.ts         route helpers, JSON errors, body limits
 │   ├── config.ts       the validated environment
+│   ├── log.ts          the structured log: JSON lines, secrets redacted
+│   ├── health.ts       the health check behind /healthz
 │   └── metrics.ts      Prometheus metrics, next to health and logs
 ├── lib/            Isomorphic utilities: term normalization, dates and time zones, format ids,
 │                   JSON Schema helpers

@@ -99,7 +99,7 @@ interface ProcessRunner {
 
 const thisProcess: ProcessRunner = {}
 
-/** Starts the one runner of this process. Nothing calls it yet: the README says why. */
+/** Starts the one runner of this process; src/server/boot.ts calls it at startup. */
 export async function startRunner(options: RunnerOptions): Promise<Runner> {
 	await thisProcess.stopping
 
@@ -130,4 +130,12 @@ export async function stopRunner(): Promise<void> {
 	}
 
 	await thisProcess.stopping
+}
+
+/**
+ * The runner this process started, for the health check, or `undefined` before the start and after
+ * a stop. Routes share this module with src/server/boot.ts, because the build bundles it once.
+ */
+export function currentRunner(): Runner | undefined {
+	return thisProcess.runner
 }
