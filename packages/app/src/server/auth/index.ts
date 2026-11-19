@@ -11,7 +11,8 @@ import type { Db } from '#/server/db/client'
 import { instanceDb } from '#/server/db/instance'
 import { mayUseCookie, type CookieJar, type Owner, type ResolverContext } from '#/server/policy'
 
-import { createBackoff } from './backoff'
+import { createBackoff, type Backoff } from './backoff'
+import { knownBrowser, rememberBrowser } from './browsers'
 import {
 	createSetupCode,
 	hashPassword,
@@ -21,6 +22,7 @@ import {
 	verifyPassword,
 } from './owner'
 import {
+	authCookie,
 	endAllSessions,
 	endSession,
 	replaceSession,
@@ -84,7 +86,26 @@ function printToLog(message: string) {
 
 export function createAuth({ db, publicOrigin, announce = printToLog }: AuthOptions): Auth {
 	const cookie = sessionCookie(publicOrigin)
-	const backoff = createBackoff()
+	const browser = authCookie(publicOrigin, 'browser')
+	// One counter for every request without a known browser, and one for each known browser.
+	const anonymousBackoff = createBackoff()
+	const browserBackoffs = new Map<string, Backoff>()
+
+	function backoffFor(cookies: CookieJar) {
+		const known = knownBrowser({ db, cookies, cookie: browser })
+
+		if (known === undefined) {
+			return anonymousBackoff
+		}
+
+		const existing = browserBackoffs.get(known.tokenHash)
+		const backoff = existing ?? createBackoff()
+
+		browserBackoffs.set(known.tokenHash, backoff)
+
+		return backoff
+	}
+
 	// Kept in memory only: a restart prints a new code, and creating the owner ends it.
 	const setup: PendingSetup = {}
 
@@ -128,6 +149,7 @@ export function createAuth({ db, publicOrigin, announce = printToLog }: AuthOpti
 				// Sessions of an owner deleted by hand, to reset a forgotten password, end with it.
 				endAllSessions(tx)
 				replaceSession({ db: tx, cookies, cookie })
+				rememberBrowser({ db: tx, cookies, cookie: browser })
 
 				return true
 			})
@@ -142,6 +164,7 @@ export function createAuth({ db, publicOrigin, announce = printToLog }: AuthOpti
 				return { status: 'no_owner' }
 			}
 
+			const backoff = backoffFor(cookies)
 			const wait = backoff.wait()
 
 			// The password is not even checked during the wait, so guessing gains nothing from it.
@@ -158,6 +181,7 @@ export function createAuth({ db, publicOrigin, announce = printToLog }: AuthOpti
 			backoff.succeed()
 			db.transaction((tx) => {
 				replaceSession({ db: tx, cookies, cookie })
+				rememberBrowser({ db: tx, cookies, cookie: browser })
 			})
 
 			return { status: 'signed_in' }
@@ -171,7 +195,18 @@ export function createAuth({ db, publicOrigin, announce = printToLog }: AuthOpti
 		},
 
 		async resolveOwner({ request, cookies }) {
-			return mayUseCookie(request) ? resolveSession({ db, cookies, cookie }) : null
+			if (!mayUseCookie(request)) {
+				return null
+			}
+
+			return resolveSession({
+				db,
+				cookies,
+				cookie,
+				onRotate: (tx, now) => {
+					rememberBrowser({ db: tx, cookies, cookie: browser }, now)
+				},
+			})
 		},
 	}
 }

@@ -25,6 +25,13 @@ const publicOrigin = 'http://127.0.0.1:4321'
 
 const cookieName = 'stockpot_session'
 
+const browserCookieName = 'stockpot_browser'
+
+/** A jar with only the browser cookie of `jar`: a known browser that is signed out. */
+function browserOnly(jar: TestCookieJar) {
+	return createCookieJar({ [browserCookieName]: jar.get(browserCookieName)?.value ?? '' })
+}
+
 const start = new Date('2026-11-19T12:00:00Z')
 
 function formPost(cookies: TestCookieJar, headers: Record<string, string>) {
@@ -164,6 +171,56 @@ describe('createAuth', () => {
 				setSystemTime(new Date(Date.now() + 4000))
 
 				expect(await auth.signIn(createCookieJar(), password)).toEqual({ status: 'signed_in' })
+			})
+		})
+
+		describe('while strangers keep the shared count waiting', () => {
+			let knownBrowser: TestCookieJar
+
+			beforeEach(async () => {
+				for (let attempt = 0; attempt < 8; attempt += 1) {
+					// oxlint-disable-next-line no-await-in-loop -- Each attempt must be counted before the next.
+					await auth.signIn(createCookieJar(), 'wrong password')
+					setSystemTime(new Date(Date.now() + longestWait))
+				}
+
+				// The last failure is now, and the eighth makes strangers wait 32 seconds.
+				setSystemTime(new Date(Date.now() - longestWait))
+				knownBrowser = browserOnly(signedIn)
+			})
+
+			it('keeps a stranger waiting, even with the right password', async () => {
+				expect(await auth.signIn(createCookieJar(), password)).toEqual({
+					status: 'throttled',
+					retryAfter: 32,
+				})
+			})
+
+			it('signs the owner in from a browser they signed in from before', async () => {
+				expect(await auth.signIn(knownBrowser, password)).toEqual({ status: 'signed_in' })
+			})
+
+			it('makes a known browser wait for its own wrong passwords only', async () => {
+				for (let attempt = 0; attempt < 3; attempt += 1) {
+					// oxlint-disable-next-line no-await-in-loop -- Each attempt must be counted before the next.
+					await auth.signIn(knownBrowser, 'wrong password')
+				}
+
+				expect(await auth.signIn(knownBrowser, password)).toEqual({
+					status: 'throttled',
+					retryAfter: 1,
+				})
+			})
+		})
+
+		describe('with a stolen browser cookie alone', () => {
+			it('signs nobody in', async () => {
+				const stolen = browserOnly(signedIn)
+
+				expect([
+					await auth.resolveOwner(pageRequest(stolen)),
+					await auth.signIn(stolen, 'wrong password'),
+				]).toEqual([null, { status: 'wrong_password' }])
 			})
 		})
 

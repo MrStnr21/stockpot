@@ -4,12 +4,14 @@
 /*
  * Sign-in backoff (D6). Three wrong passwords in a row are free, for typos; after that each attempt
  * waits twice as long as the one before, from 1 second up to 5 minutes, and an hour without a wrong
- * password forgets them. The wait never grows past 5 minutes, so the owner is never locked out for
- * good, and sessions that are already signed in are not affected at all.
+ * password forgets them. Sessions that are already signed in are not affected at all.
  *
- * The counter is one per instance, not per address: an instance has a single owner, and addresses
- * behind a proxy or a tailnet say little about who is asking. It lives in memory and starts again on a
- * restart, which only someone with access to the machine can cause.
+ * Each counter is kept per known browser (./browsers.ts): a browser the owner signed in from before
+ * counts its own wrong passwords, so a stranger who keeps the shared counter at its longest wait
+ * cannot keep the owner out. Every request without a known browser shares one counter, which caps
+ * guessing for the whole instance. Addresses are not used: behind a proxy or a tailnet, or with IPv6,
+ * they say little about who is asking. Counters live in memory and start again on a restart, which
+ * only someone with access to the machine can cause.
  */
 export const freeAttempts = 3
 

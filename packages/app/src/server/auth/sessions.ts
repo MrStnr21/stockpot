@@ -23,6 +23,8 @@ export interface SessionContext {
 	readonly db: Queryable
 	readonly cookies: CookieJar
 	readonly cookie: SessionCookie
+	/** Runs inside the transaction that rotates a token, as the browser is seen again then. */
+	readonly onRotate?: (db: Queryable, now: Date) => void
 }
 
 const day = 24 * 60 * 60 * 1000
@@ -46,25 +48,31 @@ export const rotationAge = day
 export const rotationGrace = 60 * 1000
 
 /**
- * Over HTTPS the cookie takes the `__Host-` prefix: browsers then accept it only when it is `Secure`,
- * on `/` and without a `Domain`, so no other host, a sibling subdomain included, can set it.
+ * A cookie of this instance, `stockpot_<name>`. Over HTTPS it takes the `__Host-` prefix: browsers then
+ * accept it only when it is `Secure`, on `/` and without a `Domain`, so no other host, a sibling
+ * subdomain included, can set it.
  */
-export function sessionCookie(publicOrigin: string): SessionCookie {
+export function authCookie(publicOrigin: string, name: string): SessionCookie {
 	const secure = new URL(publicOrigin).protocol === 'https:'
 
-	return { name: secure ? '__Host-stockpot_session' : 'stockpot_session', secure }
+	return { name: secure ? `__Host-stockpot_${name}` : `stockpot_${name}`, secure }
+}
+
+export function sessionCookie(publicOrigin: string): SessionCookie {
+	return authCookie(publicOrigin, 'session')
 }
 
 /* `HttpOnly` keeps the token away from scripts; `Lax` keeps it off the requests other sites send,
  * except top-level navigations, which only read. */
-function cookieOptions({ secure }: SessionCookie): CookieOptions {
+export function cookieOptions({ secure }: SessionCookie): CookieOptions {
 	return { path: '/', httpOnly: true, sameSite: 'lax', secure }
 }
 
 // A token from randomToken(): 32 bytes as base64url, without padding.
 const tokenPattern = /^[\w-]{43}$/u
 
-function asToken(value: string | undefined) {
+/** The value, when it has the shape of a token. */
+export function asToken(value: string | undefined): string | undefined {
 	return value !== undefined && tokenPattern.test(value) ? value : undefined
 }
 
@@ -163,6 +171,7 @@ function rotate(context: SessionContext & { db: Db }, session: SessionRow, now: 
 			.where(eq(sessions.tokenHash, session.tokenHash))
 			.run()
 		startSession({ ...context, db: tx }, now)
+		context.onRotate?.(tx, now)
 	})
 }
 

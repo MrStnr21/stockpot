@@ -77,9 +77,12 @@ reach it. The code stops working once the owner exists, and a restart replaces i
   browser, for example when the connection drops; then you sign in again.
 - **Backoff.** Three wrong passwords in a row are free. After that each attempt waits twice as long
   as the one before, from 1 second up to 5 minutes, and an hour without a wrong password resets the
-  count. The wait never grows further, so you are never locked out for good, and devices that are
-  already signed in are not affected. The count is kept in memory for the whole instance and starts
-  again when the server restarts.
+  count. Every browser you have signed in from gets a second, long-lived cookie (a year, stored only
+  as a hash) and its own count, so someone guessing passwords from elsewhere cannot keep you out:
+  your browser waits only for its own wrong passwords. That cookie never signs anyone in by itself.
+  Everyone else shares one count, which caps guessing for the whole instance. Devices that are already
+  signed in are not affected, and the counts are kept in memory, starting again when the server
+  restarts.
 - **A forgotten password.** Stop stockpot, delete the owner with
   `sqlite3 <data directory>/stockpot.db "DELETE FROM owner"`, and start it again: it prints a new
   setup code, and creating the owner again ends every old session.

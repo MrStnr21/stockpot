@@ -24,6 +24,16 @@ export const sessions = sqliteTable('sessions', {
 	expiresAt: integer('expires_at', { mode: 'timestamp_ms' }).notNull(),
 })
 
+/**
+ * Browsers the owner has signed in from, each known by a long-lived cookie whose token is stored only
+ * as a hash. Sign-in backoff counts their wrong passwords apart from everyone else's (D6).
+ */
+export const browsers = sqliteTable('browsers', {
+	tokenHash: text('token_hash').primaryKey(),
+	createdAt,
+	lastSeenAt: integer('last_seen_at', { mode: 'timestamp_ms' }).notNull(),
+})
+
 /** Clients other than the web app (a Shortcut, an MCP client), each with a token revoked alone. */
 export const devices = sqliteTable('devices', {
 	id: integer('id').primaryKey(),
