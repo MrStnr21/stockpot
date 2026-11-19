@@ -92,6 +92,24 @@ function checksOf(call: CallRecord | undefined): Record<string, boolean> {
 	return Object.fromEntries(call?.checks.map(({ check, passed }) => [check, passed]) ?? [])
 }
 
+function inOrder(replies: readonly Reply[]): (input: Redacted<EngineInput>) => Reply {
+	let next = 0
+
+	return (input) => {
+		const reply = replies.at(next) ?? answerWell(input)
+
+		next += 1
+
+		return reply
+	}
+}
+
+const auth = new EngineError({ kind: 'auth' }, 'Rejected')
+
+function rateLimited(inMs: number): EngineError {
+	return new EngineError({ kind: 'rate_limited', resetsAt: new Date(Date.now() + inMs) }, 'Limited')
+}
+
 describe('runEval', () => {
 	const technologyNote = evalNoteFactory.build({ id: 'technology-note' })
 	const privateNote = privateEvalNoteFactory.build({ id: 'private-note', text: 'Ferritin' })
@@ -100,14 +118,14 @@ describe('runEval', () => {
 
 	describe('with an engine that answers', () => {
 		let received: EngineNote[]
-		let calls: CallRecord[]
+		let calls: readonly CallRecord[]
 
 		beforeEach(async () => {
 			const clock = { ms: 0 }
 
 			received = []
 
-			calls = await runEval({
+			const outcome = await runEval({
 				engine: fakeEngine({ clock, received, reply: answerWell }),
 				notes,
 				language: 'en',
@@ -115,6 +133,8 @@ describe('runEval', () => {
 				checkLinks: async () => null,
 				now: () => clock.ms,
 			})
+
+			calls = [...outcome.calls]
 		})
 
 		it('records a suggestion and a card for each note, in turn', () => {
@@ -156,18 +176,20 @@ describe('runEval', () => {
 	})
 
 	describe('with an engine that fails', () => {
-		let calls: CallRecord[]
+		let calls: readonly CallRecord[]
 
 		beforeEach(async () => {
 			const clock = { ms: 0 }
 
-			calls = await runEval({
+			const outcome = await runEval({
 				engine: fakeEngine({ clock, received: [], reply: answerBadly }),
 				notes: [technologyNote],
 				language: 'en',
 				fillerPhrases: [],
 				now: () => clock.ms,
 			})
+
+			calls = [...outcome.calls]
 		})
 
 		it('records an error without checks', () => {
@@ -179,6 +201,71 @@ describe('runEval', () => {
 				error: null,
 				checks: [{ check: 'schema', passed: false, detail: 'summary: Invalid length' }],
 			})
+		})
+	})
+
+	describe('when the engine stops answering', () => {
+		const clock = { ms: 0 }
+		const answered = { delayMs: 10, answer: suggestion }
+
+		async function runWith(replies: readonly Reply[], signal?: AbortSignal) {
+			const saved: CallRecord[] = []
+			const waits: number[] = []
+
+			const outcome = await runEval({
+				engine: fakeEngine({ clock, received: [], reply: inOrder(replies) }),
+				notes: [technologyNote, privateNote],
+				language: 'en',
+				fillerPhrases: [],
+				checkLinks: async () => null,
+				now: () => clock.ms,
+				onCall: async (call) => {
+					saved.push(call)
+				},
+				wait: async (ms) => {
+					waits.push(ms)
+				},
+				...(signal && { signal }),
+			})
+
+			return { ...outcome, saved, waits }
+		}
+
+		it('stops on a rejected key and keeps every call made so far', async () => {
+			const { calls, saved, stopped } = await runWith([answered, { delayMs: 5, answer: auth }])
+
+			expect([calls.length, saved.length, stopped]).toEqual([
+				2,
+				2,
+				'the engine rejected its key or login (auth)',
+			])
+		})
+
+		it('waits out a usage limit that resets within a minute, then calls again', async () => {
+			const { calls, waits, stopped } = await runWith([
+				answered,
+				{ delayMs: 5, answer: rateLimited(30_000) },
+			])
+
+			expect([calls.length, stopped, calls.at(1)?.error]).toEqual([4, null, null])
+			expect(waits.at(0)).toBeGreaterThan(29_000)
+		})
+
+		it('stops on a usage limit further away', async () => {
+			const { calls, stopped } = await runWith([{ delayMs: 5, answer: rateLimited(600_000) }])
+
+			expect(calls.length).toBe(1)
+			expect(stopped).toContain('usage limit resets at')
+		})
+
+		it('stops when interrupted', async () => {
+			const controller = new AbortController()
+
+			controller.abort(new Error('stopped with Ctrl-C'))
+
+			const { calls, stopped } = await runWith([], controller.signal)
+
+			expect([calls, stopped]).toEqual([[], 'interrupted: stopped with Ctrl-C'])
 		})
 	})
 })

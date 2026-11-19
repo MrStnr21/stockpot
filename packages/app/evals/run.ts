@@ -22,7 +22,14 @@ import {
 } from './engines'
 import { runEval, type EvalRun } from './evaluate'
 import { loadNotes, sampleOrder } from './notes'
-import { renderMarkdown, renderScoreSheet, summarize, type EvalReport } from './report'
+import {
+	parseCalls,
+	renderMarkdown,
+	renderScoreSheet,
+	summarize,
+	type CallRecord,
+	type EvalReport,
+} from './report'
 
 export const usage =
 	'Usage: bun run eval -- --engine <id> [--notes <file>] [--limit <n>] [--language <code>] [--out <dir>]'
@@ -78,6 +85,8 @@ export interface MainOptions {
 	readonly createEngine?: (id: EvalArgs['engine'], context: EngineContext) => Engine
 	readonly checkLinks?: EvalRun['checkLinks']
 	readonly now?: () => number
+	readonly wait?: EvalRun['wait']
+	readonly signal?: AbortSignal
 }
 
 const migrationsFolder = join(import.meta.dir, '../src/server/db/migrations')
@@ -90,26 +99,47 @@ export async function main(args: readonly string[], options: MainOptions): Promi
 	const rubric = await file(join(import.meta.dir, 'rubric.md')).text()
 	const { sqlite, db } = await openDatabase({ path: ':memory:', migrationsFolder })
 	const engine = (options.createEngine ?? createEvalEngine)(engineId, { env: options.env, db })
-	const startedAt = new Date()
+	const startedAt = new Date().toISOString()
+	const stamp = startedAt.slice(0, 19).replaceAll(':', '-')
+	const folder = resolve(out ?? join(import.meta.dir, 'local', 'reports', `${stamp}-${engineId}`))
+	const callsFile = join(folder, 'calls.jsonl')
 
-	const calls = await runEval({
+	// Each call is on disk before the next one starts, so Ctrl-C or a crash loses nothing.
+	await write(callsFile, '')
+
+	const calls = file(callsFile).writer()
+
+	async function save(call: CallRecord): Promise<void> {
+		await calls.write(`${JSON.stringify(call)}\n`)
+		await calls.flush()
+	}
+
+	const { stopped } = await runEval({
 		engine,
 		notes: sampleOrder(notes),
-		...(limit !== undefined && { maxCalls: limit }),
 		language,
 		fillerPhrases: parseFillerPhrases(rubric, language),
+		onCall: save,
+		...(limit !== undefined && { maxCalls: limit }),
 		...(options.checkLinks && { checkLinks: options.checkLinks }),
 		...(options.now && { now: options.now }),
+		...(options.wait && { wait: options.wait }),
+		...(options.signal && { signal: options.signal }),
 	})
 
+	await calls.end()
 	sqlite.close()
 
+	const saved = parseCalls(await file(callsFile).text())
+	const reached = new Set(saved.map(({ noteId }) => noteId))
+
 	const report: EvalReport = {
+		stopped,
 		engine: engineId,
 		language,
-		startedAt: startedAt.toISOString(),
+		startedAt,
 		notes: notes
-			.filter(({ id }) => calls.some(({ noteId }) => noteId === id))
+			.filter(({ id }) => reached.has(id))
 			.map((note) => ({
 				id: note.id,
 				text: note.text,
@@ -118,12 +148,9 @@ export async function main(args: readonly string[], options: MainOptions): Promi
 				format: note.expected.format,
 				local: note.local,
 			})),
-		calls,
-		summary: summarize(calls),
+		calls: saved,
+		summary: summarize(saved),
 	}
-
-	const stamp = report.startedAt.slice(0, 19).replaceAll(':', '-')
-	const folder = resolve(out ?? join(import.meta.dir, 'local', 'reports', `${stamp}-${engineId}`))
 
 	await write(join(folder, 'report.md'), renderMarkdown(report))
 	await write(join(folder, 'report.json'), `${JSON.stringify(report, null, '\t')}\n`)
@@ -133,8 +160,15 @@ export async function main(args: readonly string[], options: MainOptions): Promi
 }
 
 if (import.meta.main) {
+	const interrupt = new AbortController()
+
+	// The first Ctrl-C stops the run and writes the report so far; a second one exits at once.
+	process.once('SIGINT', () => {
+		interrupt.abort(new Error('stopped with Ctrl-C'))
+	})
+
 	try {
-		const folder = await main(argv.slice(2), { env })
+		const folder = await main(argv.slice(2), { env, signal: interrupt.signal })
 
 		await write(stdout, `The report is in ${folder}\n`)
 	} catch (error) {

@@ -5,11 +5,12 @@
  * One eval run: every note goes through the engine's `suggest`, then `explain` (or `research` for an
  * idea), and the automatic checks of evals/rubric.md judge each answer. run.ts is the command line.
  */
+import { sleep } from 'bun'
+
 import { cardFormat } from '#/features/research/shared/formats'
 import type { FormatId } from '#/lib/format-ids'
 import {
 	defaultTimeoutMs,
-	EngineError,
 	redactPrivate,
 	type Engine,
 	type EngineNote,
@@ -17,8 +18,10 @@ import {
 	type SuggestCategory,
 	type Tier,
 } from '#/server/engines/contract'
+import { abortReason } from '#/server/engines/runs'
 import { suggestionFormat } from '#/server/engines/suggestion'
 
+import { attempt, stopReason, type Failure } from './attempt'
 import {
 	cardLinks,
 	checkCategory,
@@ -84,35 +87,6 @@ function engineNote(note: EvalNote): EngineNote {
 	}
 }
 
-type Failure =
-	| { readonly kind: 'invalid'; readonly issues: readonly string[] }
-	| { readonly kind: 'error'; readonly message: string }
-
-type Attempt<T> =
-	| { readonly answer: T; readonly failure: null; readonly elapsedMs: number }
-	| { readonly answer: null; readonly failure: Failure; readonly elapsedMs: number }
-
-/** Runs one call and times it, whatever its outcome. */
-async function attempt<T>(now: () => number, call: () => Promise<T>): Promise<Attempt<T>> {
-	const startedAt = now()
-
-	try {
-		const answer = await call()
-
-		return { answer, failure: null, elapsedMs: now() - startedAt }
-	} catch (error) {
-		const elapsedMs = now() - startedAt
-
-		if (error instanceof EngineError && error.failure.kind === 'invalid') {
-			return { answer: null, failure: { kind: 'invalid', issues: error.failure.issues }, elapsedMs }
-		}
-
-		const message = error instanceof EngineError ? error.kind : String(error)
-
-		return { answer: null, failure: { kind: 'error', message }, elapsedMs }
-	}
-}
-
 function present(result: CheckResult | null): result is CheckResult {
 	return result !== null
 }
@@ -133,11 +107,33 @@ export interface EvalRun {
 	readonly now?: () => number
 	/** Stop after this many engine calls; every call is one, suggestions included. */
 	readonly maxCalls?: number
+	/** Receives each call as soon as it is checked, so a stopped run loses nothing. */
+	readonly onCall?: (call: CallRecord) => Promise<void>
+	/** Waits out a usage limit that resets within a minute. */
+	readonly wait?: (ms: number) => Promise<void>
+	/** Stops the run, and the call in flight, as Ctrl-C does. */
+	readonly signal?: AbortSignal
 }
 
-type Settings = Required<Omit<EvalRun, 'maxCalls'>>
+type Settings = Required<Omit<EvalRun, 'maxCalls' | 'signal'>> & {
+	readonly signal: AbortSignal | undefined
+}
 
-async function suggestFor(note: EvalNote, run: Settings): Promise<CallRecord> {
+/** A checked call, and why the run must stop after it, if it must. */
+interface Step {
+	readonly record: CallRecord
+	readonly stop: string | null
+}
+
+interface Stoppable {
+	readonly signal: AbortSignal | undefined
+}
+
+function signalOf({ signal }: Stoppable): { readonly signal?: AbortSignal } {
+	return signal === undefined ? {} : { signal }
+}
+
+async function suggestFor(note: EvalNote, run: Settings): Promise<Step> {
 	const input = redactPrivate({
 		task: 'suggest',
 		note: engineNote(note),
@@ -146,9 +142,9 @@ async function suggestFor(note: EvalNote, run: Settings): Promise<CallRecord> {
 		categories: builtInCategories,
 	})
 
-	const options = { tier: 'fast', timeoutMs: defaultTimeoutMs.suggest } as const
+	const options = { tier: 'fast', timeoutMs: defaultTimeoutMs.suggest, ...signalOf(run) } as const
 
-	const call = await attempt(run.now, async () => {
+	const call = await attempt(run, async () => {
 		const result = await run.engine.suggest(input, options)
 
 		return result.output
@@ -165,7 +161,7 @@ async function suggestFor(note: EvalNote, run: Settings): Promise<CallRecord> {
 				]
 			: failedChecks(call.failure)
 
-	return {
+	const record: CallRecord = {
 		noteId: note.id,
 		task: 'suggest',
 		format: 'suggestion',
@@ -174,9 +170,11 @@ async function suggestFor(note: EvalNote, run: Settings): Promise<CallRecord> {
 		checks: [...checks, sent].filter((result) => present(result)),
 		answer: call.answer,
 	}
+
+	return { record, stop: stopReason(call.failure) }
 }
 
-async function cardFor(note: EvalNote, run: Settings): Promise<CallRecord> {
+async function cardFor(note: EvalNote, run: Settings): Promise<Step> {
 	const { format } = note.expected
 
 	const base = {
@@ -189,9 +187,9 @@ async function cardFor(note: EvalNote, run: Settings): Promise<CallRecord> {
 	} as const
 
 	const task = format === 'report' ? 'research' : 'explain'
-	const options = { tier: tierFor(format), timeoutMs: defaultTimeoutMs[task] }
+	const options = { tier: tierFor(format), timeoutMs: defaultTimeoutMs[task], ...signalOf(run) }
 
-	const call = await attempt<JsonValue>(run.now, async () => {
+	const call = await attempt<JsonValue>(run, async () => {
 		const result =
 			task === 'research'
 				? await run.engine.research(redactPrivate({ ...base, task }), options)
@@ -213,7 +211,7 @@ async function cardFor(note: EvalNote, run: Settings): Promise<CallRecord> {
 				]
 			: failedChecks(call.failure)
 
-	return {
+	const record: CallRecord = {
 		noteId: note.id,
 		task,
 		format,
@@ -222,14 +220,37 @@ async function cardFor(note: EvalNote, run: Settings): Promise<CallRecord> {
 		checks: [...checks, sent].filter((result) => present(result)),
 		answer: call.answer,
 	}
+
+	return { record, stop: stopReason(call.failure) }
+}
+
+export interface EvalOutcome {
+	readonly calls: readonly CallRecord[]
+	/** Why the run stopped before its last call, or `null` when it ran to the end. */
+	readonly stopped: string | null
+}
+
+async function keepNothing(): Promise<void> {
+	// Without onCall the run keeps its calls in memory only.
+}
+
+async function take(step: () => Promise<Step>, settings: Settings): Promise<Step> {
+	const result = await step()
+
+	await settings.onCall(result.record)
+
+	return result
 }
 
 /** Runs every note through the engine, one call at a time so each latency is the call's own. */
-export async function runEval(run: EvalRun): Promise<CallRecord[]> {
+export async function runEval(run: EvalRun): Promise<EvalOutcome> {
 	const settings: Settings = {
-		checkLinks: async (links) => checkLinks(links),
+		checkLinks: async (links) => checkLinks(links, signalOf({ signal: run.signal })),
 		now: () => performance.now(),
+		onCall: keepNothing,
+		wait: async (ms) => sleep(ms),
 		...run,
+		signal: run.signal,
 	}
 
 	const calls: CallRecord[] = []
@@ -241,9 +262,19 @@ export async function runEval(run: EvalRun): Promise<CallRecord[]> {
 	])
 
 	for (const step of steps.slice(0, maxCalls)) {
+		if (run.signal?.aborted === true) {
+			return { calls, stopped: `interrupted: ${abortReason(run.signal).message}` }
+		}
+
 		// oxlint-disable-next-line no-await-in-loop -- Calls run in turn, so a latency is never another call's wait.
-		calls.push(await step())
+		const { record, stop } = await take(step, settings)
+
+		calls.push(record)
+
+		if (stop !== null) {
+			return { calls, stopped: stop }
+		}
 	}
 
-	return calls
+	return { calls, stopped: null }
 }

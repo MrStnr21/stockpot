@@ -36,6 +36,13 @@ a first-level card in the note's expected format (a report for an idea), on the 
 table in docs/engines.md gives that format. Calls run one at a time, so each latency is the call's
 own. A real run calls a real engine: it takes time and spends the provider's usage.
 
+### Stopping early
+
+A run stops by itself when the engine rejects its key or login (`auth`), or reports a usage limit
+that resets more than a minute away; a limit that resets sooner is waited out and the call made
+again. Ctrl-C stops the run too, and a second Ctrl-C exits at once. A stopped run still writes its
+report, which says why it stopped and covers the calls made before.
+
 ### Card language
 
 The default card language is `en`, the product default, so that a run on the public notes
@@ -93,8 +100,10 @@ runner reads `local/` when it exists and runs the public notes alone when it doe
 
 ## Reports
 
-Each run writes three files to its folder:
+Each run writes four files to its folder:
 
+- `calls.jsonl`: every call and its checks, appended as soon as the call is done, so stopping a
+  run loses nothing; the other files are built from it;
 - `report.md`: the pass rate and the p50 and p95 latency for suggestions and for each format, the
   pass rate of each check, and every failure;
 - `report.json`: the same, with every answer;

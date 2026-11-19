@@ -59,12 +59,41 @@ export interface Summary {
 }
 
 export interface EvalReport {
+	/** Why the run stopped before its last call, or `null` when it ran to the end. */
+	readonly stopped: string | null
 	readonly engine: string
 	readonly language: string
 	readonly startedAt: string
 	readonly notes: readonly ReportNote[]
 	readonly calls: readonly CallRecord[]
 	readonly summary: Summary
+}
+
+const checkResultSchema = v.strictObject({
+	check: v.picklist(checkIds),
+	passed: v.boolean(),
+	detail: v.nullable(v.string()),
+})
+
+const callRecordSchema = v.strictObject({
+	noteId: v.string(),
+	task: v.picklist(['suggest', 'explain', 'research']),
+	format: v.string(),
+	elapsedMs: v.number(),
+	error: v.nullable(v.string()),
+	checks: v.array(checkResultSchema),
+	// The value came from JSON.parse, so whatever it holds is JSON.
+	answer: v.custom<JsonValue>((value) => value !== undefined),
+})
+
+const callLine = v.pipe(v.string(), v.parseJson(), callRecordSchema)
+
+/** The calls a run appended to its `calls.jsonl`, one per line, in order. */
+export function parseCalls(text: string): CallRecord[] {
+	return text
+		.split('\n')
+		.filter((line) => line.trim() !== '')
+		.map((line) => v.parse(callLine, line))
 }
 
 /** The nearest-rank percentile: the smallest value that `p` percent of the values do not exceed. */
@@ -195,6 +224,11 @@ export function renderMarkdown(report: EvalReport): string {
 
 	return [
 		`# Eval report: ${report.engine}`,
+		...(report.stopped === null
+			? []
+			: [
+					`**Stopped early:** ${report.stopped}. The report covers the ${report.calls.length} calls made before that.`,
+				]),
 		`Started ${report.startedAt}, card language \`${report.language}\`, ${report.notes.length} notes (${owner} from the owner, ${report.notes.length - owner} composed, ${privateNotes} private). Compare the numbers with the thresholds in evals/rubric.md.`,
 		'## By format',
 		'Latency counts only the calls that answered; the calls that failed are in Errors.',

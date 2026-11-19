@@ -5,6 +5,7 @@ import { describe, expect, it } from 'bun:test'
 
 import {
 	formatDuration,
+	parseCalls,
 	percentile,
 	renderMarkdown,
 	renderScoreSheet,
@@ -38,6 +39,7 @@ const calls = [
 ]
 
 const report: EvalReport = {
+	stopped: null,
 	engine: 'fake',
 	language: 'en',
 	startedAt: '2026-11-19T08:00:00.000Z',
@@ -109,6 +111,24 @@ describe('the eval report', () => {
 		it('lists every failure and error', () => {
 			expect(markdown).toContain('| b | technology | filler | "delve into" |')
 			expect(markdown).toContain('| b | suggestion | error | timeout |')
+		})
+	})
+
+	describe('parseCalls', () => {
+		it('reads back the calls a run appended', () => {
+			const lines = calls.map((saved) => `${JSON.stringify(saved)}\n`).join('')
+
+			expect(parseCalls(lines)).toEqual(calls)
+		})
+	})
+
+	describe('a stopped run', () => {
+		it('says why it stopped and how many calls it covers', () => {
+			const markdown = renderMarkdown({ ...report, stopped: 'the engine rejected its key' })
+
+			expect(markdown).toContain(
+				'**Stopped early:** the engine rejected its key. The report covers the 4 calls made before that.',
+			)
 		})
 	})
 
