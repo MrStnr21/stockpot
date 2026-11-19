@@ -126,8 +126,21 @@ const httpMethods = ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS',
 
 type HttpMethod = (typeof httpMethods)[number]
 
-/** The handlers an Astro endpoint module may export, one per method. */
-export type RouteModule = Readonly<Partial<Record<HttpMethod, (context: never) => Reply>>>
+const handler = v.optional(v.unknown())
+
+/** The exports of an endpoint module that Astro serves, one per method; anything else is dropped. */
+export const routeModuleSchema = v.object({
+	GET: handler,
+	HEAD: handler,
+	POST: handler,
+	PUT: handler,
+	PATCH: handler,
+	DELETE: handler,
+	OPTIONS: handler,
+	ALL: handler,
+})
+
+export type RouteModule = v.InferOutput<typeof routeModuleSchema>
 
 /** The HTTP methods a route module exports without `route.public` or `route.authorized`. */
 export function undeclaredHandlers(module: RouteModule): HttpMethod[] {
