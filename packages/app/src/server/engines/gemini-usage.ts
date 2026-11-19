@@ -18,7 +18,9 @@ export interface UsageLimit {
 export interface UsageCounters {
 	/**
 	 * Counts `requests` against `model`, or fails with `rate_limited`, counting nothing, when they would
-	 * pass either limit. The error carries the time the blocking window frees enough room.
+	 * pass either limit. The error carries the time the blocking window frees enough room. A call that
+	 * needs more requests than a limit allows never fits, so it fails with an ordinary error instead,
+	 * which no wait would fix.
 	 */
 	take: (model: string, limit: UsageLimit, requests: number) => void
 }
@@ -100,6 +102,14 @@ export function createUsageCounters(): UsageCounters {
 
 	return {
 		take(model, { perMinute, perDay }, requests) {
+			const most = Math.min(perMinute ?? Infinity, perDay ?? Infinity)
+
+			if (requests > most) {
+				throw new Error(
+					`A call of ${requests} requests never fits the configured limit of ${most} for ${model}`,
+				)
+			}
+
 			const now = Date.now()
 			const today = pacificDay(now)
 			const current = usage.get(model) ?? { minute: [], day: today, dayCount: 0 }
@@ -111,7 +121,7 @@ export function createUsageCounters(): UsageCounters {
 			}
 
 			if (perMinute !== null && minute.length + requests > perMinute) {
-				// These fit once enough of the oldest requests leave the window; more than the limit never fits.
+				// These fit once enough of the oldest requests leave the window.
 				const leaving = minute.at(minute.length + requests - perMinute - 1)
 
 				refuse(model, (leaving ?? now) + minuteMs, 'per-minute')

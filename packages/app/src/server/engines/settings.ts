@@ -66,7 +66,13 @@ const fallbackOrder = v.pipe(
 /** The model ID behind each tier; model IDs change often, so they live in settings, never in code. */
 const modelsSchema = v.object({ fast: modelId, standard: modelId, deep: modelId })
 
-const requestCount = v.nullable(v.pipe(v.number(), v.integer(), v.minValue(1)))
+/*
+ * A card takes two requests, so a limit below 2 would refuse every card. That holds for every tier:
+ * `fast` writes vocabulary cards too (docs/engines.md, "Routing").
+ */
+const requestCount = v.nullable(
+	v.pipe(v.number(), v.integer(), v.minValue(2, 'A card takes two requests: allow at least 2')),
+)
 
 const limitSchema = v.object({ perMinute: requestCount, perDay: requestCount })
 

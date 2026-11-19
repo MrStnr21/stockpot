@@ -101,6 +101,15 @@ describe('gemini-usage', () => {
 			})
 		})
 
+		it('fails with an ordinary error when a call needs more requests than a limit allows', () => {
+			const error = refusal('model-a', { perMinute: null, perDay: 1 }, 2)
+
+			expect(error).not.toBeInstanceOf(EngineError)
+			expect(error?.message).toBe(
+				'A call of 2 requests never fits the configured limit of 1 for model-a',
+			)
+		})
+
 		describe('with a per-minute limit', () => {
 			const perMinute = { perMinute: 2, perDay: null }
 

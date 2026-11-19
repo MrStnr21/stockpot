@@ -28,8 +28,8 @@ export const configuredSettingsFactory = Factory.define<Settings>(() => ({
 			apiKey: faker.string.alphanumeric(39),
 			models: models(),
 			limits: {
-				fast: { perMinute: faker.number.int({ min: 1, max: 30 }), perDay: 1000 },
-				standard: { perMinute: null, perDay: faker.number.int({ min: 1, max: 250 }) },
+				fast: { perMinute: faker.number.int({ min: 2, max: 30 }), perDay: 1000 },
+				standard: { perMinute: null, perDay: faker.number.int({ min: 2, max: 250 }) },
 				deep: { perMinute: null, perDay: null },
 			},
 		},

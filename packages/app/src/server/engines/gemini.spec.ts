@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
 import { afterEach, beforeEach, describe, expect, it, setSystemTime } from 'bun:test'
-import { firstCardInput, suggestInputFactory } from '#tests/factories/engine-input'
+import { firstCardInput } from '#tests/factories/engine-input'
 import badKey from '#tests/recordings/gemini/bad-key.json'
 import explainCard from '#tests/recordings/gemini/explain-card.json'
 import explainFacts from '#tests/recordings/gemini/explain-facts.json'
@@ -11,68 +11,23 @@ import suggestAnswer from '#tests/recordings/gemini/suggest.json'
 import unavailable from '#tests/recordings/gemini/unavailable.json'
 import { createTestDb, type TestDb } from '#tests/setup/db'
 import { errorOf } from '#tests/setup/engines'
+import {
+	fakeGeminiFetch,
+	hang,
+	recorded,
+	recordedSuggestInput,
+	suggestionSaying,
+	type Answer,
+	type SentRequest,
+} from '#tests/setup/gemini'
 
 import { engineRuns } from '#/server/db/schema/jobs'
 
-import {
-	EngineError,
-	parseJsonText,
-	redactPrivate,
-	type Engine,
-	type EngineResult,
-	type JsonValue,
-} from './contract'
+import { EngineError, redactPrivate, type Engine, type EngineResult } from './contract'
 import { createGeminiEngine, geminiSchema } from './gemini'
 import { defaultEngines, type EngineSettings } from './settings'
-import { suggestionFormat } from './suggestion'
 
-interface Sent {
-	readonly url: string
-	readonly key: string | null
-	readonly text: string
-	readonly body: JsonValue
-}
-
-type Answer = (request: Request) => Promise<Response>
-
-function recorded({ status, body }: { readonly status: number; readonly body: object }): Answer {
-	return async () => Response.json(body, { status })
-}
-
-/** The recorded suggestion with its answer text replaced. */
-function suggestionSaying(text: string, finishReason = 'STOP'): Answer {
-	const [candidate] = suggestAnswer.body.candidates
-	const content = { ...candidate.content, parts: [{ text }] }
-
-	return recorded({
-		status: 200,
-		body: { ...suggestAnswer.body, candidates: [{ ...candidate, content, finishReason }] },
-	})
-}
-
-/** Never answers, and fails the request with the reason it was aborted. */
-async function hang(request: Request): Promise<Response> {
-	const { promise, reject } = Promise.withResolvers<Response>()
-
-	request.signal.addEventListener('abort', () => {
-		reject(request.signal.reason)
-	})
-
-	return promise
-}
-
-const recordedCategories = [
-	{ id: 'technology', name: 'Technology', hint: null },
-	{ id: 'english', name: 'English', hint: 'Words and phrases to learn' },
-	{ id: 'concept', name: 'Concept', hint: null },
-]
-
-// Spread rather than passed to `build`, which would merge the factory's schema into this one.
-const suggestInput = redactPrivate({
-	...suggestInputFactory.build(),
-	categories: recordedCategories,
-	output: suggestionFormat(recordedCategories.map(({ id }) => id)),
-})
+const suggestInput = recordedSuggestInput()
 
 const cardInput = redactPrivate(firstCardInput())
 
@@ -91,21 +46,11 @@ describe('gemini', () => {
 	})
 
 	describe('createGeminiEngine', () => {
-		let sent: Sent[]
+		let sent: SentRequest[]
 		let answers: Answer[]
 		let current: EngineSettings['gemini']
 		let db: TestDb
 		let engine: Engine
-
-		async function fakeFetch(input: RequestInfo | URL, init?: RequestInit) {
-			const request = new Request(input, init)
-			const text = await request.clone().text()
-			const key = request.headers.get('x-goog-api-key')
-
-			sent.push({ url: request.url, key, text, body: parseJsonText(text) })
-
-			return (answers.shift() ?? recorded({ status: 500, body: {} }))(request)
-		}
 
 		function runRows() {
 			return db.select().from(engineRuns).all()
@@ -117,7 +62,7 @@ describe('gemini', () => {
 			current = { ...defaultEngines().gemini, apiKey: 'test-key-a' }
 			;({ db } = await createTestDb())
 
-			const fetch = Object.assign(fakeFetch, { preconnect: globalThis.fetch.preconnect })
+			const fetch = fakeGeminiFetch(() => answers.shift(), sent)
 
 			engine = createGeminiEngine({ db, settings: () => current, fetch })
 		})
@@ -282,14 +227,30 @@ describe('gemini', () => {
 				expect(runRows()).toMatchObject([{ outcome: 'ok' }, { outcome: 'rate_limited' }])
 			})
 
-			it('refuses a card whose two requests do not both fit', async () => {
-				const standardLimit = { perMinute: 1, perDay: null }
+			it('refuses a card whose two requests do not both fit, before sending either', async () => {
+				const limit = { perMinute: 2, perDay: null }
 
-				current = { ...current, limits: { ...current.limits, standard: standardLimit } }
+				current = { ...current, limits: { fast: limit, standard: limit, deep: limit } }
+				current = { ...current, models: { ...current.models, standard: current.models.fast } }
+				answers = [recorded(suggestAnswer)]
+				await engine.suggest(suggestInput, fast)
 
 				expect(await errorOf(engine.explain(cardInput, standard))).toMatchObject({
-					kind: 'rate_limited',
+					failure: { kind: 'rate_limited', resetsAt: new Date('2026-11-19T15:01:00Z') },
 				})
+				expect(sent).toHaveLength(1)
+			})
+
+			it('fails a card with an ordinary error when its limit is below two requests', async () => {
+				current = {
+					...current,
+					limits: { ...current.limits, standard: { perMinute: 1, perDay: null } },
+				}
+
+				const error = await errorOf(engine.explain(cardInput, standard))
+
+				expect(error).not.toBeInstanceOf(EngineError)
+				expect(runRows()).toMatchObject([{ outcome: 'error' }])
 				expect(sent).toHaveLength(0)
 			})
 		})
