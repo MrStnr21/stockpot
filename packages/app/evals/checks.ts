@@ -81,11 +81,53 @@ export function cardLinks(card: JsonValue): string[] {
 // The formats whose `summary` is "What it is, in one sentence."
 const oneLinerFormats = new Set(['technology', 'comparison'])
 
+/*
+ * Abbreviations whose dot the Unicode sentence rules may take for a sentence end, per card language.
+ * Their dots are dropped before counting; so are the dots of initials, such as "Р. Джонсоном".
+ */
+const abbreviations = {
+	en: ['Dr.', 'Mr.', 'Mrs.', 'Ms.', 'U.S.', 'vs.', 'v.', 'e.g.', 'i.e.', 'etc.'],
+	ru: ['напр.', 'т. е.', 'и т. д.', 'и т. п.', 'см.'],
+} as const satisfies Readonly<Record<string, readonly string[]>>
+
+function escapeRegex(text: string): string {
+	return text.replaceAll(/[.*+?^${}()|[\]\\]/gu, String.raw`\$&`)
+}
+
+// The words of an abbreviation may be written with or without the space between them.
+function abbreviationPattern(abbreviation: string): RegExp {
+	const words = abbreviation.split(' ').map((word) => escapeRegex(word))
+
+	return new RegExp(String.raw`(?<!\p{L})${words.join(String.raw`\s*`)}`, 'giu')
+}
+
+const abbreviationPatterns = new Map(
+	Object.entries(abbreviations).map(([language, list]) => [
+		language,
+		list.map((abbreviation) => abbreviationPattern(abbreviation)),
+	]),
+)
+
+// A capital letter and a dot before a capitalized word: an initial, as in "J. R. R. Tolkien".
+const initial = /(?<!\p{L})(?<letter>\p{Lu})\.(?=\s+\p{Lu})/gu
+
+function withoutAbbreviationDots(text: string, language: string): string {
+	const patterns = abbreviationPatterns.get(language) ?? []
+
+	const plain = patterns.reduce(
+		(current, pattern) => current.replaceAll(pattern, (match) => match.replaceAll('.', '')),
+		text,
+	)
+
+	return plain.replaceAll(initial, '$<letter>')
+}
+
 /** How many sentences `text` holds, by the Unicode sentence rules for `language`. */
 export function countSentences(text: string, language: string): number {
 	const segmenter = new Intl.Segmenter(language, { granularity: 'sentence' })
+	const segments = segmenter.segment(withoutAbbreviationDots(text, language))
 
-	return [...segmenter.segment(text)].filter(({ segment }) => segment.trim() !== '').length
+	return [...segments].filter(({ segment }) => segment.trim() !== '').length
 }
 
 /** The one-liner of a `technology` or `comparison` card is a single sentence. */

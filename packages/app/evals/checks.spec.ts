@@ -65,8 +65,23 @@ describe('eval checks', () => {
 			['Bun is a JavaScript runtime, e.g. for servers.', 1],
 			['Bun is a runtime. It also bundles code.', 2],
 			['Bun 1.4 is a runtime.', 1],
-		])('counts %p as %p sentences', (text, count) => {
+			['A protocol Dr. Hopper described for U.S. Navy computers.', 1],
+			['A comparison of React vs. Vue for small apps.', 1],
+			['The ruling in Roe v. Wade, cited in privacy law.', 1],
+			['A format, i.e. a shape for cards, with fields, etc. for each.', 1],
+			['A method described by J. R. R. Tolkien in a letter.', 1],
+		])('counts %p as %p sentences in English', (text, count) => {
 			expect(countSentences(text, 'en')).toBe(count)
+		})
+
+		it.each([
+			['Среда для кода, напр. для серверов.', 1],
+			['Среда, т. е. место, где выполняется код.', 1],
+			['Языки, фреймворки и т. д. в одном обзоре.', 1],
+			['Метод, описанный Р. Джонсоном в статье.', 1],
+			['Это среда. Она быстрая.', 2],
+		])('counts %p as %p sentences in Russian', (text, count) => {
+			expect(countSentences(text, 'ru')).toBe(count)
 		})
 
 		it('fails a two-sentence summary of a technology card', () => {
