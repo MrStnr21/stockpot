@@ -42,8 +42,15 @@ const report: EvalReport = {
 	language: 'en',
 	startedAt: '2026-11-19T08:00:00.000Z',
 	notes: [
-		{ id: 'a', text: 'bun', source: 'owner', private: false, format: 'technology' },
-		{ id: 'b', text: 'a | b', source: 'composed', private: true, format: 'technology' },
+		{ id: 'a', text: 'bun', source: 'owner', private: false, format: 'technology', local: false },
+		{
+			id: 'b',
+			text: 'a | b',
+			source: 'composed',
+			private: true,
+			format: 'technology',
+			local: true,
+		},
 	],
 	calls,
 	summary: summarize(calls),

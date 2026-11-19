@@ -21,7 +21,7 @@ import {
 	type EvalEnv,
 } from './engines'
 import { runEval, type EvalRun } from './evaluate'
-import { loadNotes } from './notes'
+import { loadNotes, sampleOrder } from './notes'
 import { renderMarkdown, renderScoreSheet, summarize, type EvalReport } from './report'
 
 export const usage =
@@ -87,7 +87,6 @@ export async function main(args: readonly string[], options: MainOptions): Promi
 	const { engine: engineId, notes: notesFile, limit, language, out } = parseArgs(args)
 	const publicFile = resolve(notesFile)
 	const notes = await loadNotes({ publicFile, localDir: join(dirname(publicFile), 'local') })
-	const selected = notes.slice(0, limit)
 	const rubric = await file(join(import.meta.dir, 'rubric.md')).text()
 	const { sqlite, db } = await openDatabase({ path: ':memory:', migrationsFolder })
 	const engine = (options.createEngine ?? createEvalEngine)(engineId, { env: options.env, db })
@@ -95,7 +94,8 @@ export async function main(args: readonly string[], options: MainOptions): Promi
 
 	const calls = await runEval({
 		engine,
-		notes: selected,
+		notes: sampleOrder(notes),
+		...(limit !== undefined && { maxCalls: limit }),
 		language,
 		fillerPhrases: parseFillerPhrases(rubric, language),
 		...(options.checkLinks && { checkLinks: options.checkLinks }),
@@ -108,13 +108,16 @@ export async function main(args: readonly string[], options: MainOptions): Promi
 		engine: engineId,
 		language,
 		startedAt: startedAt.toISOString(),
-		notes: selected.map((note) => ({
-			id: note.id,
-			text: note.text,
-			source: note.source,
-			private: note.private,
-			format: note.expected.format,
-		})),
+		notes: notes
+			.filter(({ id }) => calls.some(({ noteId }) => noteId === id))
+			.map((note) => ({
+				id: note.id,
+				text: note.text,
+				source: note.source,
+				private: note.private,
+				format: note.expected.format,
+				local: note.local,
+			})),
 		calls,
 		summary: summarize(calls),
 	}

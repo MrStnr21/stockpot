@@ -131,9 +131,11 @@ export interface EvalRun {
 	readonly checkLinks?: (links: readonly string[]) => Promise<CheckResult | null>
 	/** The clock that times each call, in milliseconds. */
 	readonly now?: () => number
+	/** Stop after this many engine calls; every call is one, suggestions included. */
+	readonly maxCalls?: number
 }
 
-type Settings = Required<EvalRun>
+type Settings = Required<Omit<EvalRun, 'maxCalls'>>
 
 async function suggestFor(note: EvalNote, run: Settings): Promise<CallRecord> {
 	const input = redactPrivate({
@@ -231,10 +233,16 @@ export async function runEval(run: EvalRun): Promise<CallRecord[]> {
 	}
 
 	const calls: CallRecord[] = []
+	const maxCalls = run.maxCalls ?? Number.POSITIVE_INFINITY
 
-	for (const note of run.notes) {
+	const steps = run.notes.flatMap((note) => [
+		async () => suggestFor(note, settings),
+		async () => cardFor(note, settings),
+	])
+
+	for (const step of steps.slice(0, maxCalls)) {
 		// oxlint-disable-next-line no-await-in-loop -- Calls run in turn, so a latency is never another call's wait.
-		calls.push(await suggestFor(note, settings), await cardFor(note, settings))
+		calls.push(await step())
 	}
 
 	return calls

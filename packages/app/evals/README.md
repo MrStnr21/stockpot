@@ -23,13 +23,13 @@ From the repository root:
 bun run eval -- --engine <id> [--notes <file>] [--limit <n>] [--language <code>] [--out <dir>]
 ```
 
-| Option       | Default                                             | Meaning                                                           |
-| ------------ | --------------------------------------------------- | ----------------------------------------------------------------- |
-| `--engine`   | required                                            | The engine to measure, by its id below                            |
-| `--notes`    | `packages/app/evals/notes.jsonl`                    | The public notes; the `local/` folder next to the file joins them |
-| `--limit`    | every note                                          | Run only the first `n` notes, for a quick try                     |
-| `--language` | `en`                                                | The card language, as an ISO 639-1 code                           |
-| `--out`      | `packages/app/evals/local/reports/<time>-<engine>/` | Where the report goes                                             |
+| Option       | Default                                             | Meaning                                                                                               |
+| ------------ | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `--engine`   | required                                            | The engine to measure, by its id below                                                                |
+| `--notes`    | `packages/app/evals/notes.jsonl`                    | The public notes; the `local/` folder next to the file joins them                                     |
+| `--limit`    | every call                                          | Stop after `n` engine calls, for a quick try; notes are taken one format at a time, local notes first |
+| `--language` | `en`                                                | The card language, as an ISO 639-1 code                                                               |
+| `--out`      | `packages/app/evals/local/reports/<time>-<engine>/` | Where the report goes                                                                                 |
 
 For each note the runner asks the engine for a suggestion among the built-in categories, then for
 a first-level card in the note's expected format (a report for an idea), on the tier the routing

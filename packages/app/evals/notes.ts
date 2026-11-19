@@ -11,7 +11,7 @@ import { file, Glob } from 'bun'
 import { basename, join } from 'node:path'
 import * as v from 'valibot'
 
-import { formatIds } from '#/lib/format-ids'
+import { formatIds, type FormatId } from '#/lib/format-ids'
 
 const nonEmpty = v.pipe(v.string(), v.nonEmpty())
 
@@ -58,6 +58,9 @@ export const evalNoteSchema = v.strictObject({
 })
 
 export type EvalNote = v.InferOutput<typeof evalNoteSchema>
+
+/** A note as the loader returns it: `local` when any of it came from a local file. */
+export type LoadedNote = EvalNote & { readonly local: boolean }
 
 const localAdditionSchema = v.strictObject({
 	id: noteId,
@@ -119,15 +122,15 @@ export function parseNotes(text: string, name: string): EvalNote[] {
 export function mergeLocal(
 	notes: readonly EvalNote[],
 	local: readonly (EvalNote | LocalAddition)[],
-): EvalNote[] {
-	const byId = new Map<string, EvalNote>()
+): LoadedNote[] {
+	const byId = new Map<string, LoadedNote>()
 
 	for (const note of notes) {
 		if (byId.has(note.id)) {
 			throw new Error(`The note "${note.id}" is listed twice`)
 		}
 
-		byId.set(note.id, note)
+		byId.set(note.id, { ...note, local: false })
 	}
 
 	for (const line of local) {
@@ -138,7 +141,7 @@ export function mergeLocal(
 				throw new Error(`The note "${line.id}" is listed twice`)
 			}
 
-			byId.set(line.id, line)
+			byId.set(line.id, { ...line, local: true })
 		} else {
 			if (existing === undefined) {
 				throw new Error(`The local addition "${line.id}" names no public note`)
@@ -153,6 +156,7 @@ export function mergeLocal(
 				...existing,
 				context: line.context ?? existing.context,
 				url: line.url ?? existing.url,
+				local: true,
 			})
 		}
 	}
@@ -191,8 +195,27 @@ export interface LoadNotesOptions {
 	readonly localDir: string
 }
 
-export async function loadNotes({ publicFile, localDir }: LoadNotesOptions): Promise<EvalNote[]> {
+export async function loadNotes({ publicFile, localDir }: LoadNotesOptions): Promise<LoadedNote[]> {
 	const notes = parseNotes(await file(publicFile).text(), basename(publicFile))
 
 	return mergeLocal(notes, await readLocal(localDir))
+}
+
+/**
+ * The order a run takes notes in: one note of each format in turn, local notes first within a
+ * format, so a run cut short by `--limit` still samples every format and the owner's own notes.
+ */
+export function sampleOrder(notes: readonly LoadedNote[]): LoadedNote[] {
+	const groups = formatIds.map((id: FormatId) => {
+		const group = notes.filter((note) => note.expected.format === id)
+
+		// A stable sort: local notes first, each side in file order.
+		return group.toSorted((a, b) => Number(b.local) - Number(a.local))
+	})
+
+	const rounds = Math.max(0, ...groups.map((group) => group.length))
+
+	return Array.from({ length: rounds }, (_, round) =>
+		groups.flatMap((group) => group.slice(round, round + 1)),
+	).flat()
 }

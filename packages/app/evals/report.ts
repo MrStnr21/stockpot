@@ -31,6 +31,8 @@ export interface ReportNote {
 	readonly source: 'owner' | 'composed'
 	readonly private: boolean
 	readonly format: string
+	/** Whether any of the note came from a local file. */
+	readonly local: boolean
 }
 
 export interface GroupStats {

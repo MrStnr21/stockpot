@@ -5,8 +5,18 @@ import { $, write } from 'bun'
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { evalNoteFactory } from '#tests/factories/eval-notes'
 
-import { loadNotes, mergeLocal, parseNotes, type EvalNote } from './notes'
+import type { FormatId } from '#/lib/format-ids'
+
+import {
+	loadNotes,
+	mergeLocal,
+	parseNotes,
+	sampleOrder,
+	type EvalNote,
+	type LoadedNote,
+} from './notes'
 
 function noteLine(overrides: Partial<EvalNote> = {}): string {
 	return JSON.stringify({
@@ -21,6 +31,12 @@ function noteLine(overrides: Partial<EvalNote> = {}): string {
 		tests: 'A formal conjunction.',
 		...overrides,
 	})
+}
+
+function loaded(id: string, format: FormatId, local = false): LoadedNote {
+	const note = evalNoteFactory.build({ id })
+
+	return { ...note, expected: { ...note.expected, format }, local }
 }
 
 describe('eval notes', () => {
@@ -110,6 +126,24 @@ describe('eval notes', () => {
 			const notes = await loadNotes({ publicFile, localDir: join(folder, 'absent') })
 
 			expect(notes.map(({ id }) => id)).toEqual(['albeit'])
+		})
+	})
+
+	describe('sampleOrder', () => {
+		it('takes one note of each format in turn, local notes first', () => {
+			const notes = [
+				loaded('tech-1', 'technology'),
+				loaded('tech-2', 'technology'),
+				loaded('word-1', 'vocabulary'),
+				loaded('tech-local', 'technology', true),
+			]
+
+			expect(sampleOrder(notes).map(({ id }) => id)).toEqual([
+				'word-1',
+				'tech-local',
+				'tech-1',
+				'tech-2',
+			])
 		})
 	})
 
