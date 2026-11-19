@@ -40,6 +40,7 @@ variable when one is invalid. Every other setting is changed in the app and stor
 | `STOCKPOT_PUBLIC_ORIGIN` | `http://localhost:` and the port       | The address you open stockpot at, such as `https://stockpot.example.ts.net`; set it when that is not the default                                                               |
 | `STOCKPOT_SOURCE_URL`    | `https://github.com/MrStnr21/stockpot` | Where the source of your instance is published; point it at your fork if you change the code, as the AGPL asks (see below)                                                     |
 | `STOCKPOT_AGENT_COMMAND` | unset                                  | The command template that runs your agent for the agent command engine ([how to write it](docs/engines.md#the-agent-command)); that engine is configured only when this is set |
+| `STOCKPOT_METRICS_TOKEN` | unset                                  | The bearer token a Prometheus scraper sends to read `/metrics`, at least 32 characters, such as the output of `openssl rand -hex 32`; without it `/metrics` answers 404        |
 
 The agent command is set only here, never in the app: a shell command that could be edited over
 HTTP would turn any stolen session into shell access on your machine, and stockpot is built to
@@ -57,7 +58,7 @@ An instance belongs to one owner. Until you create that owner, the server prints
 code to its log every time it starts:
 
 ```text
-stockpot has no owner yet. To claim this instance, open https://stockpot.example.ts.net/setup and enter the setup code 7K2M-Q9XD-4PRT-H8WN. ...
+{"level":"info","time":"…","message":"stockpot has no owner yet. To claim this instance, open https://stockpot.example.ts.net/setup and enter the setup code 7K2M-Q9XD-4PRT-H8WN. ..."}
 ```
 
 Open `/setup`, enter the code and choose a password of at least 12 characters. Only someone who can
@@ -86,6 +87,31 @@ reach it. The code stops working once the owner exists, and a restart replaces i
 - **A forgotten password.** Stop stockpot, delete the owner with
   `sqlite3 <data directory>/stockpot.db "DELETE FROM owner"`, and start it again: it prints a new
   setup code, and creating the owner again ends every old session.
+
+## Health, logs and metrics
+
+- **Health.** `GET /healthz` answers 200, or 503 when the database fails, with a status word for
+  the database, the job runner and each engine: `ok`, `failing` or `not configured`. An engine
+  counts as failing when its latest call was refused its key; the check never calls an engine. It
+  is public and says nothing else, so an uptime monitor or a container health check can use it.
+- **Logs.** The server writes one JSON object per line, with `level`, `time`, `message` and any
+  fields: `info` on stdout, `warn` and `error` on stderr. A field whose name looks like a secret,
+  such as `apiKey`, `token` or `cookie`, is written as `[redacted]`.
+- **Metrics.** With `STOCKPOT_METRICS_TOKEN` set, `GET /metrics` serves Prometheus metrics to a
+  request with `Authorization: Bearer <token>`: jobs and their attempts by kind and status
+  (`stockpot_jobs`, `stockpot_job_attempts`), and engine calls with their durations by engine and
+  outcome (`stockpot_engine_run_duration_seconds`). Point the scraper at it with its
+  `authorization` setting:
+
+  ```yaml
+  scrape_configs:
+    - job_name: stockpot
+      metrics_path: /metrics
+      authorization:
+        credentials_file: /etc/prometheus/stockpot-token
+      static_configs:
+        - targets: ['stockpot.example.ts.net']
+  ```
 
 ## License
 

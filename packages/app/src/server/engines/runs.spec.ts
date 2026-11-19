@@ -4,19 +4,21 @@
 import { afterEach, beforeEach, describe, expect, it, spyOn, type Mock } from 'bun:test'
 import { createTestDb } from '#tests/setup/db'
 
+import { log, type Logger } from '#/server/log'
+
 import type { EngineResult } from './contract'
 import { oneAtATime, recordRun, type Line } from './runs'
 
 describe('runs', () => {
 	describe('recordRun', () => {
 		describe('with a database that cannot take the row', () => {
-			let logged: Mock<typeof console.error>
+			let logged: Mock<Logger['error']>
 			let result: EngineResult<string>
 
 			beforeEach(async () => {
 				const { sqlite, db } = await createTestDb()
 
-				logged = spyOn(console, 'error').mockImplementation(() => {
+				logged = spyOn(log, 'error').mockImplementation(() => {
 					// The spec checks the call; the message would only clutter the output.
 				})
 				sqlite.close()

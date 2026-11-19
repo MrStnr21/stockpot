@@ -8,6 +8,7 @@ import { createTestDb } from '#tests/setup/db'
 
 import { createAuth } from '#/server/auth'
 import { route, type RouteContext } from '#/server/http'
+import { log, type Logger } from '#/server/log'
 import type { Owner, OwnerResolver } from '#/server/policy'
 
 import { createMiddleware } from './middleware'
@@ -128,16 +129,16 @@ describe('middleware', () => {
 	})
 
 	describe('on /api/*', () => {
-		let consoleError: Mock<typeof console.error>
+		let logged: Mock<Logger['error']>
 
 		beforeEach(() => {
-			consoleError = spyOn(console, 'error').mockImplementation(() => {
+			logged = spyOn(log, 'error').mockImplementation(() => {
 				// Keeps the expected error out of the test output.
 			})
 		})
 
 		afterEach(() => {
-			consoleError.mockRestore()
+			logged.mockRestore()
 		})
 
 		describe('when the route throws', () => {
@@ -158,7 +159,7 @@ describe('middleware', () => {
 			})
 
 			it('logs the error', () => {
-				expect(consoleError).toHaveBeenCalledTimes(1)
+				expect(logged).toHaveBeenCalledTimes(1)
 			})
 		})
 

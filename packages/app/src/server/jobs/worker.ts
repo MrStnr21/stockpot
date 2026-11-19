@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
 import type { Db } from '#/server/db/client'
+import { log } from '#/server/log'
 
 import {
 	claimNextJob,
@@ -213,8 +214,7 @@ function recordFailure(worker: Worker, error: Error) {
 	const cause = error.cause instanceof Error ? ` (${error.cause.message})` : ''
 
 	worker.failure = { error: `${error.message}${cause}`, at: new Date(), delay }
-	// oxlint-disable-next-line no-console -- The server has no logger yet, and this error must not pass silently.
-	console.error(`The job runner hit an error and tries again in ${delay / 1000} s:`, error)
+	log.error(`The job runner hit an error and tries again in ${delay / 1000} s`, { error })
 }
 
 async function drainSafely(worker: Worker) {

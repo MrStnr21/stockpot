@@ -93,16 +93,16 @@ the health check (SRV-7). A handler's own errors stay on its job and do not coun
 seconds for it; a job still in hand stays `running` and is requeued on the next start, as after a
 crash. The runner counts as started until its stop has finished.
 
-Nothing calls them yet, because Astro 7 has no clean place to do it in production:
+[`src/server/boot.ts`](../boot.ts), which the `boot` integration in `astro.config.ts` runs when the
+built server starts, calls `startRunner()` after it opens the database, and calls `stopRunner()` on
+`SIGTERM` and `SIGINT` before the process exits; the Node adapter installs no signal handlers of its
+own. The dev server does not run `boot.ts`, so no runner works there and `/healthz` reports it as
+failing.
 
-- the integration hooks `astro:server:setup`, `astro:server:start` and `astro:server:done` run only
-  in the dev server;
-- `@astrojs/node` takes only `mode`, `experimentalDisableStreaming`, `staticHeaders` and
-  `bodySizeLimit`, with no startup callback;
-- the standalone entry starts the server as soon as it is imported, unless `ASTRO_NODE_AUTOSTART` is
-  `disabled`, and exports `startServer` and `handler`.
+Routes reach the runner through `currentRunner()`: the build bundles `runner.ts` once, so a route
+and `boot.ts` share its module instance. `/healthz` reads `health()` this way, and the first route
+that enqueues will call `enqueue` on it.
 
-The first story that needs the runner wires it: for example an entry script that disables the
-autostart, opens the database, calls `startServer()` and `startRunner()`, and calls `stopRunner()` on
-`SIGTERM` and `SIGINT`. Routes and the runner must share one module instance, so that story also
-decides how request handlers reach `enqueue`.
+`boot.ts` registers no jobs yet. It sits in `server/`, which may not import features, so the first
+story with a feature job moves the start into an entry module that may, and passes the definitions
+and the `timeZone` setting from there.
