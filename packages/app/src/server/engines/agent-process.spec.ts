@@ -142,6 +142,24 @@ describe('agent-process', () => {
 			})
 		})
 
+		describe('with a script whose child ignores SIGINT', () => {
+			let child: number
+
+			beforeEach(async () => {
+				jest.useFakeTimers()
+
+				const running = run('sleep 30 & echo $! > pid; wait', { timeoutMs: 3000 })
+
+				child = await pidIn(cwd)
+				jest.advanceTimersByTime(3000)
+				await errorOf(running)
+			})
+
+			it('stops the child with the script', async () => {
+				expect(await isRunning(child)).toBe(false)
+			})
+		})
+
 		describe('when the run is aborted', () => {
 			const reason = new Error('The runner stopped')
 			let pid: number

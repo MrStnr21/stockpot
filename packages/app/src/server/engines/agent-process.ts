@@ -53,6 +53,21 @@ export function splitWords(command: string): string[] {
 	return words
 }
 
+type StopSignal = 'SIGINT' | 'SIGTERM' | 'SIGKILL'
+
+/**
+ * Signals the process's whole group. The agent runs in a group of its own, so a wrapper script and
+ * the agent it started stop together, which signalling the script alone would not do.
+ */
+function signalGroup(pid: number, signal: StopSignal) {
+	try {
+		// oxlint-disable-next-line no-undef -- process is a Bun global; docs/guidelines/runtime.md allows process.kill for a process group.
+		process.kill(-pid, signal)
+	} catch {
+		// The group is gone already.
+	}
+}
+
 export interface ProcessExit {
 	readonly exitCode: number
 	readonly stdout: string
@@ -71,9 +86,9 @@ export interface ProcessRun {
 }
 
 /**
- * Runs a process to its exit and returns what it printed. On the timeout or an abort it sends SIGINT,
- * then SIGTERM and SIGKILL a grace period apart, and fails once the process is gone with `timeout` or
- * the abort reason, without waiting for output that a child of the process may still hold open.
+ * Runs a process to its exit and returns what it printed. On the timeout or an abort it sends its group
+ * SIGINT, then SIGTERM and SIGKILL a grace period apart, and fails once the process is gone with
+ * `timeout` or the abort reason, without waiting for output that a child may still hold open.
  */
 export async function runProcess({
 	cmd,
@@ -88,6 +103,7 @@ export async function runProcess({
 	const agent = spawn({
 		cmd: [...cmd],
 		cwd,
+		detached: true,
 		stdin: stdin === null ? 'ignore' : new Blob([stdin]),
 		stdout: 'pipe',
 		stderr: 'pipe',
@@ -97,10 +113,10 @@ export async function runProcess({
 	const escalations: ReturnType<typeof setTimeout>[] = []
 
 	function escalate() {
-		agent.kill('SIGTERM')
+		signalGroup(agent.pid, 'SIGTERM')
 		escalations.push(
 			setTimeout(() => {
-				agent.kill('SIGKILL')
+				signalGroup(agent.pid, 'SIGKILL')
 			}, graceMs),
 		)
 	}
@@ -109,7 +125,7 @@ export async function runProcess({
 	function stop(reason: Error) {
 		clearTimeout(timeout)
 		signal?.removeEventListener('abort', onAbort)
-		agent.kill('SIGINT')
+		signalGroup(agent.pid, 'SIGINT')
 		escalations.push(setTimeout(escalate, graceMs))
 		stopWith(reason)
 	}
@@ -143,6 +159,11 @@ export async function runProcess({
 		signal?.removeEventListener('abort', onAbort)
 		// After a stop, the signals keep going until the process is gone, so the next run starts clean.
 		await agent.exited
+
+		// Whatever the stopped process left behind in its group goes with it.
+		if (escalations.length > 0) {
+			signalGroup(agent.pid, 'SIGKILL')
+		}
 
 		for (const escalation of escalations) {
 			clearTimeout(escalation)

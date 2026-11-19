@@ -45,6 +45,8 @@ Use a Node API only where Bun has no equivalent:
 - `node:path` and `node:os` are allowed everywhere outside browser code;
 - `process.exit`, and `process.execve` in `tools/lint/tsrs-lint.ts`, which replaces the process
   with the tsrs binary so oxlint keeps its standard streams;
+- `process.kill` with a negative process id in `src/server/engines/agent-process.ts`, which signals
+  the agent command's whole process group: a subprocess's own `kill` reaches one process only;
 - configuration files loaded by Node-based tools may read `process.env`.
 
 Any other Node import needs a comment that explains why Bun cannot do it, and a line in this list.

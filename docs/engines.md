@@ -2,8 +2,8 @@
 
 How stockpot talks to language models: the contract every engine implements, the card formats and
 depth levels an engine must answer in, the suggestion schema, how a prompt is put together, which
-links a card may carry, what leaves the instance for a private note, and which engine runs which
-task. The [architecture](architecture.md#the-engine-contract-boundary) explains where these pieces
+links a card may carry, what leaves the instance for a private note, which engine runs which task,
+and what the agent command must do. The [architecture](architecture.md#the-engine-contract-boundary) explains where these pieces
 live; this page records what they are. Paths are relative to `packages/app/`.
 
 ## The contract
@@ -131,8 +131,9 @@ side. Whatever a provider drops or ignores, an answer that breaks the format fai
   generation config but does not say which to prefer. To verify with a real call in ENG-4: which of
   `response_format`, `responseJsonSchema` and `responseSchema` the engine uses, and how each treats
   `pattern`, `format: uri`, `anyOf` and `$schema`.
-- **Agent command** (ENG-3): the schema goes to the command as its template says; what the agent
-  enforces depends on the agent, so validation on our side is the only guarantee.
+- **Agent command** (ENG-3): the schema goes to the command unchanged, as its template says (see
+  [The agent command](#the-agent-command)); what the agent enforces depends on the agent, so
+  validation on our side is the only guarantee.
 
 ### Fields every card shares
 
@@ -274,3 +275,114 @@ single category, and set the fallback order.
 - **Drafts.** A card from a fallback engine is marked a draft and redone by the primary engine once
   its limit resets. Drafts apply to cards only: a suggestion is not stored, so one from a fallback
   engine is simply shown.
+
+## The agent command
+
+The agent command engine
+([`src/server/engines/agent-cli.ts`](../packages/app/src/server/engines/agent-cli.ts), ENG-3) runs a
+command-line agent the owner already uses. No agent is named or assumed
+([D3](principles.md#decisions)): the owner sets `STOCKPOT_AGENT_COMMAND` to a command template, and
+the engine is configured only when it is set. It lives in the environment rather than in settings, so
+the command cannot be changed over HTTP.
+
+### The template
+
+The template is split into words as a shell would, with single and double quotes and nothing else:
+no variables, escapes, pipes or redirections. Anything more, such as picking a model for a tier or
+translating the agent's messages, goes in a script that the template names. Placeholders are filled
+in word by word, so a value never splits into more words or reaches a shell:
+
+| Placeholder     | Becomes                                                                            |
+| --------------- | ---------------------------------------------------------------------------------- |
+| `{schema_file}` | The path of a file holding the call's JSON Schema                                  |
+| `{schema}`      | The JSON Schema itself, as one argument                                            |
+| `{tier}`        | `fast`, `standard` or `deep`; a script maps it to one of the agent's models        |
+| `{prompt_file}` | The path of a file holding the [prompt](#prompts); without it, the prompt is stdin |
+
+The schema is the derived draft-07 schema, as it is: stockpot validates the answer itself.
+
+### Each run
+
+- **A fresh empty working directory**, removed afterwards. The prompt and schema files sit next to
+  it, not in it. The environment is the server's, so the agent finds its own login.
+- **Search and fetch only.** The template must limit the agent to searching and fetching pages;
+  stockpot cannot enforce what tools an agent has, and the empty directory is only a second line of
+  defence.
+- **One run at a time.** A call waits for the one before it; one aborted while it waits leaves
+  without running.
+- **Timeout and abort.** The timeout counts from the start of the run, not the wait. On the timeout
+  or an abort, the engine sends SIGINT to the run's process group, then SIGTERM after 5 seconds and
+  SIGKILL after 5 more, so a wrapper script and the agent it started stop together. Once the
+  command has exited, anything left in its group is killed.
+- **One `engine_runs` row** per run, with its outcome, its duration and the model and usage the
+  agent reported.
+
+### Output
+
+On success the command exits with status 0 and prints one JSON document on stdout, either the
+answer itself or a wrapper around it:
+
+```json
+{
+  "structured_output": { "categories": ["technology"], "senses": [], "language": "en" },
+  "model": "the-model-id",
+  "usage": { "input_tokens": 1200, "output_tokens": 300, "searches": 2, "cost_usd": 0.004 }
+}
+```
+
+`model` and each `usage` field are optional and recorded when present. Nothing else may go to
+stdout: logs and progress belong on stderr.
+
+### Failures
+
+stockpot does not read the agent's own wording. The command, or a script around it, reports a usage
+limit or a login failure with an `error` object on stdout, with any exit status:
+
+| The command                                                         | The engine reports                                                          |
+| ------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| prints `{"error":{"kind":"rate_limited","resets_at":"<ISO 8601>"}}` | `rate_limited` until `resets_at`; an hour from now when it is missing       |
+| prints `{"error":{"kind":"auth"}}`                                  | `auth`                                                                      |
+| exits with another status and no `error` object                     | an ordinary error with the status and the end of stderr, retried by the job |
+| exits with 0 and prints no JSON, or JSON that breaks the format     | `invalid`                                                                   |
+| does not exit within the timeout                                    | `timeout`                                                                   |
+
+### Example
+
+A template that passes the tier and the schema file to a script, with the prompt on stdin:
+
+```sh
+STOCKPOT_AGENT_COMMAND='/usr/local/bin/stockpot-agent {tier} {schema_file}'
+```
+
+The script picks a model for the tier, runs your agent, and turns your agent's limit and login
+messages into the `error` object. Replace `your-agent`, its flags, the model names and the two
+messages with your agent's own:
+
+```sh
+#!/bin/sh
+# stockpot-agent TIER SCHEMA_FILE: runs your agent for stockpot; the prompt arrives on stdin.
+case "$1" in
+  fast) model=your-fast-model ;;
+  standard) model=your-standard-model ;;
+  *) model=your-deep-model ;;
+esac
+
+errors=$(mktemp)
+trap 'rm -f "$errors"' EXIT
+
+your-agent --model "$model" --output-schema "$2" --allow-tools search,fetch 2>"$errors"
+status=$?
+
+if [ "$status" -ne 0 ]; then
+  if grep -q 'usage limit reached' "$errors"; then
+    # Say your agent prints "usage limit reached, resets at 2026-11-19T15:00:00Z".
+    resets_at=$(grep -o '[0-9-]*T[0-9:]*Z' "$errors" | head -n 1)
+    printf '{"error":{"kind":"rate_limited","resets_at":"%s"}}\n' "$resets_at"
+  elif grep -q 'not logged in' "$errors"; then
+    printf '{"error":{"kind":"auth"}}\n'
+  fi
+fi
+
+cat "$errors" >&2
+exit "$status"
+```
