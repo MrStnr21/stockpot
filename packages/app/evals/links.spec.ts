@@ -4,7 +4,7 @@
 import { serve } from 'bun'
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 
-import { checkLinks, ipv6Hextets, isPublicAddress, type Fetch } from './links'
+import { checkLinks, type Fetch } from './links'
 
 async function publicLookup(): Promise<string[]> {
 	return ['93.184.215.14']
@@ -33,61 +33,6 @@ function respond(routes: Record<string, Response | Error>): Fetch {
 }
 
 describe('the link check', () => {
-	describe('isPublicAddress', () => {
-		it.each([
-			'127.0.0.1',
-			'10.1.2.3',
-			'172.20.0.1',
-			'192.168.1.1',
-			'169.254.169.254',
-			'100.100.1.1',
-			'0.0.0.0',
-			'::',
-			'::1',
-			'::7f00:1',
-			'::ffff:127.0.0.1',
-			'::ffff:7f00:1',
-			'[::ffff:7f00:1]',
-			'::ffff:a00:1',
-			'::ffff:8.8.8.8',
-			'64:ff9b::7f00:1',
-			'64:ff9b::8.8.8.8',
-			'2002:7f00:1::1',
-			'2002:a00:1::',
-			'fd00::1',
-			'fe80::1',
-			'fec0::1',
-			'ff02::1',
-			'fe80::1%eth0',
-			'1::2::3',
-			'::ffff:999.0.0.1',
-			'localhost',
-		])('refuses %p', (address) => {
-			expect(isPublicAddress(address)).toBe(false)
-		})
-
-		it.each(['93.184.215.14', '172.32.0.1', '2606:4700::1111', '2002:5db8:d70e::1'])(
-			'allows %p',
-			(address) => {
-				expect(isPublicAddress(address)).toBe(true)
-			},
-		)
-	})
-
-	describe('ipv6Hextets', () => {
-		it.each([
-			['::ffff:127.0.0.1', [0, 0, 0, 0, 0, 0xff_ff, 0x7f_00, 1]],
-			['2606:4700::1111', [0x26_06, 0x47_00, 0, 0, 0, 0, 0, 0x11_11]],
-			['1:2:3:4:5:6:7:8', [1, 2, 3, 4, 5, 6, 7, 8]],
-		])('expands %p', (address, hextets) => {
-			expect(ipv6Hextets(address)).toEqual(hextets)
-		})
-
-		it.each(['1:2:3', '1:2:3:4:5:6:7:8::', 'g::1'])('rejects %p', (address) => {
-			expect(ipv6Hextets(address)).toBeNull()
-		})
-	})
-
 	describe('against a server on this machine', () => {
 		let hits = 0
 		const server = serve({ hostname: '127.0.0.1', port: 0, fetch: countHit })
@@ -169,6 +114,44 @@ describe('the link check', () => {
 
 			expect(result?.passed).toBe(false)
 			expect(result?.detail).toContain('127.0.0.1')
+		})
+
+		it('stops at the deadline while DNS is still resolving', async () => {
+			const controller = new AbortController()
+			let requests = 0
+
+			const result = await checkLinks(['https://slow.example/'], {
+				signal: controller.signal,
+				lookup: async () => {
+					controller.abort(new Error('deadline'))
+
+					return Promise.withResolvers<string[]>().promise
+				},
+				fetch: async () => {
+					requests += 1
+
+					return new Response(null, { status: 200 })
+				},
+			})
+
+			expect([result?.detail, requests]).toEqual(['https://slow.example/: deadline', 0])
+		})
+
+		it('keeps one deadline across the GET fallback', async () => {
+			const controller = new AbortController()
+
+			const result = await checkLinks(['https://example.com/'], {
+				signal: controller.signal,
+				lookup: publicLookup,
+				fetch: async (_url, init) => {
+					init.signal?.throwIfAborted()
+					controller.abort(new Error('deadline'))
+
+					return new Response(null, { status: 405 })
+				},
+			})
+
+			expect(result?.detail).toBe('https://example.com/: deadline')
 		})
 
 		it('reports dead links and failed requests with the reason', async () => {

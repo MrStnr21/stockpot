@@ -6,16 +6,21 @@ How to run it is in the [README](README.md).
 
 ## Automatic checks
 
-| Check         | Applies to                                             | Passes when                                                                                                              |
-| ------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
-| `schema`      | every call                                             | the answer matches the call's format; an engine's `invalid` failure counts as a fail                                     |
-| `links`       | cards with sources                                     | every source opens (HEAD, or GET when HEAD is refused) within 10 s, and no hop resolves to a loopback or private address |
-| `oneSentence` | `technology` and `comparison` cards                    | the `summary` is one sentence by the Unicode sentence rules                                                              |
-| `uncertain`   | notes composed to be unknowable (`expected.uncertain`) | the card is marked `uncertain` and cites no sources                                                                      |
-| `filler`      | every card                                             | no text in the card uses a phrase from the list below, in any letter case                                                |
-| `private`     | private notes                                          | the engine received the term alone: no text as typed, context, link or earlier cards                                     |
-| `category`    | every suggestion                                       | the first category is the note's expected one, or one it also fits (`expected.alsoAccept`)                               |
-| `senses`      | suggestions for ambiguous terms (two or more `senses`) | the suggestion lists at least two senses                                                                                 |
+| Check         | Applies to                                             | Passes when                                                                                                                                                                                                                                |
+| ------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `schema`      | every call                                             | the answer matches the call's format; an engine's `invalid` failure counts as a fail                                                                                                                                                       |
+| `links`       | cards with sources                                     | every source opens (HEAD, or GET when HEAD is refused, following up to 5 redirects) within one 10 s deadline per link that covers DNS, every redirect and the GET fallback, and no hop resolves to a loopback, private or reserved address |
+| `oneSentence` | `technology` and `comparison` cards                    | the `summary` is one sentence by the Unicode sentence rules                                                                                                                                                                                |
+| `uncertain`   | notes composed to be unknowable (`expected.uncertain`) | the card is marked `uncertain` and cites no sources                                                                                                                                                                                        |
+| `filler`      | every card                                             | no text in the card uses a phrase from the list below, in any letter case                                                                                                                                                                  |
+| `private`     | private notes                                          | the engine received the term alone: no text as typed, context, link or earlier cards                                                                                                                                                       |
+| `category`    | every suggestion                                       | the first category is the note's expected one, or one it also fits (`expected.alsoAccept`)                                                                                                                                                 |
+| `senses`      | suggestions for ambiguous terms (two or more `senses`) | the suggestion lists at least two senses                                                                                                                                                                                                   |
+
+**Known gap: DNS rebinding.** The check resolves a host name and refuses private addresses, then
+the request resolves the name again, so a DNS answer that changes in between is not caught. The
+eval runs on the owner's machine against links an engine cited, so the risk is small here; the
+server's link check (RES-2) must connect to the address it checked.
 
 A call that fails for any other reason (a timeout, a usage limit, a rejected key) is counted as an
 error and not checked.
