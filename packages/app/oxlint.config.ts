@@ -129,7 +129,7 @@ const policies = [
 		disallow: { to: { module: { source: ['node:*', 'bun:*', 'bun'] } } },
 		message: 'isomorphic code must not import runtime built-ins',
 	},
-	{ from: layers('test-support'), allow: { to: layers(...appLayers, 'test-support') } },
+	{ from: layers('test-support'), allow: { to: layers(...appLayers, 'test-support', 'evals') } },
 	{
 		from: layers('evals'),
 		allow: { to: layers('server', 'lib', 'feature-shared', 'evals') },
