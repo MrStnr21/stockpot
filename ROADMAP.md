@@ -7,16 +7,18 @@ are no target dates.
 
 ## Now
 
-[M0 Foundation](https://github.com/MrStnr21/stockpot/milestone/1) is done, so three lanes run side
-by side:
+[M0 Foundation](https://github.com/MrStnr21/stockpot/milestone/1) and
+[M1 Design](https://github.com/MrStnr21/stockpot/milestone/2) are done. The design canvas is in
+[docs/design-canvas](docs/design-canvas/README.md), so the web app now runs alongside the engines and
+the server core:
 
-- **[M1 Design](https://github.com/MrStnr21/stockpot/milestone/2):** the design canvas, the
-  source of truth for the interface: the kit and every screen at phone, tablet and desktop sizes,
-  in light and dark.
 - **[M2 Engines & formats](https://github.com/MrStnr21/stockpot/milestone/3):** proof that each
   engine writes good cards in every format, fast enough, before the product is built around them.
 - **[M3 Server core](https://github.com/MrStnr21/stockpot/milestone/4):** one process with the
   database, migrations, config, jobs, sign-in, HTTP conventions and health checks.
+- **[M6 Web app](https://github.com/MrStnr21/stockpot/milestone/7):** the PWA is the whole product
+  on the phone and the desktop: capture, notes, cards, Base, settings and push notifications,
+  built from the canvas boards.
 
 ## Next
 
@@ -24,8 +26,6 @@ by side:
   within three seconds from any entry point, with a suggested category.
 - **[M5 Research](https://github.com/MrStnr21/stockpot/milestone/6):** every note becomes a checked
   card in its category's format, overnight or on demand.
-- **[M6 Web app](https://github.com/MrStnr21/stockpot/milestone/7):** the PWA is the whole product
-  on the phone and the desktop: capture, notes, cards, Base, settings and push notifications.
 - **[M7 Digest](https://github.com/MrStnr21/stockpot/milestone/8):** the morning habit: the nightly
   queue, the morning push, Today with one-tap actions, carry-over and the archive.
 
