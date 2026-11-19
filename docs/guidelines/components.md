@@ -1,7 +1,7 @@
 # Components
 
 Paths starting with `src/` are relative to `packages/app/`. Follow the [styling](styling.md) rules
-and, once it exists, the design canvas.
+and the [design canvas](../design-canvas/README.md).
 
 ## Astro or Svelte
 

@@ -1,0 +1,366 @@
+<!doctype html>
+<!--
+  SPDX-License-Identifier: AGPL-3.0-or-later
+  SPDX-FileCopyrightText: 2026 The stockpot authors
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>First run: phone</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./tokens.css">
+<link rel="stylesheet" href="./kit.css">
+<link rel="stylesheet" href="./screens.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&amp;family=Literata:ital,opsz,wght@0,7..72,400..700;1,7..72,400..500&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#9D1E60}a:hover{color:#AC1E68}
+</style>
+</helmet>
+<div class="kit b-board" data-scheme="light" style="width: 3500px; min-height: 2480px">
+<svg class="b-sprite" aria-hidden="true" focusable="false">
+<symbol id="i-english" viewBox="0 0 24 24"><path d="M5 4.5h14a1.5 1.5 0 0 1 1.5 1.5v9.5a1.5 1.5 0 0 1-1.5 1.5h-7l-4.5 3.5V17H5a1.5 1.5 0 0 1-1.5-1.5V6A1.5 1.5 0 0 1 5 4.5zM9.25 13.75L12 7.25l2.75 6.5M10.2 11.6h3.6"></path></symbol>
+<symbol id="i-ai" viewBox="0 0 24 24"><path d="M10.5 3.5l1.9 5.1 5.1 1.9-5.1 1.9-1.9 5.1-1.9-5.1-5.1-1.9 5.1-1.9zM18 15.25l.8 1.95 1.95.8-1.95.8-.8 1.95-.8-1.95-1.95-.8 1.95-.8z"></path></symbol>
+<symbol id="i-tech" viewBox="0 0 24 24"><path d="M8.5 7.5L4 12l4.5 4.5M15.5 7.5L20 12l-4.5 4.5M13.5 5l-3 14"></path></symbol>
+<symbol id="i-concept" viewBox="0 0 24 24"><path d="M12 3.25l4 6.5H8z"></path><circle cx="7.25" cy="16.25" r="3.75"></circle><rect x="13.25" y="12.5" width="7.25" height="7.25" rx="1.25"></rect></symbol>
+<symbol id="i-idea" viewBox="0 0 24 24"><path d="M9.25 18h5.5M10.25 21h3.5M12 3a6 6 0 0 0-3.6 10.8c.7.55 1.1 1.3 1.1 2.1V16h5v-.1c0-.8.4-1.55 1.1-2.1A6 6 0 0 0 12 3z"></path></symbol>
+<symbol id="i-other" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.75"></circle><path d="M8 12h.01M12 12h.01M16 12h.01"></path></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"></path></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M12 2.75v2M12 19.25v2M2.75 12h2M19.25 12h2M5.46 5.46l1.41 1.41M17.13 17.13l1.41 1.41M5.46 18.54l1.41-1.41M17.13 6.87l1.41-1.41"></path></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"></path></symbol>
+<symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M7 3.75h10a1 1 0 0 1 1 1v15.5l-6-4.25-6 4.25V4.75a1 1 0 0 1 1-1z"></path></symbol>
+<symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h8M16 7h4M4 17h3M11 17h9"></path><circle cx="14" cy="7" r="2"></circle><circle cx="9" cy="17" r="2"></circle></symbol>
+<symbol id="i-clipboard" viewBox="0 0 24 24"><rect x="8.5" y="3" width="7" height="4" rx="1"></rect><path d="M15.5 5h1.75A1.75 1.75 0 0 1 19 6.75v12.5A1.75 1.75 0 0 1 17.25 21H6.75A1.75 1.75 0 0 1 5 19.25V6.75A1.75 1.75 0 0 1 6.75 5H8.5"></path></symbol>
+<symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13.5a4 4 0 0 0 5.66.5l2.83-2.83a4 4 0 0 0-5.66-5.66l-1.06 1.06M14 10.5a4 4 0 0 0-5.66-.5l-2.83 2.83a4 4 0 0 0 5.66 5.66l1.06-1.06"></path></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2"></rect><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"></path></symbol>
+<symbol id="i-chevron" viewBox="0 0 24 24"><path d="M9.5 6l6 6-6 6"></path></symbol>
+<symbol id="i-deeper" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4 4M11 8.25v5.5M8.25 11h5.5"></path></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l.9 12.1A2 2 0 0 0 8.9 21h6.2a2 2 0 0 0 2-1.9L18 7M9 7V4.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 .5.5V7"></path></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.75"></circle><path d="M12 7.75v5M12 16.25h.01"></path></symbol>
+<symbol id="i-pot" viewBox="0 0 24 24"><path d="M3 10.5h18M5 10.5V15a5 5 0 0 0 5 5h4a5 5 0 0 0 5-5v-4.5M10 7.5c-.8-1 .8-2 0-3M14 7.5c-.8-1 .8-2 0-3"></path></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4 4"></path></symbol>
+<symbol id="i-archive" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="4.5" rx="1"></rect><path d="M5 8.5V19a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8.5M10 12.5h4"></path></symbol>
+<symbol id="i-quote" viewBox="0 0 24 24"><path d="M5 18c2.5-1 4-3.2 4-6.5V7H5v5h4M15 18c2.5-1 4-3.2 4-6.5V7h-4v5h4"></path></symbol>
+<symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 3L5 13.5h6L10 21l8-10.5h-6z"></path></symbol>
+<symbol id="i-retry" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4.5h-4.5"></path></symbol>
+<symbol id="i-more" viewBox="0 0 24 24"><path d="M6 12h.01M12 12h.01M18 12h.01" stroke-width="2.5"></path></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.75"></circle><path d="M12 7.5V12l3 2"></path></symbol>
+<symbol id="i-tag" viewBox="0 0 24 24"><path d="M4 4h7.2l8.8 8.8-7.2 7.2L4 11.2z"></path><circle cx="8.25" cy="8.25" r="1.25"></circle></symbol>
+<symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"></path></symbol>
+<symbol id="i-grip" viewBox="0 0 24 24"><path d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01" stroke-width="2.5"></path></symbol>
+<symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4.5h5.5V10M19.5 4.5L11 13M17 13.5v4.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 5 18v-9a1.5 1.5 0 0 1 1.5-1.5H11"></path></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2"></rect><path d="M15.5 8.5V6A1.5 1.5 0 0 0 14 4.5H6A1.5 1.5 0 0 0 4.5 6v8A1.5 1.5 0 0 0 6 15.5h2.5"></path></symbol>
+<symbol id="i-phone" viewBox="0 0 24 24"><rect x="7" y="2.75" width="10" height="18.5" rx="2.25"></rect><path d="M11 18h2"></path></symbol>
+<symbol id="i-laptop" viewBox="0 0 24 24"><rect x="4.5" y="5" width="15" height="10.5" rx="1.5"></rect><path d="M2.5 19h19"></path></symbol>
+<symbol id="i-terminal" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2"></rect><path d="M7.5 9.5l3 2.5-3 2.5M12.5 15h4"></path></symbol>
+<symbol id="i-send" viewBox="0 0 24 24"><path d="M20.5 3.5L3.5 10.5l6.5 2.5 2.5 6.5zM10 13l4.5-4.5"></path></symbol>
+<symbol id="i-share" viewBox="0 0 24 24"><path d="M12 3.75v11M8 7.75l4-4 4 4M7 10.5H6a1.5 1.5 0 0 0-1.5 1.5v6.75A1.5 1.5 0 0 0 6 20.25h12a1.5 1.5 0 0 0 1.5-1.5V12a1.5 1.5 0 0 0-1.5-1.5h-1"></path></symbol>
+<symbol id="i-addsq" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"></rect><path d="M12 8.5v7M8.5 12h7"></path></symbol>
+<symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3.5" width="6" height="11" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v2.5"></path></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M12 6.5C10.5 5 8 4.5 4 4.75v13.5c4-.25 6.5.25 8 1.75 1.5-1.5 4-2 8-1.75V4.75c-4-.25-6.5.25-8 1.75zM12 6.5V20"></path></symbol>
+<symbol id="i-flag" viewBox="0 0 24 24"><path d="M5.5 21V4M5.5 4.5h11l-2 4 2 4h-11"></path></symbol>
+<symbol id="i-music" viewBox="0 0 24 24"><path d="M9 17.5V5.5l10-2v12"></path><circle cx="6.5" cy="17.5" r="2.5"></circle><circle cx="16.5" cy="15.5" r="2.5"></circle></symbol>
+<symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.75"></circle><path d="M14.5 9.25c-.5-.9-1.4-1.25-2.5-1.25-1.5 0-2.5.75-2.5 1.9 0 2.6 5.25 1.4 5.25 4.2 0 1.15-1.1 1.9-2.75 1.9-1.2 0-2.2-.45-2.75-1.35M12 6.5V8M12 16v1.5"></path></symbol>
+<symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z"></path></symbol>
+<symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.75"></circle><path d="M3.25 12h17.5M12 3.25c2.4 2.4 3.5 5.4 3.5 8.75s-1.1 6.35-3.5 8.75M12 3.25C9.6 5.65 8.5 8.65 8.5 12s1.1 6.35 3.5 8.75"></path></symbol>
+<symbol id="i-briefcase" viewBox="0 0 24 24"><rect x="3.5" y="7" width="17" height="12.5" rx="2"></rect><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7M3.5 12.5h17"></path></symbol>
+<symbol id="i-film" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2"></rect><path d="M7.5 4.5v15M16.5 4.5v15M3.5 9.5h4M3.5 14.5h4M16.5 9.5h4M16.5 14.5h4"></path></symbol>
+<symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s6.5-5.6 6.5-11a6.5 6.5 0 0 0-13 0c0 5.4 6.5 11 6.5 11z"></path><circle cx="12" cy="10" r="2.25"></circle></symbol>
+<symbol id="i-leaf" viewBox="0 0 24 24"><path d="M5 19c0-8 5-13 14-14 0 9-5 14-13 14zM5 19l7-7"></path></symbol>
+<symbol id="i-flask" viewBox="0 0 24 24"><path d="M9.5 3.75h5M10.5 3.75v5.5L5.2 18.1a1.5 1.5 0 0 0 1.3 2.4h11a1.5 1.5 0 0 0 1.3-2.4L13.5 9.25v-5.5M7.5 14.5h9"></path></symbol>
+<symbol id="i-pen" viewBox="0 0 24 24"><path d="M15.5 4.5l4 4L9 19l-5 1 1-5zM13.5 6.5l4 4"></path></symbol>
+</svg>
+
+<header class="b-head">
+<div>
+<p class="b-kicker">stockpot screens · first run · 390</p>
+<h1 class="b-title">First run on a phone</h1>
+<p class="b-lede" style="max-width: 1180px">From an empty server to the first note in under five minutes: a password, an engine key, the Home Screen, notifications and the Shortcut. The key comes second, because without it the first note gets no suggestions and no card; it can be skipped. Returning visits only ask for the password.</p>
+</div>
+<span class="b-tag">DES-5 · 5 steps · 8 screens</span>
+</header>
+
+<div class="s-panels">
+<sc-for list="{{schemes}}" as="s" hint-placeholder-count="2">
+<section class="b-panel s-panel" data-scheme="{{s.id}}">
+<p class="b-panel-label">{{s.label}}</p>
+<div class="s-grid" data-cols="8">
+<sc-for list="{{s.states}}" as="st" hint-placeholder-count="8">
+<div class="s-cell">
+<span class="b-state-label">{{st.n}} · {{st.name}}</span>
+<p class="s-cap">{{st.cap}}</p>
+<div class="frame" data-device="phone">
+<div class="onb"><sc-for list="{{st.os}}" as="o" hint-placeholder-count="1">
+<sc-if value="{{o.hasSteps}}" hint-placeholder-val="{{true}}"><div class="onb-steps" aria-hidden="true"><sc-for list="{{o.steps}}" as="sp" hint-placeholder-count="5"><span data-on="{{sp.on}}"></span></sc-for></div></sc-if>
+<sc-if value="{{o.mark}}" hint-placeholder-val="{{false}}"><div class="onb-mark"><span class="tile"><svg class="ico" aria-hidden="true"><use href="#i-pot"></use></svg></span>stockpot</div></sc-if>
+<sc-if value="{{o.hasKicker}}" hint-placeholder-val="{{true}}"><p class="onb-kicker">{{o.kicker}}</p></sc-if>
+<h1>{{o.title}}</h1>
+<p class="onb-text">{{o.text}}</p>
+<sc-for list="{{o.fields}}" as="it" hint-placeholder-count="1">
+<sc-if value="{{it.isRow}}" hint-placeholder-val="{{true}}"><a class="srow" href="#setting" data-tone="{{it.tone}}" aria-current="{{it.cur}}"><sc-if value="{{it.catTile}}" hint-placeholder-val="{{false}}"><span class="tile" data-cat="{{it.cat}}"><svg class="ico" aria-hidden="true"><use href="#i-{{it.icon}}"></use></svg></span></sc-if><sc-if value="{{it.iconTile}}" hint-placeholder-val="{{false}}"><span class="tile" data-plain="true"><svg class="ico" aria-hidden="true"><use href="#i-{{it.icon}}"></use></svg></span></sc-if><span class="srow-main"><span class="srow-label">{{it.label}}</span><sc-if value="{{it.hasSub}}" hint-placeholder-val="{{false}}"><span class="srow-sub">{{it.sub}}</span></sc-if></span><sc-if value="{{it.hasDot}}" hint-placeholder-val="{{false}}"><span class="sdot" data-tone="{{it.dot}}"></span></sc-if><sc-if value="{{it.hasValue}}" hint-placeholder-val="{{true}}"><span class="srow-value">{{it.value}}</span></sc-if><sc-if value="{{it.handle}}" hint-placeholder-val="{{false}}"><svg class="ico handle" aria-hidden="true"><use href="#i-grip"></use></svg></sc-if><sc-if value="{{it.chev}}" hint-placeholder-val="{{true}}"><svg class="ico" data-size="16" aria-hidden="true"><use href="#i-chevron"></use></svg></sc-if><sc-if value="{{it.ext}}" hint-placeholder-val="{{false}}"><svg class="ico" data-size="16" aria-hidden="true"><use href="#i-external"></use></svg></sc-if></a></sc-if>
+<sc-if value="{{it.isSwitch}}" hint-placeholder-val="{{false}}"><div class="sitem"><span class="srow-main"><span class="srow-label">{{it.label}}</span><sc-if value="{{it.hasSub}}" hint-placeholder-val="{{false}}"><span class="srow-sub">{{it.sub}}</span></sc-if></span><button class="switch" type="button" role="switch" aria-checked="{{it.on}}" aria-label="{{it.label}}"></button></div></sc-if>
+<sc-if value="{{it.isStepper}}" hint-placeholder-val="{{false}}"><div class="sitem"><span class="srow-main"><span class="srow-label">{{it.label}}</span><sc-if value="{{it.hasSub}}" hint-placeholder-val="{{false}}"><span class="srow-sub">{{it.sub}}</span></sc-if></span><span class="stepper"><button class="icon-btn" type="button" aria-label="Fewer"><svg class="ico" data-size="16" aria-hidden="true"><use href="#i-minus"></use></svg></button><b>{{it.value}}</b><button class="icon-btn" type="button" aria-label="More"><svg class="ico" data-size="16" aria-hidden="true"><use href="#i-plus"></use></svg></button></span></div></sc-if>
+<sc-if value="{{it.isField}}" hint-placeholder-val="{{false}}"><div class="sfield"><span class="field-label">{{it.label}}</span><div class="field-box {{it.areaCls}}" data-mono="{{it.mono}}" data-error="{{it.error}}"><sc-if value="{{it.hasValue}}" hint-placeholder-val="{{true}}"><span class="fv">{{it.value}}</span></sc-if><sc-if value="{{it.noValue}}" hint-placeholder-val="{{false}}"><span class="fv placeholder">{{it.placeholder}}</span></sc-if><sc-if value="{{it.hasBtn}}" hint-placeholder-val="{{false}}"><button class="btn" type="button" data-variant="ghost" data-size="s">{{it.btn}}</button></sc-if></div><sc-if value="{{it.hasErr}}" hint-placeholder-val="{{false}}"><p class="sfield-err" role="alert"><svg class="ico" aria-hidden="true"><use href="#i-alert"></use></svg>{{it.err}}</p></sc-if><sc-if value="{{it.hasHint}}" hint-placeholder-val="{{false}}"><p class="sfield-hint">{{it.hint}}</p></sc-if></div></sc-if>
+<sc-if value="{{it.isCard}}" hint-placeholder-val="{{false}}"><div class="ecard"><div class="ecard-top"><span class="tile"><svg class="ico" aria-hidden="true"><use href="#i-{{it.icon}}"></use></svg></span><span class="ecard-name">{{it.name}}</span><span class="badge" data-tone="{{it.tone}}"><sc-if value="{{it.bDot}}" hint-placeholder-val="{{true}}"><span class="dot"></span></sc-if><sc-if value="{{it.bAlert}}" hint-placeholder-val="{{false}}"><svg class="ico" aria-hidden="true"><use href="#i-alert"></use></svg></sc-if><sc-if value="{{it.bClock}}" hint-placeholder-val="{{false}}"><svg class="ico" aria-hidden="true"><use href="#i-clock"></use></svg></sc-if><sc-if value="{{it.bSpin}}" hint-placeholder-val="{{false}}"><span class="spin" data-size="s" aria-hidden="true"></span></sc-if>{{it.badge}}</span></div><p class="ecard-text">{{it.text}}</p><sc-if value="{{it.hasMeta}}" hint-placeholder-val="{{false}}"><p class="ecard-meta">{{it.meta}}</p></sc-if><sc-if value="{{it.hasBtns}}" hint-placeholder-val="{{true}}"><div class="ecard-foot"><sc-for list="{{it.btns}}" as="bt" hint-placeholder-count="1"><button class="btn" type="button" data-variant="{{bt.v}}" data-size="s" data-tone="{{bt.tone}}" aria-busy="{{bt.busy}}"><sc-if value="{{bt.busy}}" hint-placeholder-val="{{false}}"><span class="spin" aria-hidden="true"></span></sc-if><span>{{bt.label}}</span><sc-if value="{{bt.ext}}" hint-placeholder-val="{{false}}"><svg class="ico" data-size="16" aria-hidden="true"><use href="#i-external"></use></svg></sc-if></button></sc-for></div></sc-if></div></sc-if>
+<sc-if value="{{it.isDevice}}" hint-placeholder-val="{{false}}"><div class="sitem"><span class="tile"><svg class="ico" aria-hidden="true"><use href="#i-{{it.icon}}"></use></svg></span><span class="srow-main"><span class="srow-label">{{it.label}}</span><span class="srow-sub">{{it.sub}}</span></span><button class="btn" type="button" data-variant="ghost" data-tone="danger">{{it.action}}</button></div></sc-if>
+<sc-if value="{{it.isBtns}}" hint-placeholder-val="{{false}}"><div class="set-btns"><sc-for list="{{it.btns}}" as="bt" hint-placeholder-count="1"><button class="btn {{bt.cls}}" type="button" data-variant="{{bt.v}}" data-tone="{{bt.tone}}"><sc-if value="{{bt.hasIcon}}" hint-placeholder-val="{{false}}"><svg class="ico" aria-hidden="true"><use href="#i-{{bt.icon}}"></use></svg></sc-if><span>{{bt.label}}</span></button></sc-for></div></sc-if>
+<sc-if value="{{it.isIcons}}" hint-placeholder-val="{{false}}"><div class="icon-grid" role="radiogroup" aria-label="Icon"><sc-for list="{{it.icons}}" as="ic" hint-placeholder-count="18"><button class="icon-pick" type="button" role="radio" aria-checked="{{ic.on}}" aria-label="{{ic.label}}"><svg class="ico" aria-hidden="true"><use href="#i-{{ic.id}}"></use></svg></button></sc-for></div></sc-if>
+<sc-if value="{{it.isSwatches}}" hint-placeholder-val="{{false}}"><div class="swatches" role="radiogroup" aria-label="Colour"><sc-for list="{{it.sw}}" as="sw" hint-placeholder-count="6"><button class="swatch" type="button" role="radio" data-cat="{{sw.cat}}" aria-checked="{{sw.on}}" aria-label="{{sw.label}}"><sc-if value="{{sw.on}}" hint-placeholder-val="{{false}}"><svg class="ico" aria-hidden="true"><use href="#i-check"></use></svg></sc-if></button></sc-for></div></sc-if>
+<sc-if value="{{it.isFmt}}" hint-placeholder-val="{{false}}"><button class="fmt" type="button" role="radio" aria-checked="{{it.on}}"><span class="radio"></span><span class="fmt-main"><span class="fmt-label">{{it.label}}</span><span class="fmt-text">{{it.text}}</span></span></button></sc-if>
+<sc-if value="{{it.isMeter}}" hint-placeholder-val="{{false}}"><div class="sitem sitem-block"><div class="meter"><div class="meter-top"><span>{{it.label}}</span><span>{{it.value}}</span></div><div class="td-bar"><span style="width: {{it.pct}}"></span></div></div></div></sc-if>
+<sc-if value="{{it.isTest}}" hint-placeholder-val="{{false}}"><div class="sitem sitem-block"><div class="test-rows"><sc-for list="{{it.rows}}" as="tr" hint-placeholder-count="3"><div class="test-row"><svg class="ico" aria-hidden="true"><use href="#i-check"></use></svg><span>{{tr.t}}</span><span>{{tr.v}}</span></div></sc-for></div></div></sc-if>
+<sc-if value="{{it.isPreview}}" hint-placeholder-val="{{false}}"><div class="cat-preview"><span class="tile" data-cat="{{it.cat}}"><svg class="ico" aria-hidden="true"><use href="#i-{{it.icon}}"></use></svg></span><span class="cat-preview-main"><span class="cat-preview-name">{{it.name}}</span><span class="cat" data-cat="{{it.cat}}" data-size="s"><svg class="ico" aria-hidden="true"><use href="#i-{{it.icon}}"></use></svg>{{it.name}}</span></span></div></sc-if>
+<sc-if value="{{it.isOrder}}" hint-placeholder-val="{{false}}"><div class="sitem order-row" data-off="{{it.off}}"><span class="order-n">{{it.n}}</span><span class="srow-main"><span class="srow-label">{{it.label}}</span><span class="srow-sub">{{it.sub}}</span></span><svg class="ico handle" aria-hidden="true"><use href="#i-grip"></use></svg></div></sc-if>
+<sc-if value="{{it.isToken}}" hint-placeholder-val="{{false}}"><div class="token"><span class="field-label">{{it.label}}</span><span class="token-value">{{it.value}}</span><div class="set-btns"><button class="btn" type="button" data-variant="tonal" data-size="s"><svg class="ico" data-size="16" aria-hidden="true"><use href="#i-copy"></use></svg><span>Copy</span></button></div><p class="sfield-hint">{{it.hint}}</p></div></sc-if>
+<sc-if value="{{it.isText}}" hint-placeholder-val="{{false}}"><p class="set-text">{{it.text}}</p></sc-if>
+</sc-for>
+<sc-if value="{{o.hasHow}}" hint-placeholder-val="{{false}}"><div class="onb-how"><sc-for list="{{o.how}}" as="h" hint-placeholder-count="3"><div class="onb-how-row"><span class="tile"><svg class="ico" aria-hidden="true"><use href="#i-{{h.icon}}"></use></svg></span><span>{{h.pre}}<b>{{h.b}}</b>{{h.post}}</span></div></sc-for></div></sc-if>
+<sc-if value="{{o.notif}}" hint-placeholder-val="{{false}}"><div class="onb-notif"><span class="tile"><svg class="ico" aria-hidden="true"><use href="#i-pot"></use></svg></span><span class="banner-text"><span class="banner-title">Digest: 7 notes, ~5 min</span><span class="banner-sub">serendipity, Ollama, Idempotency and 4 more</span></span></div></sc-if>
+<sc-if value="{{o.hasQr}}" hint-placeholder-val="{{false}}"><div class="onb-wide"><div class="qr" role="img" aria-label="QR code with the server address"><i></i><i></i><i></i><b></b></div><div class="onb-qr-steps"><sc-for list="{{o.qrSteps}}" as="h" hint-placeholder-count="3"><div class="onb-how-row"><span class="order-n">{{h.n}}</span><span>{{h.t}}</span></div></sc-for></div></div><p class="qr-url">{{o.url}}</p></sc-if>
+<sc-if value="{{o.hasDone}}" hint-placeholder-val="{{false}}"><div class="onb-done"><sc-for list="{{o.done}}" as="d" hint-placeholder-count="5"><div class="onb-done-row" data-done="{{d.done}}"><span class="step-mark"><sc-if value="{{d.ok}}" hint-placeholder-val="{{true}}"><svg class="ico" aria-hidden="true"><use href="#i-check"></use></svg></sc-if></span>{{d.t}}</div></sc-for></div></sc-if>
+<div class="onb-foot"><sc-for list="{{o.btns}}" as="bt" hint-placeholder-count="2"><button class="btn" type="button" data-variant="{{bt.v}}" data-size="l" aria-busy="{{bt.busy}}" disabled="{{bt.off}}"><sc-if value="{{bt.busy}}" hint-placeholder-val="{{false}}"><span class="spin" aria-hidden="true"></span></sc-if><span>{{bt.label}}</span></button></sc-for></div>
+</sc-for></div>
+</div>
+</div>
+</sc-for>
+</div>
+</section>
+</sc-for>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":3500,"height":2480}}'>
+class Component extends DCLogic {
+  renderVals() {
+    /* Shared data for the DES-5 boards: settings pages and first-run steps. */
+    const CL = { english: 'English', tech: 'Technology', ai: 'AI', concept: 'Concept', idea: 'Idea', other: 'Other' };
+    const I0 = { isRow: false, isSwitch: false, isStepper: false, isField: false, isCard: false, isDevice: false, isBtns: false, isIcons: false,
+      isSwatches: false, isFmt: false, isMeter: false, isTest: false, isPreview: false, isOrder: false, isToken: false, isText: false };
+    const item = (o) => Object.assign({}, I0, o);
+    const ROW = (label, o) => {
+      const x = Object.assign({ label: label, sub: '', value: '', chev: true, ext: false, handle: false, tone: '', cur: false, dot: '', cat: '', icon: '' }, o || {});
+      return item(Object.assign(x, { isRow: true, hasSub: !!x.sub, hasValue: !!x.value, hasDot: !!x.dot, catTile: !!x.cat, iconTile: !x.cat && !!x.icon }));
+    };
+    const SWITCH = (label, sub, on) => item({ isSwitch: true, label: label, sub: sub || '', hasSub: !!sub, on: !!on });
+    const STEPPER = (label, sub, value) => item({ isStepper: true, label: label, sub: sub || '', hasSub: !!sub, value: value });
+    const FIELD = (label, o) => {
+      const x = Object.assign({ label: label, value: '', placeholder: '', mono: false, error: false, err: '', hint: '', btn: '', area: false }, o || {});
+      return item(Object.assign(x, { isField: true, hasValue: !!x.value, noValue: !x.value, hasErr: !!x.err, error: !!x.err, hasHint: !!x.hint, hasBtn: !!x.btn, areaCls: x.area ? 'sarea' : '' }));
+    };
+    const B = (label, v, o) => Object.assign({ label: label, v: v, tone: '', busy: false, ext: false, cls: '', icon: '', off: false }, o || {});
+    const CARD = (o) => {
+      const x = Object.assign({ icon: 'bolt', name: '', tone: 'ok', badge: '', mark: 'dot', text: '', meta: '', btns: [] }, o);
+      x.btns = x.btns.map((b) => Object.assign(B(b.label, b.v), b));
+      return item(Object.assign(x, { isCard: true, bDot: x.mark === 'dot', bAlert: x.mark === 'alert', bClock: x.mark === 'clock', bSpin: x.mark === 'spin', hasMeta: !!x.meta, hasBtns: x.btns.length > 0 }));
+    };
+    const DEVICE = (icon, label, sub, action) => item({ isDevice: true, icon: icon, label: label, sub: sub, action: action || 'Revoke' });
+    const BTNS = (btns) => item({ isBtns: true, btns: btns.map((b) => Object.assign(B(b.label, b.v), b, { hasIcon: !!b.icon })) });
+    const TEXT = (text) => item({ isText: true, text: text });
+    const group = (o) => Object.assign({ head: '', foot: '', list: true, items: [] }, o, {
+      hasHead: !!o.head, hasFoot: !!o.foot, cls: o.list === false ? 'sgrp-plain' : 'list' });
+    const page = (o) => Object.assign({ top: true, back: 'Settings', action: '', crumb: '', intro: '', groups: [] }, o, {
+      hasAction: !!o.action, hasCrumb: !!o.crumb, hasIntro: !!o.intro });
+
+    const NEW_ICONS = [['book', 'Book'], ['flag', 'Flag'], ['music', 'Music'], ['coin', 'Money'], ['heart', 'Health'], ['globe', 'World'],
+      ['briefcase', 'Work'], ['film', 'Film'], ['pin', 'Place'], ['leaf', 'Nature'], ['flask', 'Science'], ['pen', 'Writing']];
+    const ICONS = (sel) => item({ isIcons: true, icons: ['english', 'tech', 'ai', 'concept', 'idea', 'other'].map((id) => [id, CL[id]]).concat(NEW_ICONS)
+      .map((x) => ({ id: x[0], label: x[1], on: x[0] === sel })) });
+    const SWATCHES = (sel) => item({ isSwatches: true, sw: [['english', 'Blue'], ['ai', 'Violet'], ['tech', 'Teal'], ['concept', 'Green'], ['idea', 'Amber'], ['other', 'Slate']]
+      .map((x) => ({ cat: x[0], label: x[1], on: x[0] === sel })) });
+    const FORMATS = (sel) => [
+      ['vocabulary', 'Vocabulary', 'A word in a language you are learning: translation, examples, the typical mistake.'],
+      ['technology', 'Technology', 'A technology or a technical term: what it is, an analogy, why it matters to you.'],
+      ['comparison', 'Comparison', 'A product in a crowded field, against its alternatives.'],
+      ['concept', 'Concept', 'An idea from any field: an explanation, an analogy, an example.'],
+      ['report', 'Report', 'An idea you might build: a researched report that takes a few minutes.'],
+      ['brief', 'Brief', 'Anything else: a short explanation with links.'],
+    ].map((f) => item({ isFmt: true, label: f[1], text: f[2], on: f[0] === sel }));
+    const METER = (label, value, pct) => item({ isMeter: true, label: label, value: value, pct: pct });
+    const TEST = (rows) => item({ isTest: true, rows: rows.map((r) => ({ t: r[0], v: r[1] })) });
+    const PREVIEW = (cat, icon, name) => item({ isPreview: true, cat: cat, icon: icon, name: name });
+    const ORDER = (n, label, sub, off) => item({ isOrder: true, n: n, label: label, sub: sub, off: !!off });
+    const TOKEN = (label, value, hint) => item({ isToken: true, label: label, value: value, hint: hint });
+
+    const P_ROOT = () => page({ top: false, title: 'Settings', groups: [
+      group({ head: 'Digest', items: [
+        ROW('Digest at', { value: '08:30' }),
+        STEPPER('Cards per digest', 'The rest waits for tomorrow, repeats first', '7'),
+        ROW('Night run at', { sub: 'Explains the saved notes before the digest', value: '06:30' }),
+        ROW('Weekly summary', { value: 'Sunday' }),
+        ROW('Time zone', { value: 'Europe/Amsterdam' }),
+      ] }),
+      group({ head: 'Cards', items: [ROW('Card language', { value: 'English' }), ROW('Categories', { value: '6' })] }),
+      group({ head: 'Engines and devices', items: [
+        ROW('Engines', { sub: 'Gemini works · one needs attention', dot: 'danger' }),
+        ROW('Devices and Shortcut', { value: '2' }),
+        ROW('Integrations', { value: 'Notion' }),
+      ] }),
+      group({ head: 'App', items: [ROW('Interface language', { value: 'English' }), ROW('Appearance', { value: 'System' }), SWITCH('Notifications', 'On this iPhone: the digest and Ready', true)] }),
+      group({ head: 'Account', items: [ROW('Change password'), ROW('Sign out', { chev: false, tone: 'danger' })] }),
+      group({ head: 'About', items: [ROW('Version', { value: '0.1.0', chev: false }), ROW('Source code', { sub: 'AGPL-3.0-or-later', chev: false, ext: true })] }),
+    ] });
+    const P_DIGEST = () => page({ top: false, title: 'Digest', intro: 'At the night run the server explains what you saved. At the digest time you get up to the limit; the rest waits for tomorrow, repeats first.', groups: [
+      group({ items: [
+        ROW('Digest at', { value: '08:30' }),
+        STEPPER('Cards per digest', 'Seven fit in about five minutes', '7'),
+        ROW('Night run at', { sub: 'Two hours before the digest leaves room for retries', value: '06:30' }),
+        ROW('Weekly summary', { value: 'Sunday' }),
+        ROW('Time zone', { value: 'Europe/Amsterdam' }),
+      ] }),
+      group({ head: 'Cards', items: [ROW('Card language', { sub: 'The language engines write in; English cards translate into it', value: 'English' })] }),
+    ] });
+    const CATS = [['english', 'Vocabulary', '31'], ['tech', 'Technology', '23'], ['ai', 'Comparison', '18'], ['concept', 'Concept', '27'], ['idea', 'Report', '9'], ['other', 'Brief', '20']];
+    const P_CATS = () => page({ title: 'Categories', action: 'New', intro: 'A category decides the card’s format. The order here is the order of the chips.', groups: [
+      group({ items: CATS.map((c) => ROW(CL[c[0]], { cat: c[0], icon: c[0], sub: c[1] + ' format · ' + c[2] + ' notes', handle: true })) }),
+      group({ list: false, items: [BTNS([{ label: 'New category', v: 'tonal', cls: 'btn-block', icon: 'plus' }])] }),
+    ] });
+    const P_EDIT = (o) => page(Object.assign({ title: 'Technology', back: 'Categories', action: 'Save', groups: [
+      group({ list: false, items: [PREVIEW('tech', 'tech', 'Technology'), FIELD('Name', { value: 'Technology' })] }),
+      group({ head: 'Icon', list: false, items: [ICONS('tech')] }),
+      group({ head: 'Colour', list: false, items: [SWATCHES('tech')], foot: 'Six colours. With more categories they repeat; the icon and the name tell them apart.' }),
+      group({ head: 'Format', items: FORMATS('technology') }),
+      group({ head: 'Extra instructions', list: false, items: [FIELD('Added to every prompt in this category', { value: 'Draw analogies from TypeScript and the web platform. Mention Bun when it applies.', area: true, hint: 'Sent with every note in the category, private ones included.' })] }),
+      group({ head: 'Engine', items: [ROW('Writes the cards', { value: 'Default · Gemini' })] }),
+      group({ list: false, items: [BTNS([{ label: 'Delete category', v: 'outline', tone: 'danger', cls: 'btn-block', icon: 'trash' }])] }),
+    ] }, o || {}));
+    const ENGINE_CARDS = (atLimit) => [
+      atLimit
+        ? CARD({ icon: 'ai', name: 'Gemini', tone: 'off', mark: 'clock', badge: 'At its limit until 09:00', text: 'Suggests categories and writes cards and reports. Until the reset, the backup writes drafts and suggestions come from history only.', meta: 'Daily search limit reached at 07:12', btns: [{ label: 'Test', v: 'outline' }, { label: 'Details', v: 'ghost' }] })
+        : CARD({ icon: 'ai', name: 'Gemini', badge: 'Working', text: 'Suggests categories and writes cards and reports, on the free tier.', meta: 'Tested 2 min ago · 42 suggestions and 18 cards today', btns: [{ label: 'Test', v: 'outline' }, { label: 'Details', v: 'ghost' }] }),
+      atLimit
+        ? CARD({ icon: 'link', name: 'OpenAI-compatible', badge: 'Writing drafts', text: 'Backup writer: api.z.ai, glm-4.7-flash. Text only, no search.', meta: '3 drafts this morning, rewritten after 09:00', btns: [{ label: 'Test', v: 'outline' }, { label: 'Details', v: 'ghost' }] })
+        : CARD({ icon: 'link', name: 'OpenAI-compatible', tone: 'bad', mark: 'alert', badge: 'Key rejected', text: 'Backup writer: api.z.ai, glm-4.7-flash. Text only, no search.', meta: 'Failed at 06:52 · the provider answered 401', btns: [{ label: 'Replace key', v: 'tonal' }, { label: 'Test', v: 'outline' }] }),
+      CARD({ icon: 'terminal', name: 'Agent command', tone: 'off', mark: 'none', badge: 'Not set up', text: 'Runs a command-line agent on your server, allowed only to search and read pages. It is set up in the server’s settings file, not from here.', btns: [{ label: 'How to set it up', v: 'ghost', ext: true }] }),
+    ];
+    const P_ENGINES = (atLimit) => page({ title: 'Engines', intro: 'Engines suggest categories and write the cards. Keys stay on your server.', groups: [
+      group({ list: false, items: ENGINE_CARDS(atLimit) }),
+      group({ head: 'Fallback order', items: [
+        ORDER('1', 'Gemini', 'The main engine for every task'),
+        ORDER('2', 'OpenAI-compatible', 'Writes drafts while Gemini is at its limit'),
+        ORDER('3', 'Agent command', 'Not set up, so it is skipped', true),
+      ], foot: 'On a usage limit or a rejected key, the next engine writes a draft and the main one rewrites it after the reset. Idea reports have no backup: they wait.' }),
+    ] });
+    const P_GEMINI = () => page({ title: 'Gemini', back: 'Engines', groups: [
+      group({ head: 'Last test · 2 min ago', items: [TEST([['Suggest categories', '0.8 s'], ['Card with search', '6.4 s'], ['Report step', '12 s']])] }),
+      group({ list: false, items: [BTNS([{ label: 'Test again', v: 'outline', icon: 'retry' }])] }),
+      group({ head: 'Key', list: false, items: [FIELD('API key', { value: '•••• •••• •••• 3F2C', mono: true, btn: 'Replace', hint: 'On the free tier Google may use what you send to improve its products. Private notes send only the term.' })] }),
+      group({ head: 'Models', list: false, items: [
+        FIELD('Fast · suggestions and English cards', { value: 'gemini-3.5-flash-lite', mono: true }),
+        FIELD('Standard · most cards', { value: 'gemini-3.8-flash', mono: true }),
+        FIELD('Deep · idea reports', { value: 'gemini-3.8-flash', mono: true }),
+        FIELD('Search grounding', { value: 'gemini-2.5-flash-lite', mono: true }),
+      ], foot: 'Model IDs change often, so they live here rather than in the code.' }),
+      group({ head: 'Today', items: [METER('Suggestions', '42 of 1,000', '4%'), METER('Searches', '61 of 500', '12%'), METER('Cards and reports', '18 of 250', '7%')],
+        foot: 'Calls stop at these limits. The counters reset at midnight Pacific time, 09:00 here.' }),
+      group({ items: [ROW('Get a key in Google AI Studio', { chev: false, ext: true, tone: 'accent' })] }),
+    ] });
+    const P_DEVICES = () => page({ title: 'Devices and Shortcut', groups: [
+      group({ head: 'Shortcut', list: false, items: [CARD({ icon: 'bolt', name: 'Add to stockpot', badge: 'On 1 device', text: 'Puts stockpot in the share sheet, Siri and the Action button. Installing makes a new device token and puts it inside.', btns: [{ label: 'Install the Shortcut', v: 'primary' }] })] }),
+      group({ head: 'Devices', items: [
+        DEVICE('phone', 'iPhone · Shortcut', 'Last used 2 min ago'),
+        DEVICE('laptop', 'Mac · MCP client', 'Last used yesterday, 22:14'),
+      ], foot: 'Each device has its own token. Revoking one signs out only that device.' }),
+      group({ list: false, items: [BTNS([{ label: 'Add a device', v: 'tonal', icon: 'plus' }])] }),
+      group({ head: 'Notifications', items: [
+        DEVICE('phone', 'iPhone · Home Screen app', 'The digest and Ready', 'Remove'),
+        DEVICE('laptop', 'Safari on the Mac', 'The digest and Ready', 'Remove'),
+      ] }),
+    ] });
+    const P_NEWDEVICE = () => page({ title: 'Add a device', back: 'Devices', groups: [
+      group({ list: false, items: [
+        FIELD('Name', { value: 'Mac · MCP client', hint: 'So you can tell it apart when you revoke it.' }),
+        TOKEN('Token', 'sp1-XXXX-XXXX-XXXX-XXXX', 'Shown once. Copy it into the device now; the server keeps only its hash.'),
+        BTNS([{ label: 'Done', v: 'primary', cls: 'btn-block' }]),
+      ] }),
+    ] });
+    const P_INTEGRATIONS = () => page({ title: 'Integrations', intro: 'All optional. Each stays off until you set it up.', groups: [
+      group({ list: false, items: [
+        CARD({ icon: 'book', name: 'Notion', badge: 'Connected', text: 'Adds English cards to your phrase page, under the heading for their difficulty.', meta: 'Page: English phrases · last entry yesterday', btns: [{ label: 'Manage', v: 'outline' }] }),
+        CARD({ icon: 'send', name: 'Telegram bot', tone: 'off', mark: 'none', badge: 'Not set up', text: 'Forward a message to your own bot and it becomes a note, with its link.', btns: [{ label: 'Set up', v: 'outline' }] }),
+        CARD({ icon: 'terminal', name: 'MCP server', badge: '1 client', text: 'Lets an agent on your Mac read notes and write cards back, with a device token.', btns: [{ label: 'Devices', v: 'ghost' }] }),
+        CARD({ icon: 'laptop', name: 'Mac Quick Action', tone: 'off', mark: 'none', badge: 'Not installed', text: 'Select text in any app on the Mac and press a hotkey to save it.', btns: [{ label: 'Install', v: 'outline' }] }),
+      ] }),
+    ] });
+    const P_NOTION = () => page({ title: 'Notion', back: 'Integrations', groups: [
+      group({ list: false, items: [
+        FIELD('Integration token', { value: '•••• •••• •••• 9A1D', mono: true, btn: 'Replace', hint: 'Make an internal integration in Notion and share the phrase page with it.' }),
+        FIELD('Phrase page', { value: 'English phrases', btn: 'Change', hint: 'An entry goes under the H3 for its difficulty, after the last entry of the same difficulty.' }),
+      ] }),
+      group({ items: [SWITCH('Ask before a new section', 'When no H2 fits, stockpot asks before making one', true), SWITCH('Skip duplicates', 'A phrase already on the page is not added again', true)] }),
+      group({ head: 'Last test · today, 08:41', items: [TEST([['Page found', '4 sections'], ['Can add entries', 'yes']])] }),
+      group({ list: false, items: [BTNS([{ label: 'Test', v: 'outline' }, { label: 'Disconnect', v: 'ghost', tone: 'danger' }])] }),
+    ] });
+
+    /* Settings sections beside the open one, at 768 and 1440 */
+    const NAV = (cur) => [['Digest', 'sun'], ['Categories', 'tag'], ['Engines', 'bolt'], ['Devices', 'phone'], ['Integrations', 'link'], ['App', 'sliders'], ['Account', 'lock'], ['About', 'pot']]
+      .map((x) => ROW(x[0], { icon: x[1], cur: x[0] === cur, dot: x[0] === 'Engines' ? 'danger' : '' }));
+
+    /* First-run steps */
+    const steps = (n) => [1, 2, 3, 4, 5].map((i) => ({ on: i <= n }));
+    const onb = (o) => {
+      const x = Object.assign({ steps: [], mark: false, kicker: '', title: '', text: '', fields: [], how: [], notif: false, qrSteps: [], url: '', done: [], btns: [], wide: false }, o);
+      x.btns = x.btns.map((b) => Object.assign({ busy: false, off: false }, b));
+      x.done = x.done.map((d) => ({ t: d[0], ok: d[1], done: d[1] ? 'true' : 'false' }));
+      return Object.assign(x, { hasSteps: x.steps.length > 0, hasKicker: !!x.kicker, hasHow: x.how.length > 0, hasQr: !!x.url, hasDone: x.done.length > 0 });
+    };
+    const HOW = (icon, pre, b, post) => ({ icon: icon, pre: pre, b: b, post: post || '' });
+    const PW = (label, o) => FIELD(label, Object.assign({ value: '••••••••••••••', btn: 'Show' }, o || {}));
+    const O_ACCOUNT = () => onb({ steps: steps(1), mark: true, kicker: 'Step 1 of 5', title: 'Welcome to stockpot', text: 'This server is yours alone. Set a password to keep it that way.',
+      fields: [PW('Password', { hint: 'At least 12 characters.' }), PW('Repeat the password', { btn: '' })], btns: [{ label: 'Create account', v: 'primary' }] });
+    const O_ENGINE = (rejected) => onb({ steps: steps(2), kicker: 'Step 2 of 5', title: 'Connect an engine',
+      text: 'An engine suggests categories as you type and writes the cards overnight. Gemini’s free tier is enough to start.',
+      fields: [rejected
+        ? FIELD('Gemini API key', { value: '•••• •••• •••• 7Q0B', mono: true, err: 'Google rejected this key. Check that it was copied whole.' })
+        : FIELD('Gemini API key', { placeholder: 'Paste the key', btn: 'Paste', hint: 'It stays on your server. On the free tier Google may use what you send to improve its products.' })],
+      how: rejected ? [] : [HOW('external', 'Get a free key in ', 'Google AI Studio', '')],
+      btns: rejected ? [{ label: 'Try again', v: 'primary' }, { label: 'Skip for now', v: 'ghost' }] : [{ label: 'Continue', v: 'primary' }, { label: 'Skip for now', v: 'ghost' }] });
+    const O_HOME = (ipad) => onb({ steps: steps(3), kicker: 'Step 3 of 5', title: 'Add stockpot to your Home Screen',
+      text: ipad ? 'On iPad, notifications only reach apps on the Home Screen.' : 'On iPhone, notifications only reach apps on the Home Screen.',
+      how: [HOW('share', 'Tap ', 'Share', ipad ? ' next to the address bar' : ' in Safari’s toolbar'), HOW('addsq', 'Choose ', 'Add to Home Screen'), HOW('pot', 'Open ', 'stockpot', ' from the Home Screen')],
+      btns: [{ label: 'I’ve added it', v: 'primary' }, { label: 'Skip', v: 'ghost' }] });
+    const O_NOTIF = () => onb({ steps: steps(4), kicker: 'Step 4 of 5', title: 'Get the morning digest',
+      text: 'One notification at 08:30 with the day’s cards, and one when a Research now card is ready. Nothing else.', notif: true,
+      btns: [{ label: 'Allow notifications', v: 'primary' }, { label: 'Not now', v: 'ghost' }] });
+    const O_SHORTCUT = () => onb({ steps: steps(5), kicker: 'Step 5 of 5', title: 'Capture from anywhere',
+      text: 'The Shortcut adds stockpot to the share sheet, Siri and the Action button. Its device token is already inside.',
+      how: [HOW('share', 'Share any text to ', 'Add to stockpot'), HOW('mic', 'Or tell Siri ', '“Add to stockpot”')],
+      btns: [{ label: 'Install the Shortcut', v: 'primary' }, { label: 'Skip', v: 'ghost' }] });
+    const O_DONE = (shortcut) => onb({ steps: steps(5), title: 'You’re set',
+      text: 'Save your first word, term or idea. Tonight it gets explained, and at 08:30 it is on Today.',
+      done: [['Account', true], ['Gemini connected', true], ['On the Home Screen', true], ['Notifications on', true], shortcut ? ['Shortcut installed', true] : ['Shortcut skipped: Settings › Devices', false]],
+      btns: [{ label: 'Add your first note', v: 'primary' }] });
+    const O_SIGNIN = () => onb({ mark: true, title: 'Welcome back', text: 'Sign in to your stockpot.',
+      fields: [PW('Password', { err: 'Wrong password. Try again in 30 seconds.' })], btns: [{ label: 'Sign in', v: 'primary', off: true }] });
+    const O_QR = () => onb({ steps: steps(2), kicker: 'Next, on your iPhone', title: 'Continue on your phone', wide: true,
+      text: 'Home Screen, notifications and the Shortcut are set up on the phone. Tailscale must be on there.',
+      qrSteps: [{ n: '1', t: 'Scan this with the camera' }, { n: '2', t: 'Sign in with the password you just set' }, { n: '3', t: 'Finish the last three steps there' }],
+      url: 'https://your-mac.your-tailnet.ts.net',
+      btns: [{ label: 'Done on my phone', v: 'primary' }, { label: 'Use stockpot here instead', v: 'ghost' }] });
+    const F = (n, name, cap, o) => ({ n: n, name: name, cap: cap, os: [o] });
+    const states = [
+      F('01', 'Account', 'One owner per server: a password, nothing else. No email, no name.', O_ACCOUNT()),
+      F('02', 'Engine', 'A Gemini key, free from AI Studio. Skip keeps notes saved but unexplained.', O_ENGINE(false)),
+      F('03', 'Key rejected', 'The key is tested before the next step, so a bad paste shows up here.', O_ENGINE(true)),
+      F('04', 'Home Screen', 'On iPhone, Web Push needs the Home Screen app, so this comes before notifications.', O_HOME(false)),
+      F('05', 'Notifications', 'Ask only after saying what will arrive: the digest and Ready, nothing else.', O_NOTIF()),
+      F('06', 'Shortcut', 'Installs the Shortcut with a fresh device token inside.', O_SHORTCUT()),
+      F('07', 'Done', 'What is set and what was skipped, then straight to the first note.', O_DONE(false)),
+      F('08', 'Sign in', 'Later visits: the password only. Wrong tries back off.', O_SIGNIN()),
+    ];
+    return {
+      schemes: [
+        { id: 'light', label: 'Light', states: states },
+        { id: 'dark', label: 'Dark', states: states },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

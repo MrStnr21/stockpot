@@ -1,0 +1,254 @@
+<!doctype html>
+<!--
+  SPDX-License-Identifier: AGPL-3.0-or-later
+  SPDX-FileCopyrightText: 2026 The stockpot authors
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Today: phone</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./tokens.css">
+<link rel="stylesheet" href="./kit.css">
+<link rel="stylesheet" href="./screens.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&amp;family=Literata:ital,opsz,wght@0,7..72,400..700;1,7..72,400..500&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#9D1E60}a:hover{color:#AC1E68}
+</style>
+</helmet>
+<div class="kit b-board" data-scheme="light" style="width: 3500px; min-height: 7100px">
+<svg class="b-sprite" aria-hidden="true" focusable="false">
+<symbol id="i-english" viewBox="0 0 24 24"><path d="M5 4.5h14a1.5 1.5 0 0 1 1.5 1.5v9.5a1.5 1.5 0 0 1-1.5 1.5h-7l-4.5 3.5V17H5a1.5 1.5 0 0 1-1.5-1.5V6A1.5 1.5 0 0 1 5 4.5zM9.25 13.75L12 7.25l2.75 6.5M10.2 11.6h3.6"></path></symbol>
+<symbol id="i-ai" viewBox="0 0 24 24"><path d="M10.5 3.5l1.9 5.1 5.1 1.9-5.1 1.9-1.9 5.1-1.9-5.1-5.1-1.9 5.1-1.9zM18 15.25l.8 1.95 1.95.8-1.95.8-.8 1.95-.8-1.95-1.95-.8 1.95-.8z"></path></symbol>
+<symbol id="i-tech" viewBox="0 0 24 24"><path d="M8.5 7.5L4 12l4.5 4.5M15.5 7.5L20 12l-4.5 4.5M13.5 5l-3 14"></path></symbol>
+<symbol id="i-concept" viewBox="0 0 24 24"><path d="M12 3.25l4 6.5H8z"></path><circle cx="7.25" cy="16.25" r="3.75"></circle><rect x="13.25" y="12.5" width="7.25" height="7.25" rx="1.25"></rect></symbol>
+<symbol id="i-idea" viewBox="0 0 24 24"><path d="M9.25 18h5.5M10.25 21h3.5M12 3a6 6 0 0 0-3.6 10.8c.7.55 1.1 1.3 1.1 2.1V16h5v-.1c0-.8.4-1.55 1.1-2.1A6 6 0 0 0 12 3z"></path></symbol>
+<symbol id="i-other" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.75"></circle><path d="M8 12h.01M12 12h.01M16 12h.01"></path></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"></path></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M12 2.75v2M12 19.25v2M2.75 12h2M19.25 12h2M5.46 5.46l1.41 1.41M17.13 17.13l1.41 1.41M5.46 18.54l1.41-1.41M17.13 6.87l1.41-1.41"></path></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"></path></symbol>
+<symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M7 3.75h10a1 1 0 0 1 1 1v15.5l-6-4.25-6 4.25V4.75a1 1 0 0 1 1-1z"></path></symbol>
+<symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h8M16 7h4M4 17h3M11 17h9"></path><circle cx="14" cy="7" r="2"></circle><circle cx="9" cy="17" r="2"></circle></symbol>
+<symbol id="i-clipboard" viewBox="0 0 24 24"><rect x="8.5" y="3" width="7" height="4" rx="1"></rect><path d="M15.5 5h1.75A1.75 1.75 0 0 1 19 6.75v12.5A1.75 1.75 0 0 1 17.25 21H6.75A1.75 1.75 0 0 1 5 19.25V6.75A1.75 1.75 0 0 1 6.75 5H8.5"></path></symbol>
+<symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13.5a4 4 0 0 0 5.66.5l2.83-2.83a4 4 0 0 0-5.66-5.66l-1.06 1.06M14 10.5a4 4 0 0 0-5.66-.5l-2.83 2.83a4 4 0 0 0 5.66 5.66l1.06-1.06"></path></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2"></rect><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"></path></symbol>
+<symbol id="i-chevron" viewBox="0 0 24 24"><path d="M9.5 6l6 6-6 6"></path></symbol>
+<symbol id="i-deeper" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4 4M11 8.25v5.5M8.25 11h5.5"></path></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l.9 12.1A2 2 0 0 0 8.9 21h6.2a2 2 0 0 0 2-1.9L18 7M9 7V4.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 .5.5V7"></path></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.75"></circle><path d="M12 7.75v5M12 16.25h.01"></path></symbol>
+<symbol id="i-pot" viewBox="0 0 24 24"><path d="M3 10.5h18M5 10.5V15a5 5 0 0 0 5 5h4a5 5 0 0 0 5-5v-4.5M10 7.5c-.8-1 .8-2 0-3M14 7.5c-.8-1 .8-2 0-3"></path></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4 4"></path></symbol>
+<symbol id="i-archive" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="4.5" rx="1"></rect><path d="M5 8.5V19a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8.5M10 12.5h4"></path></symbol>
+<symbol id="i-quote" viewBox="0 0 24 24"><path d="M5 18c2.5-1 4-3.2 4-6.5V7H5v5h4M15 18c2.5-1 4-3.2 4-6.5V7h-4v5h4"></path></symbol>
+<symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 3L5 13.5h6L10 21l8-10.5h-6z"></path></symbol>
+<symbol id="i-retry" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4.5h-4.5"></path></symbol>
+<symbol id="i-more" viewBox="0 0 24 24"><path d="M6 12h.01M12 12h.01M18 12h.01" stroke-width="2.5"></path></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.75"></circle><path d="M12 7.5V12l3 2"></path></symbol>
+<symbol id="i-tag" viewBox="0 0 24 24"><path d="M4 4h7.2l8.8 8.8-7.2 7.2L4 11.2z"></path><circle cx="8.25" cy="8.25" r="1.25"></circle></symbol>
+<symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"></path></symbol>
+<symbol id="i-grip" viewBox="0 0 24 24"><path d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01" stroke-width="2.5"></path></symbol>
+<symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4.5h5.5V10M19.5 4.5L11 13M17 13.5v4.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 5 18v-9a1.5 1.5 0 0 1 1.5-1.5H11"></path></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2"></rect><path d="M15.5 8.5V6A1.5 1.5 0 0 0 14 4.5H6A1.5 1.5 0 0 0 4.5 6v8A1.5 1.5 0 0 0 6 15.5h2.5"></path></symbol>
+<symbol id="i-phone" viewBox="0 0 24 24"><rect x="7" y="2.75" width="10" height="18.5" rx="2.25"></rect><path d="M11 18h2"></path></symbol>
+<symbol id="i-laptop" viewBox="0 0 24 24"><rect x="4.5" y="5" width="15" height="10.5" rx="1.5"></rect><path d="M2.5 19h19"></path></symbol>
+<symbol id="i-terminal" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2"></rect><path d="M7.5 9.5l3 2.5-3 2.5M12.5 15h4"></path></symbol>
+<symbol id="i-send" viewBox="0 0 24 24"><path d="M20.5 3.5L3.5 10.5l6.5 2.5 2.5 6.5zM10 13l4.5-4.5"></path></symbol>
+<symbol id="i-share" viewBox="0 0 24 24"><path d="M12 3.75v11M8 7.75l4-4 4 4M7 10.5H6a1.5 1.5 0 0 0-1.5 1.5v6.75A1.5 1.5 0 0 0 6 20.25h12a1.5 1.5 0 0 0 1.5-1.5V12a1.5 1.5 0 0 0-1.5-1.5h-1"></path></symbol>
+<symbol id="i-addsq" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"></rect><path d="M12 8.5v7M8.5 12h7"></path></symbol>
+<symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3.5" width="6" height="11" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v2.5"></path></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M12 6.5C10.5 5 8 4.5 4 4.75v13.5c4-.25 6.5.25 8 1.75 1.5-1.5 4-2 8-1.75V4.75c-4-.25-6.5.25-8 1.75zM12 6.5V20"></path></symbol>
+<symbol id="i-flag" viewBox="0 0 24 24"><path d="M5.5 21V4M5.5 4.5h11l-2 4 2 4h-11"></path></symbol>
+<symbol id="i-music" viewBox="0 0 24 24"><path d="M9 17.5V5.5l10-2v12"></path><circle cx="6.5" cy="17.5" r="2.5"></circle><circle cx="16.5" cy="15.5" r="2.5"></circle></symbol>
+<symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.75"></circle><path d="M14.5 9.25c-.5-.9-1.4-1.25-2.5-1.25-1.5 0-2.5.75-2.5 1.9 0 2.6 5.25 1.4 5.25 4.2 0 1.15-1.1 1.9-2.75 1.9-1.2 0-2.2-.45-2.75-1.35M12 6.5V8M12 16v1.5"></path></symbol>
+<symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z"></path></symbol>
+<symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.75"></circle><path d="M3.25 12h17.5M12 3.25c2.4 2.4 3.5 5.4 3.5 8.75s-1.1 6.35-3.5 8.75M12 3.25C9.6 5.65 8.5 8.65 8.5 12s1.1 6.35 3.5 8.75"></path></symbol>
+<symbol id="i-briefcase" viewBox="0 0 24 24"><rect x="3.5" y="7" width="17" height="12.5" rx="2"></rect><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7M3.5 12.5h17"></path></symbol>
+<symbol id="i-film" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2"></rect><path d="M7.5 4.5v15M16.5 4.5v15M3.5 9.5h4M3.5 14.5h4M16.5 9.5h4M16.5 14.5h4"></path></symbol>
+<symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s6.5-5.6 6.5-11a6.5 6.5 0 0 0-13 0c0 5.4 6.5 11 6.5 11z"></path><circle cx="12" cy="10" r="2.25"></circle></symbol>
+<symbol id="i-leaf" viewBox="0 0 24 24"><path d="M5 19c0-8 5-13 14-14 0 9-5 14-13 14zM5 19l7-7"></path></symbol>
+<symbol id="i-flask" viewBox="0 0 24 24"><path d="M9.5 3.75h5M10.5 3.75v5.5L5.2 18.1a1.5 1.5 0 0 0 1.3 2.4h11a1.5 1.5 0 0 0 1.3-2.4L13.5 9.25v-5.5M7.5 14.5h9"></path></symbol>
+<symbol id="i-pen" viewBox="0 0 24 24"><path d="M15.5 4.5l4 4L9 19l-5 1 1-5zM13.5 6.5l4 4"></path></symbol>
+</svg>
+
+<header class="b-head">
+<div>
+<p class="b-kicker">stockpot screens · today · 390</p>
+<h1 class="b-title">Today on a phone</h1>
+<p class="b-lede" style="max-width: 1180px">The morning digest as one feed: progress, then each card with its main explanation and its actions; Read the card opens the full card. A card you act on folds into a line under Done today, with Undo. What did not fit waits for tomorrow, and can be read now. A small tag says why a card is here: a repeat, about to leave, or a Research now card not yet opened.</p>
+</div>
+<span class="b-tag">DES-4 · 8 screens · limit 7</span>
+</header>
+
+<div class="s-panels">
+<sc-for list="{{schemes}}" as="s" hint-placeholder-count="2">
+<section class="b-panel s-panel" data-scheme="{{s.id}}">
+<p class="b-panel-label">{{s.label}}</p>
+<div class="s-grid" data-cols="8">
+<sc-for list="{{s.states}}" as="st" hint-placeholder-count="8">
+<div class="s-cell">
+<span class="b-state-label">{{st.n}} · {{st.name}}</span>
+<p class="s-cap">{{st.cap}}</p>
+<div class="frame" data-device="phone" data-len="{{st.len}}">
+<div class="ph-page has-tabs">
+<sc-for list="{{st.ts}}" as="t" hint-placeholder-count="1">
+<sc-if value="{{t.hasBanner}}" hint-placeholder-val="{{false}}"><div class="pg-banner" role="status"><svg class="ico" aria-hidden="true"><use href="#i-alert"></use></svg><span><b>Server out of reach.</b> {{t.banner}}</span></div></sc-if>
+<div class="td-head"><p class="td-date">{{t.date}}</p><h2 class="td-title">{{t.title}}</h2></div>
+<sc-if value="{{t.hasWeek}}" hint-placeholder-val="{{false}}">
+<a class="week" href="#week"><p class="week-kicker">{{t.wk.kicker}}</p><h3 class="week-title">Your week</h3>
+<div class="wstats"><sc-for list="{{t.wk.stats}}" as="ws" hint-placeholder-count="4"><div><b>{{ws.n}}</b><span>{{ws.l}}</span></div></sc-for></div>
+<div class="wdays"><sc-for list="{{t.wk.days}}" as="dd" hint-placeholder-count="7"><span class="wday" data-on="{{dd.on}}" role="img" aria-label="{{dd.full}}">{{dd.l}}</span></sc-for></div>
+<span class="week-open">Open the summary<svg class="ico" aria-hidden="true"><use href="#i-chevron"></use></svg></span></a>
+</sc-if>
+<sc-if value="{{t.hasProg}}" hint-placeholder-val="{{true}}"><div class="td-progress"><div class="td-bar" role="progressbar" aria-label="Read today" aria-valuenow="{{t.done}}" aria-valuemax="{{t.total}}"><span style="width: {{t.pct}}"></span></div><div class="td-meta"><span>{{t.progL}}</span><span>{{t.progR}}</span></div></div></sc-if>
+<sc-if value="{{t.allRead}}" hint-placeholder-val="{{false}}"><div class="wait"><span class="empty-art"><svg class="ico" data-size="24" aria-hidden="true"><use href="#i-check"></use></svg></span><h3>All read</h3><p>Seven cards this morning. Idempotency goes deeper tonight.</p><p>4 more wait for tomorrow: Bauhaus, Zettelkasten, to hedge and CRDT.</p><div class="wait-btns"><button class="btn" type="button" data-variant="tonal" data-size="s">Read them now</button></div></div></sc-if>
+<sc-if value="{{t.empty}}" hint-placeholder-val="{{false}}"><div class="empty"><span class="empty-art"><svg class="ico" data-size="32" aria-hidden="true"><use href="#i-sun"></use></svg></span><h3>Nothing to read today</h3><p>No new cards this morning. Save a word, term or idea today, and it is here tomorrow at 08:30.</p><button class="btn" type="button" data-variant="primary">Add a note</button></div></sc-if>
+<div class="td-list">
+<sc-for list="{{t.cards}}" as="x" hint-placeholder-count="3">
+<div class="{{x.wrapCls}}" style="--offset: {{x.offset}}">
+<sc-if value="{{x.swipe}}" hint-placeholder-val="{{false}}"><div class="swipe-actions" data-side="start"><button class="swipe-act" type="button" data-tone="accent"><svg class="ico" aria-hidden="true"><use href="#i-check"></use></svg>Got it</button></div></sc-if>
+<article class="card">
+<div class="card-top">
+<span class="cat" data-cat="{{x.cat}}" data-size="s"><svg class="ico" aria-hidden="true"><use href="#i-{{x.cat}}"></use></svg>{{x.catLabel}}</span>
+<sc-if value="{{x.hasReason}}" hint-placeholder-val="{{false}}"><span class="badge" data-tone="reason"><svg class="ico" aria-hidden="true"><use href="#i-{{x.rIcon}}"></use></svg>{{x.reason}}</span></sc-if>
+<sc-if value="{{x.priv}}" hint-placeholder-val="{{false}}"><span class="badge"><svg class="ico" aria-hidden="true"><use href="#i-lock"></use></svg>Private</span></sc-if>
+<sc-if value="{{x.hasFlag}}" hint-placeholder-val="{{false}}"><span class="badge" data-flag="{{x.flag}}">{{x.flagLabel}}</span></sc-if>
+<span class="card-meta">{{x.mins}}</span>
+</div>
+<h3 class="card-title">{{x.title}}</h3>
+<sc-if value="{{x.hasSense}}" hint-placeholder-val="{{true}}"><p class="card-sum">{{x.sense}}</p></sc-if>
+<div class="card-block"><h4>{{x.bh}}</h4><p>{{x.btext}}</p><sc-if value="{{x.hasEx}}" hint-placeholder-val="{{false}}"><p class="ex-line">{{x.ex}}</p></sc-if></div>
+<button class="btn card-open" type="button" data-variant="ghost" data-size="s"><span>Read the card</span><svg class="ico" data-size="16" aria-hidden="true"><use href="#i-chevron"></use></svg></button>
+<div class="card-actions" data-n="{{x.n}}"><sc-for list="{{x.actions}}" as="a" hint-placeholder-count="4"><button class="card-action" type="button" data-tone="{{a.tone}}" disabled="{{x.off}}"><svg class="ico" aria-hidden="true"><use href="#i-{{a.icon}}"></use></svg>{{a.label}}</button></sc-for></div>
+</article>
+</div>
+</sc-for>
+</div>
+<sc-if value="{{t.hasDone}}" hint-placeholder-val="{{false}}"><p class="day">Done today · {{t.doneN}}</p><div class="list"><sc-for list="{{t.doneRows}}" as="d" hint-placeholder-count="3"><div class="done-row"><svg class="ico" aria-hidden="true"><use href="#i-{{d.icon}}"></use></svg><span class="done-title">{{d.title}}</span><span class="done-what">{{d.what}}</span><button class="btn" type="button" data-variant="ghost" data-size="s">Undo</button></div></sc-for></div></sc-if>
+<sc-if value="{{t.hasTmr}}" hint-placeholder-val="{{true}}"><div class="tmr"><div class="tmr-head"><svg class="ico" aria-hidden="true"><use href="#i-clock"></use></svg>{{t.tm.n}} more wait for tomorrow</div><div class="pills"><sc-for list="{{t.tm.terms}}" as="tt" hint-placeholder-count="4"><span class="pill">{{tt.t}}</span></sc-for></div><p class="tmr-text">The limit is 7 a day. Tomorrow repeats go first, then what is about to leave.</p><sc-if value="{{t.tmrBtn}}" hint-placeholder-val="{{true}}"><button class="btn" type="button" data-variant="tonal" data-size="s">Read them now</button></sc-if></div></sc-if>
+</sc-for>
+<sc-for list="{{st.ws}}" as="w" hint-placeholder-count="0">
+<sc-if value="{{w.top}}" hint-placeholder-val="{{true}}"><div class="pg-top"><button class="btn" type="button" data-variant="ghost"><svg class="ico" data-dir="back" aria-hidden="true"><use href="#i-chevron"></use></svg><span>Today</span></button><button class="btn" type="button" data-variant="ghost" data-size="s">Earlier weeks</button></div></sc-if>
+<div class="set-page">
+<div class="td-head"><p class="td-date">{{w.range}}</p><h2 class="td-title">{{w.title}}</h2></div>
+<div class="wgrid"><sc-for list="{{w.stats}}" as="ws" hint-placeholder-count="4"><div class="wstat"><b>{{ws.n}}</b><span>{{ws.l}}</span><small>{{ws.sub}}</small></div></sc-for></div>
+<div class="sgrp"><p class="sgrp-head">Mornings with the digest</p><div class="wdays" data-size="l"><sc-for list="{{w.days}}" as="dd" hint-placeholder-count="7"><span class="wday" data-on="{{dd.on}}" role="img" aria-label="{{dd.full}}">{{dd.l}}</span></sc-for></div><p class="sgrp-foot">{{w.habit}}</p></div>
+<div class="sgrp"><p class="sgrp-head">Came up more than once</p><div class="list"><sc-for list="{{w.repeats}}" as="r" hint-placeholder-count="3"><div class="sitem"><span class="tile" data-cat="{{r.cat}}"><svg class="ico" aria-hidden="true"><use href="#i-{{r.cat}}"></use></svg></span><span class="srow-main"><span class="srow-label">{{r.title}}</span><span class="srow-sub">{{r.sub}}</span></span><span class="srow-value">×{{r.n}}</span></div></sc-for></div></div>
+<div class="sgrp"><p class="sgrp-head">Added, by category</p><div class="list"><sc-for list="{{w.cats}}" as="c2" hint-placeholder-count="6"><div class="sitem sitem-block"><div class="wbar"><span class="wbar-label"><svg class="ico" data-cat="{{c2.cat}}" aria-hidden="true"><use href="#i-{{c2.cat}}"></use></svg>{{c2.label}}</span><span class="wbar-track"><span class="wbar-fill" data-cat="{{c2.cat}}" style="width: {{c2.pct}}"></span></span><span class="wbar-n">{{c2.n}}</span></div></div></sc-for></div></div>
+<div class="sgrp"><p class="sgrp-head">Went to the archive unread</p><div class="list"><sc-for list="{{w.archived}}" as="r" hint-placeholder-count="2"><div class="sitem"><span class="tile" data-cat="{{r.cat}}"><svg class="ico" aria-hidden="true"><use href="#i-{{r.cat}}"></use></svg></span><span class="srow-main"><span class="srow-label">{{r.title}}</span><span class="srow-sub">{{r.sub}}</span></span></div></sc-for></div><p class="sgrp-foot">They stay in Notes under Archived, and search still finds them.</p></div>
+<p class="pg-meta">Counted on your server. No engine was used.</p>
+</div>
+</sc-for>
+</div>
+<div class="ph-nav"><nav class="tabbar" aria-label="Main">
+<a class="tab" href="#today" aria-current="page"><span class="tab-ico"><svg class="ico" data-size="24" aria-hidden="true"><use href="#i-sun"></use></svg><sc-if value="{{st.hasBadge}}" hint-placeholder-val="{{true}}"><span class="tab-badge">{{st.badge}}</span></sc-if></span>Today</a>
+<a class="tab" href="#notes"><span class="tab-ico"><svg class="ico" data-size="24" aria-hidden="true"><use href="#i-list"></use></svg></span>Notes</a>
+<a class="tab" href="#add" data-add="true"><span class="tab-ico"><svg class="ico" data-size="24" aria-hidden="true"><use href="#i-plus"></use></svg></span>Add</a>
+<a class="tab" href="#base"><span class="tab-ico"><svg class="ico" data-size="24" aria-hidden="true"><use href="#i-bookmark"></use></svg></span>Base</a>
+<a class="tab" href="#settings"><span class="tab-ico"><svg class="ico" data-size="24" aria-hidden="true"><use href="#i-sliders"></use></svg></span>Settings</a>
+</nav></div>
+</div>
+</div>
+</sc-for>
+</div>
+</section>
+</sc-for>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":3500,"height":7100}}'>
+class Component extends DCLogic {
+  renderVals() {
+    /* Shared data for the DES-4 boards: the digest, its states and the weekly summary. */
+    const TL = { english: 'English', ai: 'AI', tech: 'Technology', concept: 'Concept', idea: 'Idea', other: 'Other' };
+    const TA = {
+      got: { label: 'Got it', icon: 'check', tone: 'accent' }, deeper: { label: 'Deeper', icon: 'deeper', tone: '' },
+      keep: { label: 'Keep', icon: 'bookmark', tone: '' }, notion: { label: 'Notion', icon: 'plus', tone: '' }, del: { label: 'Delete', icon: 'trash', tone: '' },
+    };
+    const TC = (o) => {
+      const x = Object.assign({ cat: 'tech', title: '', sense: '', reason: '', rIcon: '', flag: '', priv: false, mins: '1 min', bh: '', btext: '', ex: '',
+        acts: ['got', 'deeper', 'keep', 'del'], off: false, swipe: false }, o);
+      x.catLabel = TL[x.cat];
+      x.hasReason = !!x.reason; x.hasSense = !!x.sense; x.hasEx = !!x.ex;
+      x.hasFlag = !!x.flag; x.flagLabel = x.flag === 'draft' ? 'Draft' : 'Unsure';
+      x.actions = x.acts.map((k) => TA[k]); x.n = String(x.actions.length);
+      x.wrapCls = x.swipe ? 'swipe today-swipe' : 'today-item'; x.offset = x.swipe ? '112px' : '0px';
+      return x;
+    };
+    const CARDS7 = () => [
+      TC({ cat: 'tech', title: 'Bun', sense: 'A JavaScript runtime and toolkit', reason: 'Repeat · level 2', rIcon: 'retry', bh: 'How it works', btext: 'Bun is written in Zig and runs JavaScript on JavaScriptCore, the engine from Safari, rather than V8, so it starts and installs fast.' }),
+      TC({ cat: 'tech', title: 'blue-green deployment', priv: true, sense: 'Releasing by switching between two identical environments', bh: 'What it is', btext: 'Run the new version beside the old one, then move all traffic over at once; moving it back is the rollback.' }),
+      TC({ cat: 'concept', title: 'Idempotency', sense: 'Repeating an operation changes nothing more', reason: 'Leaves Friday', rIcon: 'clock', bh: 'Explanation', btext: 'Doing it twice has the same effect as doing it once, which is what makes retries safe.' }),
+      TC({ cat: 'tech', title: 'Kafka', sense: 'A distributed event log', reason: 'Research now · not opened', rIcon: 'bolt', bh: 'What it is', btext: 'A distributed log that stores streams of events and lets many services read them, each at its own pace.' }),
+      TC({ cat: 'english', title: 'serendipity', sense: 'noun · finding something good by chance', bh: 'Translation', btext: 'счастливая случайность, удачная находка', ex: 'Meeting my co-founder at a bus stop was pure serendipity.', acts: ['got', 'deeper', 'keep', 'notion', 'del'] }),
+      TC({ cat: 'ai', title: 'Ollama', sense: 'A runner for local language models', mins: '2 min', bh: 'What it is', btext: 'Runs open-weight language models on your own machine and serves them over a local API.' }),
+      TC({ cat: 'tech', title: 'SABR', sense: 'YouTube’s adaptive streaming protocol', bh: 'What it is', btext: 'YouTube’s newer way to stream video, in which the server rather than the player picks the quality of each piece.' }),
+    ];
+    const DONE = (rows) => rows.map((r) => ({ title: r[0], what: r[1], icon: r[2] }));
+    const TMR = { n: '4', terms: [{ t: 'Bauhaus' }, { t: 'Zettelkasten' }, { t: 'to hedge' }, { t: 'CRDT' }] };
+    const WEEK = { kicker: 'Week 47 · 16–22 November',
+      stats: [{ n: '23', l: 'Added' }, { n: '18', l: 'Read' }, { n: '5', l: 'Kept' }, { n: '2', l: 'Archived unread' }],
+      days: [['M', 'Monday', true], ['T', 'Tuesday', true], ['W', 'Wednesday', false], ['T', 'Thursday', true], ['F', 'Friday', true], ['S', 'Saturday', false], ['S', 'Sunday', true]]
+        .map((d) => ({ l: d[0], full: d[1] + (d[2] ? ': digest opened' : ': not opened'), on: d[2] })) };
+    /* A Today screen: header, progress, the cards, what is done, what waits for tomorrow. */
+    const today = (o) => {
+      const t = Object.assign({ date: 'Thursday, 19 November', title: 'Today', banner: '', week: false, done: 0, total: 7, left: 'About 8 min',
+        cards: [], doneRows: [], tmr: true, tmrBtn: true, allRead: false, empty: false }, o);
+      t.hasBanner = !!t.banner; t.hasWeek = !!t.week; t.wk = WEEK;
+      t.hasProg = t.total > 0;
+      t.pct = Math.round((t.done / Math.max(t.total, 1)) * 100) + '%';
+      t.progL = t.done + ' of ' + t.total + ' read';
+      t.progR = t.left;
+      t.hasDone = t.doneRows.length > 0; t.doneN = String(t.doneRows.length);
+      t.hasTmr = t.tmr && !t.allRead; t.tm = TMR;
+      return t;
+    };
+    const WEEKPAGE = (top) => ({ top: top, title: 'Week 47', range: '16–22 November', days: WEEK.days,
+      stats: [
+        { n: '23', l: 'Added', sub: 'notes captured' }, { n: '18', l: 'Read', sub: 'cards marked Got it' },
+        { n: '5', l: 'Kept', sub: 'now in Base' }, { n: '2', l: 'Archived unread', sub: 'shown, never opened' },
+      ],
+      habit: 'Five of seven mornings. The goal is four of seven, two weeks running.',
+      repeats: [
+        { cat: 'tech', title: 'Kafka', sub: 'Level 2 comes tonight', n: '3' },
+        { cat: 'tech', title: 'SABR', sub: 'Two meanings; you chose streaming', n: '2' },
+        { cat: 'english', title: 'serendipity', sub: 'Level 2 in Monday’s digest', n: '2' },
+      ],
+      cats: [['tech', 8], ['english', 6], ['ai', 4], ['concept', 3], ['idea', 1], ['other', 1]].map((c) => ({ cat: c[0], label: TL[c[0]], n: String(c[1]), pct: Math.round((c[1] / 8) * 100) + '%' })),
+      archived: [
+        { cat: 'tech', title: 'CQRS', sub: 'Shown on 12 November, never opened' },
+        { cat: 'other', title: 'Mise en place', sub: 'Shown on 13 November, never opened' },
+      ] });
+    const swiped = (cards) => { cards[0].swipe = true; cards[0].wrapCls = 'swipe today-swipe'; cards[0].offset = '112px'; return cards; };
+    const offline = (cards) => cards.map((c) => Object.assign(c, { off: true }));
+    const ALLDONE = DONE([['Bun', 'Got it', 'check'], ['blue-green deployment', 'Kept', 'bookmark'], ['Idempotency', 'Level 2 tonight', 'deeper'], ['Kafka', 'Got it', 'check'], ['serendipity', 'Added to Notion', 'plus'], ['Ollama', 'Got it', 'check'], ['SABR', 'Got it', 'check']]);
+    const DONE3 = () => DONE([['Bun', 'Got it', 'check'], ['blue-green deployment', 'Kept', 'bookmark'], ['Idempotency', 'Level 2 tonight', 'deeper']]);
+    const F = (n, name, cap, len, o) => Object.assign({ n: n, name: name, cap: cap, len: len, ts: [], ws: [], badge: '' }, o);
+    const fin = (st) => Object.assign(st, { hasBadge: !!st.badge });
+    const states = [
+      F('01', 'Morning', 'Seven cards in the digest order: repeats, then work, then what is about to leave, then the rest.', 'full', { badge: '7', ts: [today({ cards: CARDS7() })] }),
+      F('02', 'In progress', 'Three done: they fold into lines under Done today, each with Undo, and the progress moves.', 'full', { badge: '4', ts: [today({ done: 3, left: 'About 5 min left', cards: CARDS7().slice(3), doneRows: DONE3() })] }),
+      F('03', 'Swipe', 'Swipe right for Got it, left for Keep and Delete. Every swipe is also a button on the card.', 'fixed', { badge: '7', ts: [today({ cards: swiped(CARDS7()) })] }),
+      F('04', 'All read', 'Seven of seven. What went deeper, and what waits for tomorrow, with Read them now.', 'fixed', { ts: [today({ done: 7, left: 'Done in 6 min', allRead: true, doneRows: ALLDONE })] }),
+      F('05', 'Nothing today', 'No new cards this morning, so no push was sent either.', 'fixed', { ts: [today({ total: 0, empty: true, tmr: false })] }),
+      F('06', 'Sunday', 'On Sunday the week’s summary leads Today and opens its page.', 'fixed', { badge: '6', ts: [today({ date: 'Sunday, 22 November', week: true, total: 6, left: 'About 7 min', tmr: false, cards: CARDS7().slice(1) })] }),
+      F('07', 'Weekly summary', 'Counted on the server: added, read, kept, archived unread, mornings, repeats.', 'full', { ws: [WEEKPAGE(true)] }),
+      F('08', 'Offline', 'The server is out of reach: the phone shows this morning’s digest, and the actions wait.', 'fixed', { badge: '4', ts: [today({ banner: 'Reading works; the actions wait until it is back.', done: 3, left: 'About 5 min left', cards: offline(CARDS7().slice(3)) })] }),
+    ].map(fin);
+    return {
+      schemes: [
+        { id: 'light', label: 'Light', states: states },
+        { id: 'dark', label: 'Dark', states: states },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

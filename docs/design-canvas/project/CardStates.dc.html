@@ -1,0 +1,356 @@
+<!doctype html>
+<!--
+  SPDX-License-Identifier: AGPL-3.0-or-later
+  SPDX-FileCopyrightText: 2026 The stockpot authors
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cards: every format in every state</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./tokens.css">
+<link rel="stylesheet" href="./kit.css">
+<link rel="stylesheet" href="./screens.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&amp;family=Literata:ital,opsz,wght@0,7..72,400..700;1,7..72,400..500&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#9D1E60}a:hover{color:#AC1E68}
+</style>
+</helmet>
+<div class="kit b-board" data-scheme="light" style="width: 2560px; min-height: 4150px">
+<svg class="b-sprite" aria-hidden="true" focusable="false">
+<symbol id="i-english" viewBox="0 0 24 24"><path d="M5 4.5h14a1.5 1.5 0 0 1 1.5 1.5v9.5a1.5 1.5 0 0 1-1.5 1.5h-7l-4.5 3.5V17H5a1.5 1.5 0 0 1-1.5-1.5V6A1.5 1.5 0 0 1 5 4.5zM9.25 13.75L12 7.25l2.75 6.5M10.2 11.6h3.6"></path></symbol>
+<symbol id="i-ai" viewBox="0 0 24 24"><path d="M10.5 3.5l1.9 5.1 5.1 1.9-5.1 1.9-1.9 5.1-1.9-5.1-5.1-1.9 5.1-1.9zM18 15.25l.8 1.95 1.95.8-1.95.8-.8 1.95-.8-1.95-1.95-.8 1.95-.8z"></path></symbol>
+<symbol id="i-tech" viewBox="0 0 24 24"><path d="M8.5 7.5L4 12l4.5 4.5M15.5 7.5L20 12l-4.5 4.5M13.5 5l-3 14"></path></symbol>
+<symbol id="i-concept" viewBox="0 0 24 24"><path d="M12 3.25l4 6.5H8z"></path><circle cx="7.25" cy="16.25" r="3.75"></circle><rect x="13.25" y="12.5" width="7.25" height="7.25" rx="1.25"></rect></symbol>
+<symbol id="i-idea" viewBox="0 0 24 24"><path d="M9.25 18h5.5M10.25 21h3.5M12 3a6 6 0 0 0-3.6 10.8c.7.55 1.1 1.3 1.1 2.1V16h5v-.1c0-.8.4-1.55 1.1-2.1A6 6 0 0 0 12 3z"></path></symbol>
+<symbol id="i-other" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.75"></circle><path d="M8 12h.01M12 12h.01M16 12h.01"></path></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"></path></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M12 2.75v2M12 19.25v2M2.75 12h2M19.25 12h2M5.46 5.46l1.41 1.41M17.13 17.13l1.41 1.41M5.46 18.54l1.41-1.41M17.13 6.87l1.41-1.41"></path></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"></path></symbol>
+<symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M7 3.75h10a1 1 0 0 1 1 1v15.5l-6-4.25-6 4.25V4.75a1 1 0 0 1 1-1z"></path></symbol>
+<symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h8M16 7h4M4 17h3M11 17h9"></path><circle cx="14" cy="7" r="2"></circle><circle cx="9" cy="17" r="2"></circle></symbol>
+<symbol id="i-clipboard" viewBox="0 0 24 24"><rect x="8.5" y="3" width="7" height="4" rx="1"></rect><path d="M15.5 5h1.75A1.75 1.75 0 0 1 19 6.75v12.5A1.75 1.75 0 0 1 17.25 21H6.75A1.75 1.75 0 0 1 5 19.25V6.75A1.75 1.75 0 0 1 6.75 5H8.5"></path></symbol>
+<symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13.5a4 4 0 0 0 5.66.5l2.83-2.83a4 4 0 0 0-5.66-5.66l-1.06 1.06M14 10.5a4 4 0 0 0-5.66-.5l-2.83 2.83a4 4 0 0 0 5.66 5.66l1.06-1.06"></path></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2"></rect><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"></path></symbol>
+<symbol id="i-chevron" viewBox="0 0 24 24"><path d="M9.5 6l6 6-6 6"></path></symbol>
+<symbol id="i-deeper" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4 4M11 8.25v5.5M8.25 11h5.5"></path></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l.9 12.1A2 2 0 0 0 8.9 21h6.2a2 2 0 0 0 2-1.9L18 7M9 7V4.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 .5.5V7"></path></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.75"></circle><path d="M12 7.75v5M12 16.25h.01"></path></symbol>
+<symbol id="i-pot" viewBox="0 0 24 24"><path d="M3 10.5h18M5 10.5V15a5 5 0 0 0 5 5h4a5 5 0 0 0 5-5v-4.5M10 7.5c-.8-1 .8-2 0-3M14 7.5c-.8-1 .8-2 0-3"></path></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4 4"></path></symbol>
+<symbol id="i-archive" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="4.5" rx="1"></rect><path d="M5 8.5V19a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8.5M10 12.5h4"></path></symbol>
+<symbol id="i-quote" viewBox="0 0 24 24"><path d="M5 18c2.5-1 4-3.2 4-6.5V7H5v5h4M15 18c2.5-1 4-3.2 4-6.5V7h-4v5h4"></path></symbol>
+<symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 3L5 13.5h6L10 21l8-10.5h-6z"></path></symbol>
+<symbol id="i-retry" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4.5h-4.5"></path></symbol>
+<symbol id="i-more" viewBox="0 0 24 24"><path d="M6 12h.01M12 12h.01M18 12h.01" stroke-width="2.5"></path></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.75"></circle><path d="M12 7.5V12l3 2"></path></symbol>
+<symbol id="i-tag" viewBox="0 0 24 24"><path d="M4 4h7.2l8.8 8.8-7.2 7.2L4 11.2z"></path><circle cx="8.25" cy="8.25" r="1.25"></circle></symbol>
+</svg>
+
+<header class="b-head">
+<div>
+<p class="b-kicker">stockpot screens · cards · states</p>
+<h1 class="b-title">Every format in every state</h1>
+<p class="b-lede" style="max-width: 1180px">The compact card that Today and search use, for each format (columns) in each state (rows). A state reads the same whatever the format, so the opened card on the phone board needs to show each state only once; only an Idea takes minutes instead of seconds. English shows the Notion action, as when that integration is on.</p>
+</div>
+<span class="b-tag">DES-3 · 6 × 6 · compact card 358 px</span>
+</header>
+
+<div class="s-panels">
+<sc-for list="{{schemes}}" as="s" hint-placeholder-count="2">
+<section class="b-panel s-panel" data-scheme="{{s.id}}">
+<p class="b-panel-label">{{s.label}}</p>
+<div class="mx">
+<span></span>
+<sc-for list="{{s.cols}}" as="col" hint-placeholder-count="6"><span class="mx-col">{{col.t}}</span></sc-for>
+<sc-for list="{{s.rows}}" as="rw" hint-placeholder-count="6">
+<div class="mx-row">{{rw.label}}<small>{{rw.note}}</small></div>
+<sc-for list="{{rw.cards}}" as="x" hint-placeholder-count="6">
+<article class="card" aria-busy="{{x.busy}}" data-actions="{{x.hasActs}}">
+<div class="card-top">
+<span class="cat" data-cat="{{x.cat}}" data-size="s"><svg class="ico" aria-hidden="true"><use href="#i-{{x.cat}}"></use></svg>{{x.catLabel}}</span>
+<span class="badge" data-status="{{x.status}}"><sc-if value="{{x.sDot}}" hint-placeholder-val="{{true}}"><span class="dot"></span></sc-if><sc-if value="{{x.sSpin}}" hint-placeholder-val="{{false}}"><span class="spin" data-size="s" aria-hidden="true"></span></sc-if><sc-if value="{{x.sFail}}" hint-placeholder-val="{{false}}"><svg class="ico" aria-hidden="true"><use href="#i-alert"></use></svg></sc-if>{{x.statusLabel}}</span>
+<sc-if value="{{x.hasFlag}}" hint-placeholder-val="{{false}}"><span class="badge" data-flag="{{x.flag}}"><sc-if value="{{x.flagUnsure}}" hint-placeholder-val="{{false}}"><svg class="ico" aria-hidden="true"><use href="#i-alert"></use></svg></sc-if>{{x.flagLabel}}</span></sc-if>
+<sc-if value="{{x.hasMins}}" hint-placeholder-val="{{true}}"><span class="card-meta">{{x.mins}}</span></sc-if>
+</div>
+<h3 class="card-title">{{x.title}}</h3>
+<sc-if value="{{x.hasSum}}" hint-placeholder-val="{{true}}"><p class="card-sum">{{x.sum}}</p></sc-if>
+<sc-if value="{{x.hasLine}}" hint-placeholder-val="{{false}}"><span class="card-line" data-tone="{{x.lineTone}}"><sc-if value="{{x.lineSpin}}" hint-placeholder-val="{{false}}"><span class="spin" data-size="s" aria-hidden="true"></span></sc-if><sc-if value="{{x.lineIcon}}" hint-placeholder-val="{{false}}"><svg class="ico" aria-hidden="true"><use href="#i-{{x.icon}}"></use></svg></sc-if><span>{{x.line}}</span></span></sc-if>
+<sc-if value="{{x.skel}}" hint-placeholder-val="{{false}}"><div class="skel-lines"><span class="skel" style="display: block; width: 100%; height: 14px"></span><span class="skel" style="display: block; width: 76%; height: 14px"></span></div></sc-if>
+<sc-if value="{{x.hasBtns}}" hint-placeholder-val="{{false}}"><div class="card-retry"><sc-for list="{{x.btns}}" as="bt" hint-placeholder-count="1"><button class="btn" type="button" data-variant="{{bt.v}}" data-size="s">{{bt.label}}</button></sc-for></div></sc-if>
+<sc-if value="{{x.hasActs}}" hint-placeholder-val="{{true}}"><div class="card-actions" data-n="{{x.n}}"><sc-for list="{{x.acts}}" as="a" hint-placeholder-count="4"><button class="card-action" type="button" data-tone="{{a.tone}}"><svg class="ico" aria-hidden="true"><use href="#i-{{a.icon}}"></use></svg>{{a.label}}</button></sc-for></div></sc-if>
+</article>
+</sc-for>
+</sc-for>
+</div>
+</section>
+</sc-for>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":2560,"height":4150}}'>
+class Component extends DCLogic {
+  renderVals() {
+    /* Shared data for the DES-3 boards: card content per format, note rows, Base rows. */
+    const L = { english: 'English', ai: 'AI', tech: 'Technology', concept: 'Concept', idea: 'Idea', other: 'Other' };
+    const SL = { new: 'New', queued: 'Queued', researching: 'Researching', ready: 'Ready', read: 'Read', archived: 'Archived', failed: 'Failed' };
+    const FL = { draft: 'Draft', unsure: 'Unsure' };
+    const badge = (status) => ({
+      status: status, statusLabel: SL[status],
+      sDot: status === 'new' || status === 'queued' || status === 'ready',
+      sSpin: status === 'researching', sRead: status === 'read', sArch: status === 'archived', sFail: status === 'failed',
+    });
+    const flag = (f) => ({ flag: f || '', hasFlag: !!f, flagLabel: f ? FL[f] : '', flagDraft: f === 'draft', flagUnsure: f === 'unsure' });
+
+    const B = (o) => Object.assign({ h: '', text: '', items: [], isP: false, isMuted: false, isNote: false, isList: false, isOl: false, isEx: false, isKv: false, isCmp: false, isTags: false, isSrc: false }, o, { hasH: !!o.h });
+    const P = (h, text) => B({ isP: true, h: h, text: text });
+    const MUTED = (h, text) => B({ isMuted: true, h: h, text: text });
+    const NOTE = (h, text) => B({ isNote: true, h: h, text: text });
+    const UL = (h, items) => B({ isList: true, h: h, items: items.map((t) => ({ t: t })) });
+    const OL = (h, items) => B({ isOl: true, h: h, items: items.map((t, i) => ({ n: String(i + 1), t: t })) });
+    const EX = (h, items) => B({ isEx: true, h: h, items: items });
+    const KV = (h, items) => B({ isKv: true, h: h, items: items });
+    const CMP = (h, items) => B({ isCmp: true, h: h, items: items });
+    const TAGS = (h, items) => B({ isTags: true, h: h, items: items.map((t) => ({ t: t })) });
+    const SRC = (items) => B({ isSrc: true, h: 'Sources', items: items });
+
+    const LV = { std: ['Card', 'How it works', 'Hands-on'], word: ['Card', 'Nuance', 'Practice'], report: ['Report', 'Feasibility', 'Build plan'] };
+    const levels = (kind, sel, states) => LV[kind].map((label, i) => {
+      const st = states[i];
+      return { label: label, on: i === sel, ready: st === 'ready', hasDot: st === 'queued' || st === 'researching', dot: st };
+    });
+    const ACT = {
+      got: { label: 'Got it', icon: 'check', tone: 'accent' },
+      deeper: { label: 'Deeper', icon: 'deeper', tone: '' },
+      keep: { label: 'Keep', icon: 'bookmark', tone: '' },
+      kept: { label: 'Kept', icon: 'bookmark', tone: 'accent' },
+      notion: { label: 'Notion', icon: 'plus', tone: '' },
+      inNotion: { label: 'In Notion', icon: 'check', tone: '' },
+      del: { label: 'Delete', icon: 'trash', tone: '' },
+    };
+
+    const CONTENT = {
+      english: { cat: 'english', title: 'serendipity', sense: 'noun · finding something good by chance', ctx: 'Heard on a podcast about city planning', mins: '1 min', kind: 'word', diff: 'Medium',
+        meta: 'Written by Gemini · fast · 19 Nov, 06:31 · translations in Russian, the card language',
+        actions: ['got', 'deeper', 'keep', 'notion', 'del'],
+        blocks: [
+          P('Translation', 'счастливая случайность, удачная находка'),
+          EX('Examples', [
+            { text: 'Meeting my co-founder at a bus stop was pure serendipity.', tr: 'Встреча с сооснователем на остановке была чистой случайностью.' },
+            { text: 'Good libraries leave room for serendipity.', tr: 'В хороших библиотеках есть место для случайных находок.' },
+          ]),
+          UL('Sentences to reuse', ['It was pure serendipity that we met.', 'Leave room for serendipity in your plans.']),
+          NOTE('Typical mistake', 'Using it for any coincidence. Serendipity is a lucky find; a bad coincidence is not serendipity.'),
+        ] },
+      tech: { cat: 'tech', title: 'Bun', sense: 'A JavaScript runtime and toolkit', ctx: 'Seen in the stockpot README', mins: '1 min', kind: 'std',
+        meta: 'Written by Gemini · standard · 19 Nov, 06:33',
+        blocks: [
+          P('What it is', 'A JavaScript runtime with a package manager, a test runner and a bundler built in.'),
+          P('In JS terms', 'Like Node.js, npm, Jest and esbuild rolled into one fast binary.'),
+          P('Why it matters to you', 'stockpot’s server, tests and scripts run on it, so its APIs come before Node’s.'),
+          SRC([{ title: 'Bun documentation', host: 'bun.sh/docs' }, { title: 'oven-sh/bun on GitHub', host: 'github.com/oven-sh/bun' }]),
+        ] },
+      ai: { cat: 'ai', title: 'Ollama', sense: 'A runner for local language models', ctx: 'Mentioned in a self-hosting thread', mins: '2 min', kind: 'std',
+        meta: 'Written by Gemini · standard · 19 Nov, 06:35',
+        blocks: [
+          P('What it is', 'Runs open-weight language models on your own machine, and serves them and streams tokens over a local HTTP API.'),
+          CMP('Against the alternatives', [
+            { name: 'LM Studio', pros: 'A desktop app with a model browser; no terminal needed', cons: 'Closed source; made for one machine, not for serving' },
+            { name: 'llama.cpp', pros: 'The engine many runners build on; the most control', cons: 'You build, tune and serve it yourself' },
+            { name: 'vLLM', pros: 'High throughput for many users on a GPU server', cons: 'Needs a capable GPU and more setup' },
+          ]),
+          TAGS('Works with', ['Open WebUI', 'LangChain', 'Continue', 'OpenAI-compatible clients']),
+          SRC([{ title: 'ollama/ollama on GitHub', host: 'github.com/ollama/ollama' }, { title: 'Model library', host: 'ollama.com/library' }, { title: 'llama.cpp', host: 'github.com/ggml-org/llama.cpp' }]),
+        ] },
+      concept: { cat: 'concept', title: 'Idempotency', sense: 'Repeating an operation changes nothing more', ctx: 'A code review comment on retries', mins: '1 min', kind: 'std',
+        meta: 'Written by Gemini · standard · 19 Nov, 06:37',
+        blocks: [
+          P('Explanation', 'An operation is idempotent when doing it twice has the same effect as doing it once. That makes retries safe, which is why networks, payment APIs and job queues rely on it.'),
+          P('Analogy', 'A lift call button: pressing it five times still brings one lift.'),
+          P('Example', 'PUT /notes/42 with the same body leaves the same note however often it is sent; POST /notes makes a new note every time.'),
+          UL('Where you will meet it', ['HTTP methods: GET, PUT and DELETE', 'Idempotency keys in payment APIs', 'Retries in a job queue', 'Infrastructure as code']),
+          SRC([{ title: 'RFC 9110: idempotent methods', host: 'rfc-editor.org/rfc/rfc9110' }, { title: 'Idempotent requests', host: 'docs.stripe.com/api/idempotent_requests' }]),
+        ] },
+      idea: { cat: 'idea', title: 'Voice capture from the Action button', sense: 'An idea for stockpot', ctx: 'Thought of on a walk', mins: '6 min', kind: 'report',
+        meta: 'Researched by Gemini · deep · 18 Nov, 22:10 · 31 pages read',
+        blocks: [
+          P('In short', 'One press of the Action button saves a note by voice, without opening the app: for the owner first, then for other self-hosters with an iPhone.'),
+          KV('What already exists', [
+            { name: 'Shortcuts with Dictate Text', note: 'Works on the Action button today, but has no category step and no suggestions.' },
+            { name: 'Drafts', note: 'Fast voice capture into its own inbox; the notes stay inside Drafts.' },
+            { name: 'Quick add in task apps', note: 'Voice into to-do lists; nothing explains what you saved.' },
+          ]),
+          KV('Approaches', [
+            { name: 'Extend the Shortcut', note: 'Ships now with no new code on the phone; menus only, no live suggestions.' },
+            { name: 'An App Intent in the iOS app', note: 'The best feel and an offline queue; waits for the native app.' },
+          ]),
+          UL('Risks', ['Dictation mishears rare terms and names', 'Only newer iPhones have the Action button', 'Without a queue on the phone, no signal means a lost note']),
+          OL('First steps', ['Dictate ten real notes and count the misheard terms', 'Add a voice path to the Shortcut', 'Time it from the press to the saved note']),
+          SRC([{ title: 'App Intents', host: 'developer.apple.com/documentation/appintents' }, { title: 'Use the Action button on iPhone', host: 'support.apple.com/guide/iphone' }]),
+        ] },
+      other: { cat: 'other', title: 'Bauhaus', sense: 'The German school of art and design', ctx: 'A chair in a museum shop', mins: '1 min', kind: 'std',
+        meta: 'Written by Gemini · standard · 19 Nov, 06:40',
+        blocks: [
+          P('Explanation', 'A German school of art, design and architecture, open from 1919 to 1933, that joined craft with industry: simple forms, honest materials, function first. Its ideas went mainstream in furniture, type and buildings.'),
+          SRC([{ title: 'Bauhaus Kooperation', host: 'bauhauskooperation.com' }, { title: 'Bauhaus', host: 'en.wikipedia.org/wiki/Bauhaus' }]),
+        ] },
+    };
+
+    /* A card for the templates: content plus status, flags, level and body mode. */
+    const card = (o) => {
+      const base = o.key ? CONTENT[o.key] : {};
+      const c = Object.assign({ status: 'ready', flag: '', priv: false, top: true, back: 'Notes', level: 0, levelStates: ['ready', 'none', 'none'],
+        mins: '', sense: '', ctx: '', diff: '', meta: '', blocks: [], actions: ['got', 'deeper', 'keep', 'del'], kind: 'std',
+        banner: '', bannerTitle: '', mode: 'blocks', w: {} }, base, o);
+      c.catLabel = L[c.cat];
+      Object.assign(c, badge(c.status), flag(c.flag));
+      c.hasMins = !!c.mins; c.hasSense = !!c.sense; c.hasCtx = !!c.ctx; c.hasFacts = !!c.diff; c.hasMeta = !!c.meta;
+      c.hasLevels = c.mode !== 'none-levels' && c.levelStates !== null;
+      c.levels = c.levelStates ? levels(c.kind, c.level, c.levelStates) : [];
+      c.hasLevels = c.levels.length > 0;
+      c.hasBanner = !!c.banner;
+      c.showBlocks = c.mode === 'blocks';
+      c.showWait = c.mode === 'wait';
+      c.showSkel = !!c.skel;
+      c.w = Object.assign({ tone: '', icon: 'clock', spin: false, title: '', text: '', steps: [], btns: [], meta: '' }, c.w);
+      c.w.noSpin = !c.w.spin;
+      c.w.hasSteps = c.w.steps.length > 0;
+      c.w.hasBtns = c.w.btns.length > 0;
+      c.w.hasMeta = !!c.w.meta;
+      c.w.steps = c.w.steps.map((s) => Object.assign({ done: 'true', check: false, spin: false, ring: false }, s));
+      c.acts = c.actions.map((k) => ACT[k]);
+      c.hasActions = c.showBlocks && c.acts.length > 0;
+      return c;
+    };
+
+    /* A note row for the lists. */
+    const row = (cat, title, sub, status, o) => {
+      const r = Object.assign({ cat: cat, title: title, segs: null, priv: false, flag: '', checked: false, cur: false, showBadge: true,
+        notionAdd: false, notionIn: false, selm: false }, o || {});
+      r.segs = (r.segs || [{ t: sub }]).map((s) => ({ t: s.t, m: !!s.m, plain: !s.m }));
+      r.sub = r.segs.map((s) => s.t).join('');
+      Object.assign(r, badge(status), flag(r.flag));
+      r.asDiv = r.notionAdd || r.notionIn;
+      r.asButton = !r.asDiv;
+      return r;
+    };
+    const NOTES = () => [
+      { isDay: true, isCat: false, label: 'Today', rows: [
+        row('tech', 'Kafka', 'A podcast on event-driven systems', 'new'),
+        row('tech', 'SABR', 'YouTube’s adaptive streaming protocol', 'new'),
+        row('tech', 'blue-green deployment', 'Release review at work', 'new', { priv: true }),
+        row('tech', 'WebTransport', 'Seen in a browser release note', 'researching'),
+        row('concept', 'Local-first software', 'Linked from the CRDT talk', 'queued'),
+      ] },
+      { isDay: true, isCat: false, label: 'Yesterday', rows: [
+        row('english', 'serendipity', 'finding something good by chance', 'ready'),
+        row('english', 'to hedge', 'to protect yourself against a loss', 'ready', { flag: 'draft' }),
+        row('ai', 'Ollama', 'A runner for local language models', 'ready'),
+        row('idea', 'Voice capture from the Action button', 'An idea for stockpot', 'ready'),
+        row('ai', 'MCP', 'Seen in an editor’s changelog', 'failed'),
+      ] },
+      { isDay: true, isCat: false, label: 'This week', rows: [
+        row('other', 'Hyperstition', 'An idea that makes itself real by spreading', 'ready', { flag: 'unsure' }),
+        row('concept', 'Idempotency', 'Repeating an operation changes nothing more', 'read'),
+        row('tech', 'Bun', 'A JavaScript runtime and toolkit', 'read'),
+        row('tech', 'Kubernetes', 'Unread for 7 days', 'archived'),
+      ] },
+    ];
+    const BASE = () => [
+      { isDay: false, isCat: true, cat: 'english', label: 'English', n: '12', rows: [
+        row('english', 'serendipity', 'finding something good by chance', 'read', { showBadge: false, notionIn: true }),
+        row('english', 'a far cry', 'very different from', 'read', { showBadge: false, notionAdd: true }),
+      ] },
+      { isDay: false, isCat: true, cat: 'tech', label: 'Technology', n: '9', rows: [
+        row('tech', 'Bun', 'A JavaScript runtime and toolkit', 'read', { showBadge: false }),
+        row('tech', 'WebAssembly', 'A portable binary format for the web', 'read', { showBadge: false }),
+      ] },
+      { isDay: false, isCat: true, cat: 'ai', label: 'AI', n: '6', rows: [
+        row('ai', 'Ollama', 'A runner for local language models', 'read', { showBadge: false }),
+        row('ai', 'RAG', 'Answering from retrieved documents', 'read', { showBadge: false }),
+      ] },
+      { isDay: false, isCat: true, cat: 'concept', label: 'Concept', n: '5', rows: [
+        row('concept', 'Idempotency', 'Repeating an operation changes nothing more', 'read', { showBadge: false }),
+      ] },
+    ];
+    const chips = (list) => list.map((c) => ({ label: c[0], n: c[1], on: !!c[2] }));
+    const ALLCHIPS = chips([['All', '128', true], ['New', '4'], ['Queued', '1'], ['Researching', '1'], ['Ready', '9'], ['Read', '98'], ['Failed', '1'], ['Archived', '14']]);
+
+    /* A list frame: Notes or Base, with its search, filters, groups or empty state. */
+    const list = (o) => {
+      const f = Object.assign({ title: 'Notes', selectBtn: true, selMode: false, count: '', searchLabel: 'Search notes and cards', query: '', searchOff: false,
+        filters: true, cat: '', chips: ALLCHIPS, res: '', groups: [], empty: false, e: {} }, o);
+      f.hasCount = !!f.count;
+      f.hasQuery = !!f.query; f.noQuery = !f.hasQuery;
+      f.searchState = f.searchOff ? 'disabled' : (f.hasQuery ? 'focus' : '');
+      f.catChip = { cat: f.cat || 'all', label: f.cat ? L[f.cat] : 'All categories', on: !!f.cat, hasIcon: !!f.cat };
+      f.hasRes = !!f.res;
+      f.e = Object.assign({ icon: 'pot', title: '', text: '', btn: '', v: 'primary' }, f.e);
+      f.e.hasBtn = !!f.e.btn;
+      if (f.selMode) f.groups.forEach((g) => g.rows.forEach((r) => { r.selm = true; }));
+      return f;
+    };
+    const KEYS = ['english', 'tech', 'ai', 'concept', 'idea', 'other'];
+    const SUM = {
+      english: 'noun · finding something good by chance',
+      tech: 'A JavaScript runtime with a package manager, a test runner and a bundler built in.',
+      ai: 'Runs open-weight models on your own machine behind a local API.',
+      concept: 'Doing it twice has the same effect as doing it once.',
+      idea: 'One press to save a note by voice, without opening the app.',
+      other: 'A German school of design that joined craft with industry.',
+    };
+    const ROWS = [
+      { id: 'queued', label: 'Queued', note: 'New or Queued: no card yet' },
+      { id: 'researching', label: 'Researching', note: 'An engine is writing it' },
+      { id: 'ready', label: 'Ready', note: 'Written, not read yet' },
+      { id: 'draft', label: 'Draft', note: 'Ready, from the backup engine' },
+      { id: 'failed', label: 'Failed', note: 'Stopped after two retries' },
+      { id: 'unsure', label: 'Unsure', note: 'Ready, facts not confirmed' },
+    ];
+    const compact = (key, st) => {
+      const c = CONTENT[key];
+      let status = 'ready';
+      let fl = '';
+      const x = { cat: key, catLabel: L[key], title: c.title, mins: c.mins, sum: SUM[key], hasSum: true, line: '', lineTone: '', lineSpin: false, lineIcon: false, icon: '',
+        skel: false, btns: [], acts: [], busy: false };
+      const acts = (key === 'english' ? ['got', 'deeper', 'keep', 'notion', 'del'] : ['got', 'deeper', 'keep', 'del']).map((k) => ACT[k]);
+      if (st === 'queued') {
+        status = 'new'; x.hasSum = false; x.mins = ''; x.line = 'Waits for tonight’s run'; x.lineIcon = true; x.icon = 'clock';
+        x.btns = [{ label: 'Research now', v: 'tonal' }];
+      } else if (st === 'researching') {
+        status = 'researching'; x.hasSum = false; x.mins = ''; x.busy = true; x.skel = true; x.lineSpin = true; x.lineTone = 'accent';
+        x.line = key === 'idea' ? 'A report takes a few minutes' : 'Usually under a minute';
+      } else if (st === 'ready') {
+        x.acts = acts;
+      } else if (st === 'draft') {
+        fl = 'draft'; x.acts = acts; x.lineIcon = true; x.icon = 'retry'; x.line = 'Rewritten by the main engine after 14:00';
+      } else if (st === 'failed') {
+        status = 'failed'; x.hasSum = false; x.mins = ''; x.lineIcon = true; x.icon = 'alert'; x.lineTone = 'danger'; x.line = 'Couldn’t write this card';
+        x.btns = [{ label: 'Try again', v: 'primary' }, { label: 'Change category', v: 'outline' }];
+      } else if (st === 'unsure') {
+        fl = 'unsure'; x.acts = acts; x.lineIcon = true; x.icon = 'alert'; x.line = 'Facts not confirmed: read with care';
+      }
+      Object.assign(x, badge(status), flag(fl));
+      x.hasMins = !!x.mins; x.hasLine = !!x.line; x.hasBtns = x.btns.length > 0; x.hasActs = x.acts.length > 0; x.n = String(x.acts.length);
+      return x;
+    };
+    const rows = ROWS.map((r) => ({ label: r.label, note: r.note, cards: KEYS.map((k) => compact(k, r.id)) }));
+    const cols = KEYS.map((k) => ({ t: L[k] }));
+    return {
+      schemes: [
+        { id: 'light', label: 'Light', cols: cols, rows: rows },
+        { id: 'dark', label: 'Dark', cols: cols, rows: rows },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

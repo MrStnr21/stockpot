@@ -1,0 +1,189 @@
+<!doctype html>
+<!--
+  SPDX-License-Identifier: AGPL-3.0-or-later
+  SPDX-FileCopyrightText: 2026 The stockpot authors
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kit: categories and icons</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./tokens.css">
+<link rel="stylesheet" href="./kit.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&amp;family=Literata:ital,opsz,wght@0,7..72,400..700;1,7..72,400..500&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#9D1E60}a:hover{color:#AC1E68}
+.cg-table{display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--color-line);border-radius:24px;background:var(--color-surface)}
+.cg-row{display:grid;grid-template-columns:236px minmax(0,1fr) minmax(0,1fr) 380px;align-items:stretch;border-top:1px solid var(--color-line)}
+.cg-row[data-head]{border-top:0}
+.cg-row[data-head] > span{padding:14px 20px;font:600 12px/16px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--color-ink-3)}
+.cg-name{display:flex;align-items:center;gap:14px;padding:18px 20px}
+.cg-name b{display:block;font:650 17px/22px var(--font-ui)}
+.cg-name span{font:400 12px/16px var(--font-ui);color:var(--color-ink-3)}
+.cg-cell{display:flex;align-items:center;gap:14px;padding:18px 20px;background:var(--color-canvas);color:var(--color-ink)}
+.cg-sw{display:flex;gap:6px;margin-left:auto}
+.cg-swatch{display:flex;flex-direction:column;align-items:center;gap:4px;width:58px}
+.cg-swatch i{display:block;width:30px;height:30px;border-radius:9px;box-shadow:inset 0 0 0 1px var(--color-line)}
+.cg-swatch span{font:500 10px/12px var(--font-ui);color:var(--color-ink-3)}
+.cg-format{padding:18px 20px;font:400 14px/20px var(--font-ui);color:var(--color-ink-2)}
+.ic-panels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:32px}
+.ic-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:18px 12px}
+.ic{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+.ic-tile{display:grid;place-items:center;width:52px;height:52px;border-radius:14px;background:var(--color-surface);border:1px solid var(--color-line);color:var(--color-ink)}
+.ic-name{font:600 12px/16px var(--font-ui)}
+.ic-use{font:400 11px/14px var(--font-ui);color:var(--color-ink-3)}
+</style>
+</helmet>
+<div class="kit b-board" data-scheme="light" style="min-height: 1700px">
+<svg class="b-sprite" aria-hidden="true" focusable="false">
+<symbol id="i-english" viewBox="0 0 24 24"><path d="M5 4.5h14a1.5 1.5 0 0 1 1.5 1.5v9.5a1.5 1.5 0 0 1-1.5 1.5h-7l-4.5 3.5V17H5a1.5 1.5 0 0 1-1.5-1.5V6A1.5 1.5 0 0 1 5 4.5zM9.25 13.75L12 7.25l2.75 6.5M10.2 11.6h3.6"></path></symbol>
+<symbol id="i-ai" viewBox="0 0 24 24"><path d="M10.5 3.5l1.9 5.1 5.1 1.9-5.1 1.9-1.9 5.1-1.9-5.1-5.1-1.9 5.1-1.9zM18 15.25l.8 1.95 1.95.8-1.95.8-.8 1.95-.8-1.95-1.95-.8 1.95-.8z"></path></symbol>
+<symbol id="i-tech" viewBox="0 0 24 24"><path d="M8.5 7.5L4 12l4.5 4.5M15.5 7.5L20 12l-4.5 4.5M13.5 5l-3 14"></path></symbol>
+<symbol id="i-concept" viewBox="0 0 24 24"><path d="M12 3.25l4 6.5H8z"></path><circle cx="7.25" cy="16.25" r="3.75"></circle><rect x="13.25" y="12.5" width="7.25" height="7.25" rx="1.25"></rect></symbol>
+<symbol id="i-idea" viewBox="0 0 24 24"><path d="M9.25 18h5.5M10.25 21h3.5M12 3a6 6 0 0 0-3.6 10.8c.7.55 1.1 1.3 1.1 2.1V16h5v-.1c0-.8.4-1.55 1.1-2.1A6 6 0 0 0 12 3z"></path></symbol>
+<symbol id="i-other" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.75"></circle><path d="M8 12h.01M12 12h.01M16 12h.01"></path></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"></path></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"></path></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4 4"></path></symbol>
+<symbol id="i-deeper" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4 4M11 8.25v5.5M8.25 11h5.5"></path></symbol>
+<symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M7 3.75h10a1 1 0 0 1 1 1v15.5l-6-4.25-6 4.25V4.75a1 1 0 0 1 1-1z"></path></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l.9 12.1A2 2 0 0 0 8.9 21h6.2a2 2 0 0 0 2-1.9L18 7M9 7V4.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 .5.5V7"></path></symbol>
+<symbol id="i-archive" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="4.5" rx="1"></rect><path d="M5 8.5V19a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8.5M10 12.5h4"></path></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M12 2.75v2M12 19.25v2M2.75 12h2M19.25 12h2M5.46 5.46l1.41 1.41M17.13 17.13l1.41 1.41M5.46 18.54l1.41-1.41M17.13 6.87l1.41-1.41"></path></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"></path></symbol>
+<symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h8M16 7h4M4 17h3M11 17h9"></path><circle cx="14" cy="7" r="2"></circle><circle cx="9" cy="17" r="2"></circle></symbol>
+<symbol id="i-chevron" viewBox="0 0 24 24"><path d="M9.5 6l6 6-6 6"></path></symbol>
+<symbol id="i-clipboard" viewBox="0 0 24 24"><rect x="8.5" y="3" width="7" height="4" rx="1"></rect><path d="M15.5 5h1.75A1.75 1.75 0 0 1 19 6.75v12.5A1.75 1.75 0 0 1 17.25 21H6.75A1.75 1.75 0 0 1 5 19.25V6.75A1.75 1.75 0 0 1 6.75 5H8.5"></path></symbol>
+<symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13.5a4 4 0 0 0 5.66.5l2.83-2.83a4 4 0 0 0-5.66-5.66l-1.06 1.06M14 10.5a4 4 0 0 0-5.66-.5l-2.83 2.83a4 4 0 0 0 5.66 5.66l1.06-1.06"></path></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2"></rect><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11"></path></symbol>
+<symbol id="i-retry" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4.5h-4.5"></path></symbol>
+<symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 3L5 13.5h6L10 21l8-10.5h-6z"></path></symbol>
+<symbol id="i-quote" viewBox="0 0 24 24"><path d="M5 18c2.5-1 4-3.2 4-6.5V7H5v5h4M15 18c2.5-1 4-3.2 4-6.5V7h-4v5h4"></path></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16v-5a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20.5a2.2 2.2 0 0 0 4 0"></path></symbol>
+<symbol id="i-pot" viewBox="0 0 24 24"><path d="M3 10.5h18M5 10.5V15a5 5 0 0 0 5 5h4a5 5 0 0 0 5-5v-4.5M10 7.5c-.8-1 .8-2 0-3M14 7.5c-.8-1 .8-2 0-3"></path></symbol>
+</svg>
+
+<header class="b-head">
+<div>
+<p class="b-kicker">stockpot kit · 04</p>
+<h1 class="b-title">Categories and icons</h1>
+<p class="b-lede">A note has one category, and the category decides the card's format. Each one gets a colour (solid for the icon, soft for the ground, ink for text) and an icon. Hues sit away from the rose accent, and the icon and name always come with the colour, so no category depends on hue alone.</p>
+</div>
+<span class="b-tag">6 categories · editable later in Settings</span>
+</header>
+
+<section class="b-section">
+<div class="cg-table">
+<div class="cg-row" data-head="true">
+<span>Category</span>
+<span>Light</span>
+<span>Dark</span>
+<span>What the card shows</span>
+</div>
+<sc-for list="{{cats}}" as="c" hint-placeholder-count="6">
+<div class="cg-row">
+<div class="cg-name">
+<span class="tile" data-cat="{{c.id}}"><svg class="ico" aria-hidden="true"><use href="#i-{{c.id}}"></use></svg></span>
+<div><b>{{c.name}}</b><span>cat-{{c.id}} · hue {{c.hue}}</span></div>
+</div>
+<div class="cg-cell" data-scheme="light">
+<span class="cat" data-cat="{{c.id}}"><svg class="ico" aria-hidden="true"><use href="#i-{{c.id}}"></use></svg>{{c.name}}</span>
+<span class="cat" data-cat="{{c.id}}" data-size="s"><svg class="ico" aria-hidden="true"><use href="#i-{{c.id}}"></use></svg>{{c.name}}</span>
+<div class="cg-sw">
+<span class="cg-swatch"><i style="background: {{c.l.solid}}"></i><span>{{c.l.solid}}</span></span>
+<span class="cg-swatch"><i style="background: {{c.l.soft}}"></i><span>{{c.l.soft}}</span></span>
+<span class="cg-swatch"><i style="background: {{c.l.ink}}"></i><span>{{c.l.ink}}</span></span>
+</div>
+</div>
+<div class="cg-cell" data-scheme="dark">
+<span class="cat" data-cat="{{c.id}}"><svg class="ico" aria-hidden="true"><use href="#i-{{c.id}}"></use></svg>{{c.name}}</span>
+<span class="cat" data-cat="{{c.id}}" data-size="s"><svg class="ico" aria-hidden="true"><use href="#i-{{c.id}}"></use></svg>{{c.name}}</span>
+<div class="cg-sw">
+<span class="cg-swatch"><i style="background: {{c.d.solid}}"></i><span>{{c.d.solid}}</span></span>
+<span class="cg-swatch"><i style="background: {{c.d.soft}}"></i><span>{{c.d.soft}}</span></span>
+<span class="cg-swatch"><i style="background: {{c.d.ink}}"></i><span>{{c.d.ink}}</span></span>
+</div>
+</div>
+<p class="cg-format" style="margin: 0">{{c.format}}</p>
+</div>
+</sc-for>
+</div>
+<p class="b-note">Swatches read solid · soft · ink. Ink on soft passes 6.2:1 or more in light and 8.9:1 or more in dark; the solid icon passes 3:1 on its soft ground.</p>
+</section>
+
+<section class="b-section" style="margin-top: 40px">
+<h2 class="b-h">Icon set <small>24 px grid, 1.75 stroke, round caps and joins, current colour; drawn at 20 px, 16 px in chips, 24–32 px in empty states</small></h2>
+<div class="ic-panels">
+<sc-for list="{{schemes}}" as="s" hint-placeholder-count="2">
+<div class="b-panel" data-scheme="{{s.id}}" style="gap: 20px">
+<p class="b-panel-label">{{s.label}}</p>
+<div class="ic-grid">
+<sc-for list="{{icons}}" as="i" hint-placeholder-count="24">
+<div class="ic">
+<span class="ic-tile"><svg class="ico" data-size="24" aria-hidden="true"><use href="#i-{{i.id}}"></use></svg></span>
+<span class="ic-name">{{i.id}}</span>
+<span class="ic-use">{{i.use}}</span>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-for>
+</div>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1680,"height":1700}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const c = (id, name, hue, l, d, format) => ({ id, name, hue, l, d, format });
+    const i = (id, use) => ({ id, use });
+    return {
+      cats: [
+        c('english', 'English', 255,
+          { solid: '#2D74CA', soft: '#E1EEFF', ink: '#135298' },
+          { solid: '#75AEF5', soft: '#182E4B', ink: '#B3D4FF' },
+          'Translation and part of speech, difficulty, two examples, a YouGlish link, sample sentences, the typical mistake'),
+        c('ai', 'AI', 300,
+          { solid: '#814EC6', soft: '#F0E9FF', ink: '#62359C' },
+          { solid: '#B995F6', soft: '#33244B', ink: '#D9C6FE' },
+          'What it is in a line, alternatives, pros and cons against them, what it works with, two or three primary sources'),
+        c('tech', 'Technology', 195,
+          { solid: '#008C8C', soft: '#D7F4F3', ink: '#005C5C' },
+          { solid: '#57C5C5', soft: '#0A3535', ink: '#9DE3E2' },
+          'What it is, an analogy from JS, TS and the web, why it matters to you, links to dig deeper'),
+        c('concept', 'Concept', 145,
+          { solid: '#419547', soft: '#E0F5E0', ink: '#1F5F26' },
+          { solid: '#77CB7B', soft: '#1D341E', ink: '#AFE4B0' },
+          'Explanation, analogy, example, where it shows up'),
+        c('idea', 'Idea', 65,
+          { solid: '#C5770F', soft: '#FFEED3', ink: '#804D0C' },
+          { solid: '#F3B94C', soft: '#3F2C10', ink: '#F9D68C' },
+          'A research report: the gist, what already exists, approaches, risks, where to start, sources'),
+        c('other', 'Other', 265,
+          { solid: '#6D7584', soft: '#EBEEF3', ink: '#49505E' },
+          { solid: '#9DA5B5', soft: '#2B2E34', ink: '#CCD1DB' },
+          'A short explanation with links'),
+      ],
+      schemes: [ { id: 'light', label: 'Light' }, { id: 'dark', label: 'Dark' } ],
+      icons: [
+        i('sun', 'Today'), i('list', 'Notes'), i('plus', 'add a note'), i('bookmark', 'Base, keep'),
+        i('sliders', 'Settings'), i('search', 'search'), i('check', 'got it'), i('deeper', 'go deeper'),
+        i('trash', 'delete'), i('archive', 'archive'), i('bolt', 'research now'), i('x', 'close, clear'),
+        i('chevron', 'open'), i('clipboard', 'paste'), i('link', 'source, link'), i('lock', 'private'),
+        i('quote', 'where you saw it'), i('undo', 'undo'), i('retry', 'retry'), i('bell', 'notifications'),
+        i('pot', 'stockpot'), i('english', 'English'), i('ai', 'AI'), i('tech', 'Technology'),
+        i('concept', 'Concept'), i('idea', 'Idea'), i('other', 'Other'),
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,132 @@
+<!doctype html>
+<!--
+  SPDX-License-Identifier: AGPL-3.0-or-later
+  SPDX-FileCopyrightText: 2026 The stockpot authors
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kit: type</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./tokens.css">
+<link rel="stylesheet" href="./kit.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&amp;family=Literata:ital,opsz,wght@0,7..72,400..700;1,7..72,400..500&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#9D1E60}a:hover{color:#AC1E68}
+.ty-cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:32px;align-items:start}
+.ty-col{display:flex;flex-direction:column;padding:28px;border:1px solid var(--color-line);border-radius:24px;background:var(--color-surface)}
+.ty-family{display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding-bottom:16px;border-bottom:1px solid var(--color-line)}
+.ty-family h2{margin:0}
+.ty-row{display:grid;grid-template-columns:176px minmax(0,1fr);gap:24px;align-items:baseline;padding:16px 0;border-bottom:1px solid var(--color-line)}
+.ty-row:last-child{border-bottom:0}
+.ty-spec{display:flex;flex-direction:column;gap:2px}
+.ty-name{font:600 13px/18px var(--font-ui);color:var(--color-accent-ink)}
+.ty-meta{font:400 12px/16px var(--font-ui);color:var(--color-ink-3)}
+.ty-use{font:400 12px/16px var(--font-ui);color:var(--color-ink-2)}
+.ty-glyphs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:32px;margin-top:32px}
+.ty-glyph{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:24px 28px;border:1px solid var(--color-line);border-radius:24px;background:var(--color-surface)}
+.ty-big{font-size:64px;line-height:72px;letter-spacing:-0.02em}
+.ty-set{font-size:20px;line-height:30px;color:var(--color-ink-2);text-align:right}
+</style>
+</helmet>
+<div class="kit b-board" data-scheme="light" style="min-height: 1180px">
+<header class="b-head">
+<div>
+<p class="b-kicker">stockpot kit · 02</p>
+<h1 class="b-title">Type</h1>
+<p class="b-lede">Inter runs the interface: tabs, buttons, fields, lists. Literata sets what the owner reads: card titles, explanations and reports. Both cover Latin and Cyrillic, ship as self-hosted variable woff2 and fall back to the system fonts.</p>
+</div>
+<span class="b-tag">Inter + Literata · OFL</span>
+</header>
+
+<div class="ty-cols">
+<section class="ty-col">
+<div class="ty-family">
+<h2 class="b-h">Interface <small>Inter, opsz 14–32, wght 400–700</small></h2>
+</div>
+<sc-for list="{{ui}}" as="r" hint-placeholder-count="8">
+<div class="ty-row">
+<div class="ty-spec">
+<span class="ty-name">{{r.name}}</span>
+<span class="ty-meta">{{r.spec}}</span>
+<span class="ty-use">{{r.use}}</span>
+</div>
+<span class="{{r.cls}}">{{r.sample}}</span>
+</div>
+</sc-for>
+</section>
+
+<section class="ty-col">
+<div class="ty-family">
+<h2 class="b-h">Reading <small>Literata, opsz 7–72, wght 400–700, italic</small></h2>
+</div>
+<sc-for list="{{read}}" as="r" hint-placeholder-count="4">
+<div class="ty-row">
+<div class="ty-spec">
+<span class="ty-name">{{r.name}}</span>
+<span class="ty-meta">{{r.spec}}</span>
+<span class="ty-use">{{r.use}}</span>
+</div>
+<span class="{{r.cls}}">{{r.sample}}</span>
+</div>
+</sc-for>
+<div class="ty-row">
+<div class="ty-spec">
+<span class="ty-name">Pairing</span>
+<span class="ty-meta">Inter labels over Literata text</span>
+<span class="ty-use">a card block</span>
+</div>
+<div class="card-block">
+<h4>In JS terms</h4>
+<p>Like Node.js, npm, Jest and esbuild rolled into one binary.</p>
+</div>
+</div>
+</section>
+</div>
+
+<div class="ty-glyphs">
+<div class="ty-glyph">
+<span class="ty-big" style="font-family: var(--font-ui); font-weight: 600">Aa Бб</span>
+<span class="ty-set" style="font-family: var(--font-ui)">ABCDEFGHIJKLM abcdefghijklm<br>АБВГДЕЖЗИЙКЛМ абвгдежзийклм<br>0123456789 · → ✓</span>
+</div>
+<div class="ty-glyph">
+<span class="ty-big" style="font-family: var(--font-read); font-weight: 600">Aa Бб</span>
+<span class="ty-set" style="font-family: var(--font-read)">ABCDEFGHIJKLM abcdefghijklm<br>АБВГДЕЖЗИЙКЛМ абвгдежзийклм<br><em>0123456789 · italic</em></span>
+</div>
+</div>
+
+<p class="b-note" style="margin-top: 24px; max-width: 1100px">Production serves the fonts from the app, never from Google Fonts: Inter and Literata variable woff2, Latin, Latin Extended and Cyrillic subsets, font-display: swap, cached by the service worker. The board loads them from Google Fonts only to draw. Sizes are px at 1x; the reading sizes stay the same at 768 and 1440, where the reading column is capped at 680 px.</p>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1680,"height":1180}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const r = (name, spec, use, cls, sample) => ({ name, spec, use, cls, sample });
+    return {
+      ui: [
+        r('title-l', '28 / 34 · 700 · −2%', 'screen titles', 't-title-l', 'Today'),
+        r('title-m', '20 / 26 · 650 · −1%', 'sheet and section titles', 't-title-m', 'New note'),
+        r('title-s', '17 / 22 · 600', 'row titles, card headers', 't-title-s', 'Idempotency'),
+        r('body', '16 / 24 · 400', 'fields, body text', 't-body', 'Search notes and cards'),
+        r('body-s', '14 / 20 · 400', 'secondary text, rows', 't-body-s', 'Seen in the stockpot README · 12 Nov'),
+        r('label', '14 / 18 · 600', 'buttons S, chips', 't-label', 'Research now'),
+        r('caption', '12 / 16 · 500 · +1%', 'badges, meta', 't-caption', 'Ready · 2 min read'),
+        r('micro', '11 / 14 · 600 · +2%', 'tab bar, card actions', 't-micro', 'Today   Notes   Base   Settings'),
+      ],
+      read: [
+        r('read-display', '34 / 40 · 600 · −1.5%', 'an opened card or report', 't-read-display', 'Offline-first sync'),
+        r('read-title', '26 / 32 · 600 · −1%', 'card title in the digest', 't-read-title', 'Bun'),
+        r('read-body', '17 / 27 · 400', 'card blocks and reports', 't-read-body', 'A JavaScript runtime with a package manager, a test runner and a bundler built in. It starts fast and runs TypeScript without a build step.'),
+        r('read-quote', '15 / 22 · 400 italic', 'where you saw it', 't-read-quote', 'Seen in the stockpot README'),
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

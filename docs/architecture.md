@@ -36,8 +36,8 @@ stockpot/
 │   └── website/        the documentation site (M9)
 ├── tools/              @stockpot/tools: lint plugins, the license header check, third-party
 │                       notices, the docs link check and the migration check; later evals
-├── docs/               principles, architecture, engines, guidelines, ADRs; later design canvas,
-│                       install and privacy
+├── docs/               principles, architecture, engines, guidelines, ADRs, the design canvas;
+│                       later install and privacy
 ├── deploy/             launchd service for a Mac, Docker image and compose file (M8, M9)
 ├── skills/             operator skills for installing and running an instance (M9)
 └── .github/            workflows, issue forms, pull request template

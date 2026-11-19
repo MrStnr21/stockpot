@@ -1,0 +1,226 @@
+<!doctype html>
+<!--
+  SPDX-License-Identifier: AGPL-3.0-or-later
+  SPDX-FileCopyrightText: 2026 The stockpot authors
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kit: controls</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./tokens.css">
+<link rel="stylesheet" href="./kit.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&amp;family=Literata:ital,opsz,wght@0,7..72,400..700;1,7..72,400..500&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#9D1E60}a:hover{color:#AC1E68}
+</style>
+</helmet>
+<div class="kit b-board" data-scheme="light" style="min-height: 1700px">
+<svg class="b-sprite" aria-hidden="true" focusable="false">
+<symbol id="i-english" viewBox="0 0 24 24"><path d="M5 4.5h14a1.5 1.5 0 0 1 1.5 1.5v9.5a1.5 1.5 0 0 1-1.5 1.5h-7l-4.5 3.5V17H5a1.5 1.5 0 0 1-1.5-1.5V6A1.5 1.5 0 0 1 5 4.5zM9.25 13.75L12 7.25l2.75 6.5M10.2 11.6h3.6"></path></symbol>
+<symbol id="i-ai" viewBox="0 0 24 24"><path d="M10.5 3.5l1.9 5.1 5.1 1.9-5.1 1.9-1.9 5.1-1.9-5.1-5.1-1.9 5.1-1.9zM18 15.25l.8 1.95 1.95.8-1.95.8-.8 1.95-.8-1.95-1.95-.8 1.95-.8z"></path></symbol>
+<symbol id="i-tech" viewBox="0 0 24 24"><path d="M8.5 7.5L4 12l4.5 4.5M15.5 7.5L20 12l-4.5 4.5M13.5 5l-3 14"></path></symbol>
+<symbol id="i-concept" viewBox="0 0 24 24"><path d="M12 3.25l4 6.5H8z"></path><circle cx="7.25" cy="16.25" r="3.75"></circle><rect x="13.25" y="12.5" width="7.25" height="7.25" rx="1.25"></rect></symbol>
+<symbol id="i-idea" viewBox="0 0 24 24"><path d="M9.25 18h5.5M10.25 21h3.5M12 3a6 6 0 0 0-3.6 10.8c.7.55 1.1 1.3 1.1 2.1V16h5v-.1c0-.8.4-1.55 1.1-2.1A6 6 0 0 0 12 3z"></path></symbol>
+<symbol id="i-other" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.75"></circle><path d="M8 12h.01M12 12h.01M16 12h.01"></path></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"></path></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l.9 12.1A2 2 0 0 0 8.9 21h6.2a2 2 0 0 0 2-1.9L18 7M9 7V4.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 .5.5V7"></path></symbol>
+<symbol id="i-archive" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="4.5" rx="1"></rect><path d="M5 8.5V19a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8.5M10 12.5h4"></path></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11"></path></symbol>
+<symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 3L5 13.5h6L10 21l8-10.5h-6z"></path></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2"></rect><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path></symbol>
+</svg>
+
+<header class="b-head">
+<div>
+<p class="b-kicker">stockpot kit · 05</p>
+<h1 class="b-title">Controls</h1>
+<p class="b-lede">Button, Chip, CategoryChip, StatusBadge and Switch. Each row shows default, pressed, disabled and loading. Pressed is what a finger holds; loading keeps the control's size and swaps its label for the spinner.</p>
+</div>
+<span class="b-tag">Touch targets ≥ 44 px</span>
+</header>
+
+<div class="b-schemes">
+<sc-for list="{{schemes}}" as="s" hint-placeholder-count="2">
+<section class="b-panel" data-scheme="{{s.id}}">
+<p class="b-panel-label">{{s.label}}</p>
+
+<div class="b-section">
+<h2 class="b-h">Button <small>primary, tonal, outline, ghost, danger</small></h2>
+<div class="b-matrix">
+<div class="b-mrow" data-head="true">
+<span></span>
+<sc-for list="{{states}}" as="st" hint-placeholder-count="4"><span class="b-col-label">{{st.label}}</span></sc-for>
+</div>
+<sc-for list="{{buttonRows}}" as="row" hint-placeholder-count="5">
+<div class="b-mrow">
+<span class="b-row-label">{{row.name}}</span>
+<sc-for list="{{row.cells}}" as="c" hint-placeholder-count="4">
+<div>
+<button class="btn" type="button" data-variant="{{c.variant}}" data-state="{{c.state}}" disabled="{{c.disabled}}" aria-busy="{{c.busy}}">
+<sc-if value="{{c.busy}}" hint-placeholder-val="{{false}}"><span class="spin" aria-hidden="true"></span></sc-if>
+<span>{{c.text}}</span>
+</button>
+</div>
+</sc-for>
+</div>
+</sc-for>
+<div class="b-mrow">
+<span class="b-row-label">Sizes</span>
+<div class="b-wrap" style="grid-column: 2 / -1">
+<button class="btn" type="button" data-variant="primary" data-size="l"><svg class="ico" aria-hidden="true"><use href="#i-bolt"></use></svg><span>Research now</span></button>
+<button class="btn" type="button" data-variant="tonal">Save</button>
+<button class="btn" type="button" data-variant="outline" data-size="s"><svg class="ico" data-size="16" aria-hidden="true"><use href="#i-undo"></use></svg><span>Undo</span></button>
+<span class="b-na">L 52 · M 44 · S 36 (hit area 44)</span>
+</div>
+</div>
+</div>
+</div>
+
+<div class="b-section">
+<h2 class="b-h">Chip <small>status and category filters in Notes and Base</small></h2>
+<div class="b-matrix">
+<div class="b-mrow" data-head="true">
+<span></span>
+<sc-for list="{{states}}" as="st" hint-placeholder-count="4"><span class="b-col-label">{{st.label}}</span></sc-for>
+</div>
+<sc-for list="{{chipRows}}" as="row" hint-placeholder-count="2">
+<div class="b-mrow">
+<span class="b-row-label">{{row.name}}</span>
+<sc-for list="{{row.cells}}" as="c" hint-placeholder-count="4">
+<div>
+<button class="chip" type="button" aria-pressed="{{c.on}}" data-state="{{c.state}}" disabled="{{c.disabled}}" aria-busy="{{c.busy}}">
+<sc-if value="{{c.on}}" hint-placeholder-val="{{false}}"><svg class="ico" data-size="16" aria-hidden="true"><use href="#i-check"></use></svg></sc-if>
+<span>Ready</span>
+<sc-if value="{{c.busy}}" hint-placeholder-val="{{false}}"><span class="spin" data-size="s" aria-hidden="true"></span></sc-if>
+<sc-if value="{{c.idle}}" hint-placeholder-val="{{true}}"><span class="chip-count">4</span></sc-if>
+</button>
+</div>
+</sc-for>
+</div>
+</sc-for>
+</div>
+</div>
+
+<div class="b-section">
+<h2 class="b-h">CategoryChip <small>on cards and rows; as a suggestion on capture</small></h2>
+<div class="b-mrow">
+<span class="b-row-label">On a card</span>
+<div class="b-wrap" style="grid-column: 2 / -1; gap: 8px">
+<sc-for list="{{cats}}" as="k" hint-placeholder-count="6">
+<span class="cat" data-cat="{{k.id}}" data-size="s"><svg class="ico" aria-hidden="true"><use href="#i-{{k.id}}"></use></svg>{{k.name}}</span>
+</sc-for>
+</div>
+</div>
+<div class="b-matrix">
+<div class="b-mrow" data-head="true">
+<span></span>
+<sc-for list="{{states}}" as="st" hint-placeholder-count="4"><span class="b-col-label">{{st.label}}</span></sc-for>
+</div>
+<sc-for list="{{catRows}}" as="row" hint-placeholder-count="2">
+<div class="b-mrow">
+<span class="b-row-label">{{row.name}}</span>
+<sc-for list="{{row.cells}}" as="c" hint-placeholder-count="4">
+<div>
+<sc-if value="{{c.busy}}" hint-placeholder-val="{{false}}"><span class="skel" data-shape="pill" style="display: block; width: 124px; height: 40px" aria-label="Suggesting a category"></span></sc-if>
+<sc-if value="{{c.idle}}" hint-placeholder-val="{{true}}">
+<button class="cat" type="button" data-cat="tech" aria-pressed="{{c.on}}" data-state="{{c.state}}" disabled="{{c.disabled}}">
+<svg class="ico" aria-hidden="true"><use href="#i-tech"></use></svg>
+<span>Technology</span>
+</button>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</sc-for>
+</div>
+<p class="b-note">Suggested first, picked by the owner: nothing is saved until a category is tapped. While the engine suggests, skeleton pills hold the row.</p>
+</div>
+
+<div class="b-section">
+<h2 class="b-h">StatusBadge <small>a note's life: new → queued → researching → ready → read → archived</small></h2>
+<div class="b-wrap">
+<span class="badge" data-status="new"><span class="dot"></span>New</span>
+<span class="badge" data-status="queued"><span class="dot"></span>Queued</span>
+<span class="badge" data-status="researching"><span class="spin" data-size="s" aria-hidden="true"></span>Researching</span>
+<span class="badge" data-status="ready"><span class="dot"></span>Ready</span>
+<span class="badge" data-status="read"><svg class="ico" aria-hidden="true"><use href="#i-check"></use></svg>Read</span>
+<span class="badge" data-status="archived"><svg class="ico" aria-hidden="true"><use href="#i-archive"></use></svg>Archived</span>
+</div>
+<p class="b-note">Not interactive, so it has no pressed or disabled state. Its loading state is Researching. Ready is the only filled badge: it is what the owner opens next.</p>
+</div>
+
+<div class="b-section">
+<h2 class="b-h">Switch <small>added to the list: Private on capture, and Settings</small></h2>
+<div class="b-matrix">
+<div class="b-mrow" data-head="true">
+<span></span>
+<span class="b-col-label">Off</span>
+<span class="b-col-label">On</span>
+<span class="b-col-label">Pressed</span>
+<span class="b-col-label">Disabled</span>
+</div>
+<div class="b-mrow">
+<span class="b-row-label">Switch</span>
+<div><button class="switch" type="button" role="switch" aria-checked="false" aria-label="Private"></button></div>
+<div><button class="switch" type="button" role="switch" aria-checked="true" aria-label="Private"></button></div>
+<div><button class="switch" type="button" role="switch" aria-checked="true" data-state="pressed" aria-label="Private"></button></div>
+<div><button class="switch" type="button" role="switch" aria-checked="true" disabled="{{true}}" aria-label="Private"></button></div>
+</div>
+</div>
+<p class="b-note">Saving a setting is instant, so the switch has no loading state.</p>
+</div>
+</section>
+</sc-for>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1680,"height":1700}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const states = [
+      { label: 'Default', state: '', disabled: false, busy: false },
+      { label: 'Pressed', state: 'pressed', disabled: false, busy: false },
+      { label: 'Disabled', state: '', disabled: true, busy: false },
+      { label: 'Loading', state: '', disabled: false, busy: true },
+    ];
+    const cells = (extra) => states.map((s) => ({ ...s, idle: !s.busy, ...extra }));
+    const variants = [
+      { name: 'Primary', id: 'primary', text: 'Save' },
+      { name: 'Tonal', id: 'tonal', text: 'Save' },
+      { name: 'Outline', id: 'outline', text: 'Undo' },
+      { name: 'Ghost', id: 'ghost', text: 'Open' },
+      { name: 'Danger', id: 'danger', text: 'Delete' },
+    ];
+    return {
+      schemes: [ { id: 'light', label: 'Light' }, { id: 'dark', label: 'Dark' } ],
+      states,
+      buttonRows: variants.map((v) => ({ name: v.name, cells: cells({ variant: v.id, text: v.text }) })),
+      chipRows: [
+        { name: 'Off', cells: cells({ on: false }) },
+        { name: 'Selected', cells: cells({ on: true }) },
+      ],
+      catRows: [
+        { name: 'Suggested', cells: cells({ on: false }) },
+        { name: 'Picked', cells: cells({ on: true }) },
+      ],
+      cats: [
+        { id: 'english', name: 'English' },
+        { id: 'ai', name: 'AI' },
+        { id: 'tech', name: 'Technology' },
+        { id: 'concept', name: 'Concept' },
+        { id: 'idea', name: 'Idea' },
+        { id: 'other', name: 'Other' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

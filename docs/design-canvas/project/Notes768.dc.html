@@ -1,0 +1,432 @@
+<!doctype html>
+<!--
+  SPDX-License-Identifier: AGPL-3.0-or-later
+  SPDX-FileCopyrightText: 2026 The stockpot authors
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Notes and cards: tablet</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./tokens.css">
+<link rel="stylesheet" href="./kit.css">
+<link rel="stylesheet" href="./screens.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&amp;family=Literata:ital,opsz,wght@0,7..72,400..700;1,7..72,400..500&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#9D1E60}a:hover{color:#AC1E68}
+</style>
+</helmet>
+<div class="kit b-board" data-scheme="light" style="width: 3330px; min-height: 2760px">
+<svg class="b-sprite" aria-hidden="true" focusable="false">
+<symbol id="i-english" viewBox="0 0 24 24"><path d="M5 4.5h14a1.5 1.5 0 0 1 1.5 1.5v9.5a1.5 1.5 0 0 1-1.5 1.5h-7l-4.5 3.5V17H5a1.5 1.5 0 0 1-1.5-1.5V6A1.5 1.5 0 0 1 5 4.5zM9.25 13.75L12 7.25l2.75 6.5M10.2 11.6h3.6"></path></symbol>
+<symbol id="i-ai" viewBox="0 0 24 24"><path d="M10.5 3.5l1.9 5.1 5.1 1.9-5.1 1.9-1.9 5.1-1.9-5.1-5.1-1.9 5.1-1.9zM18 15.25l.8 1.95 1.95.8-1.95.8-.8 1.95-.8-1.95-1.95-.8 1.95-.8z"></path></symbol>
+<symbol id="i-tech" viewBox="0 0 24 24"><path d="M8.5 7.5L4 12l4.5 4.5M15.5 7.5L20 12l-4.5 4.5M13.5 5l-3 14"></path></symbol>
+<symbol id="i-concept" viewBox="0 0 24 24"><path d="M12 3.25l4 6.5H8z"></path><circle cx="7.25" cy="16.25" r="3.75"></circle><rect x="13.25" y="12.5" width="7.25" height="7.25" rx="1.25"></rect></symbol>
+<symbol id="i-idea" viewBox="0 0 24 24"><path d="M9.25 18h5.5M10.25 21h3.5M12 3a6 6 0 0 0-3.6 10.8c.7.55 1.1 1.3 1.1 2.1V16h5v-.1c0-.8.4-1.55 1.1-2.1A6 6 0 0 0 12 3z"></path></symbol>
+<symbol id="i-other" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.75"></circle><path d="M8 12h.01M12 12h.01M16 12h.01"></path></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"></path></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M12 2.75v2M12 19.25v2M2.75 12h2M19.25 12h2M5.46 5.46l1.41 1.41M17.13 17.13l1.41 1.41M5.46 18.54l1.41-1.41M17.13 6.87l1.41-1.41"></path></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"></path></symbol>
+<symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M7 3.75h10a1 1 0 0 1 1 1v15.5l-6-4.25-6 4.25V4.75a1 1 0 0 1 1-1z"></path></symbol>
+<symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h8M16 7h4M4 17h3M11 17h9"></path><circle cx="14" cy="7" r="2"></circle><circle cx="9" cy="17" r="2"></circle></symbol>
+<symbol id="i-clipboard" viewBox="0 0 24 24"><rect x="8.5" y="3" width="7" height="4" rx="1"></rect><path d="M15.5 5h1.75A1.75 1.75 0 0 1 19 6.75v12.5A1.75 1.75 0 0 1 17.25 21H6.75A1.75 1.75 0 0 1 5 19.25V6.75A1.75 1.75 0 0 1 6.75 5H8.5"></path></symbol>
+<symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13.5a4 4 0 0 0 5.66.5l2.83-2.83a4 4 0 0 0-5.66-5.66l-1.06 1.06M14 10.5a4 4 0 0 0-5.66-.5l-2.83 2.83a4 4 0 0 0 5.66 5.66l1.06-1.06"></path></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2"></rect><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"></path></symbol>
+<symbol id="i-chevron" viewBox="0 0 24 24"><path d="M9.5 6l6 6-6 6"></path></symbol>
+<symbol id="i-deeper" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4 4M11 8.25v5.5M8.25 11h5.5"></path></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l.9 12.1A2 2 0 0 0 8.9 21h6.2a2 2 0 0 0 2-1.9L18 7M9 7V4.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 .5.5V7"></path></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.75"></circle><path d="M12 7.75v5M12 16.25h.01"></path></symbol>
+<symbol id="i-pot" viewBox="0 0 24 24"><path d="M3 10.5h18M5 10.5V15a5 5 0 0 0 5 5h4a5 5 0 0 0 5-5v-4.5M10 7.5c-.8-1 .8-2 0-3M14 7.5c-.8-1 .8-2 0-3"></path></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4 4"></path></symbol>
+<symbol id="i-archive" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="4.5" rx="1"></rect><path d="M5 8.5V19a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8.5M10 12.5h4"></path></symbol>
+<symbol id="i-quote" viewBox="0 0 24 24"><path d="M5 18c2.5-1 4-3.2 4-6.5V7H5v5h4M15 18c2.5-1 4-3.2 4-6.5V7h-4v5h4"></path></symbol>
+<symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 3L5 13.5h6L10 21l8-10.5h-6z"></path></symbol>
+<symbol id="i-retry" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4.5h-4.5"></path></symbol>
+<symbol id="i-more" viewBox="0 0 24 24"><path d="M6 12h.01M12 12h.01M18 12h.01" stroke-width="2.5"></path></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.75"></circle><path d="M12 7.5V12l3 2"></path></symbol>
+<symbol id="i-tag" viewBox="0 0 24 24"><path d="M4 4h7.2l8.8 8.8-7.2 7.2L4 11.2z"></path><circle cx="8.25" cy="8.25" r="1.25"></circle></symbol>
+</svg>
+
+<header class="b-head">
+<div>
+<p class="b-kicker">stockpot screens · notes · 768</p>
+<h1 class="b-title">Notes, cards and Base on a tablet</h1>
+<p class="b-lede" style="max-width: 1180px">The list and the opened card sit side by side: a 300 px list beside the card, next to the side rail. Tapping a row swaps the card without leaving the list; the card keeps its own scroll and its actions. At this width the AI comparison stays stacked, as on the phone.</p>
+</div>
+<span class="b-tag">DES-3 · list 300 px · card pane</span>
+</header>
+
+<div class="s-panels">
+<sc-for list="{{schemes}}" as="s" hint-placeholder-count="2">
+<section class="b-panel s-panel" data-scheme="{{s.id}}">
+<p class="b-panel-label">{{s.label}}</p>
+<div class="s-grid" data-cols="4">
+<sc-for list="{{s.states}}" as="st" hint-placeholder-count="4">
+<div class="s-cell">
+<span class="b-state-label">{{st.n}} · {{st.name}}</span>
+<p class="s-cap">{{st.cap}}</p>
+<div class="frame" data-device="tablet">
+<nav class="tb-rail" aria-label="Main">
+<a class="tab" href="#add" data-add="true"><span class="tab-ico"><svg class="ico" data-size="24" aria-hidden="true"><use href="#i-plus"></use></svg></span>Add</a>
+<a class="tab" href="#today"><span class="tab-ico"><svg class="ico" data-size="24" aria-hidden="true"><use href="#i-sun"></use></svg><span class="tab-badge">4</span></span>Today</a>
+<a class="tab" href="#notes" aria-current="{{st.curNotes}}"><span class="tab-ico"><svg class="ico" data-size="24" aria-hidden="true"><use href="#i-list"></use></svg></span>Notes</a>
+<a class="tab" href="#base" aria-current="{{st.curBase}}"><span class="tab-ico"><svg class="ico" data-size="24" aria-hidden="true"><use href="#i-bookmark"></use></svg></span>Base</a>
+<a class="tab" href="#settings"><span class="tab-ico"><svg class="ico" data-size="24" aria-hidden="true"><use href="#i-sliders"></use></svg></span>Settings</a>
+</nav>
+<div class="split-list">
+<sc-for list="{{st.fs}}" as="f" hint-placeholder-count="1">
+<div class="pg-head"><h2 class="td-title">{{f.title}}</h2><sc-if value="{{f.selectBtn}}" hint-placeholder-val="{{true}}"><button class="btn" type="button" data-variant="ghost" data-size="s">Select</button></sc-if><sc-if value="{{f.selMode}}" hint-placeholder-val="{{false}}"><button class="btn" type="button" data-variant="ghost" data-size="s">Done</button></sc-if><sc-if value="{{f.hasCount}}" hint-placeholder-val="{{false}}"><span class="pg-count">{{f.count}}</span></sc-if></div>
+<div class="search" data-state="{{f.searchState}}">
+<svg class="ico" aria-hidden="true"><use href="#i-search"></use></svg>
+<sc-if value="{{f.hasQuery}}" hint-placeholder-val="{{false}}"><input type="search" value="{{f.query}}" aria-label="{{f.searchLabel}}"><button class="icon-btn" type="button" aria-label="Clear search"><svg class="ico" data-size="16" aria-hidden="true"><use href="#i-x"></use></svg></button></sc-if>
+<sc-if value="{{f.noQuery}}" hint-placeholder-val="{{true}}"><input type="search" placeholder="{{f.searchLabel}}" aria-label="{{f.searchLabel}}" disabled="{{f.searchOff}}"></sc-if>
+</div>
+<sc-if value="{{f.filters}}" hint-placeholder-val="{{true}}">
+<div class="filters">
+<button class="chip" type="button" data-cat="{{f.catChip.cat}}" aria-pressed="{{f.catChip.on}}" aria-haspopup="listbox"><sc-if value="{{f.catChip.hasIcon}}" hint-placeholder-val="{{false}}"><svg class="ico" aria-hidden="true"><use href="#i-{{f.catChip.cat}}"></use></svg></sc-if><span>{{f.catChip.label}}</span><svg class="ico" data-dir="down" aria-hidden="true"><use href="#i-chevron"></use></svg></button>
+<sc-for list="{{f.chips}}" as="ch" hint-placeholder-count="6"><button class="chip" type="button" aria-pressed="{{ch.on}}"><span>{{ch.label}}</span><span class="chip-count">{{ch.n}}</span></button></sc-for>
+</div>
+</sc-if>
+<sc-if value="{{f.hasRes}}" hint-placeholder-val="{{false}}"><p class="res-line">{{f.res}}</p></sc-if>
+<sc-for list="{{f.groups}}" as="g" hint-placeholder-count="2">
+<sc-if value="{{g.isDay}}" hint-placeholder-val="{{true}}"><p class="day">{{g.label}}</p></sc-if>
+<sc-if value="{{g.isCat}}" hint-placeholder-val="{{false}}"><div class="sec-head"><span class="tile" data-cat="{{g.cat}}"><svg class="ico" aria-hidden="true"><use href="#i-{{g.cat}}"></use></svg></span><span>{{g.label}}</span><span class="count">{{g.n}}</span><button class="btn" type="button" data-variant="ghost" data-size="s">Show all</button></div></sc-if>
+<div class="list">
+<sc-for list="{{g.rows}}" as="r" hint-placeholder-count="3">
+<sc-if value="{{r.asButton}}" hint-placeholder-val="{{true}}">
+<button class="row" type="button" aria-current="{{r.cur}}">
+<sc-if value="{{r.selm}}" hint-placeholder-val="{{false}}"><span class="check" data-checked="{{r.checked}}"><sc-if value="{{r.checked}}" hint-placeholder-val="{{false}}"><svg class="ico" aria-hidden="true"><use href="#i-check"></use></svg></sc-if></span></sc-if>
+<span class="tile" data-cat="{{r.cat}}"><svg class="ico" aria-hidden="true"><use href="#i-{{r.cat}}"></use></svg></span>
+<span class="row-main"><span class="row-title"><span class="rt">{{r.title}}</span><sc-if value="{{r.priv}}" hint-placeholder-val="{{false}}"><svg class="ico" data-size="16" role="img" aria-label="Private"><use href="#i-lock"></use></svg></sc-if></span><span class="row-sub"><sc-for list="{{r.segs}}" as="sg" hint-placeholder-count="1"><sc-if value="{{sg.m}}" hint-placeholder-val="{{false}}"><mark>{{sg.t}}</mark></sc-if><sc-if value="{{sg.plain}}" hint-placeholder-val="{{true}}">{{sg.t}}</sc-if></sc-for></span></span>
+<span class="row-trail">
+<sc-if value="{{r.hasFlag}}" hint-placeholder-val="{{false}}"><span class="badge" data-flag="{{r.flag}}"><sc-if value="{{r.flagUnsure}}" hint-placeholder-val="{{false}}"><svg class="ico" aria-hidden="true"><use href="#i-alert"></use></svg></sc-if>{{r.flagLabel}}</span></sc-if>
+<sc-if value="{{r.showBadge}}" hint-placeholder-val="{{true}}"><span class="badge" data-status="{{r.status}}"><sc-if value="{{r.sDot}}" hint-placeholder-val="{{true}}"><span class="dot"></span></sc-if><sc-if value="{{r.sSpin}}" hint-placeholder-val="{{false}}"><span class="spin" data-size="s" aria-hidden="true"></span></sc-if><sc-if value="{{r.sRead}}" hint-placeholder-val="{{false}}"><svg class="ico" aria-hidden="true"><use href="#i-check"></use></svg></sc-if><sc-if value="{{r.sArch}}" hint-placeholder-val="{{false}}"><svg class="ico" aria-hidden="true"><use href="#i-archive"></use></svg></sc-if><sc-if value="{{r.sFail}}" hint-placeholder-val="{{false}}"><svg class="ico" aria-hidden="true"><use href="#i-alert"></use></svg></sc-if>{{r.statusLabel}}</span></sc-if>
+</span>
+</button>
+</sc-if>
+<sc-if value="{{r.asDiv}}" hint-placeholder-val="{{false}}">
+<div class="row">
+<span class="tile" data-cat="{{r.cat}}"><svg class="ico" aria-hidden="true"><use href="#i-{{r.cat}}"></use></svg></span>
+<span class="row-main"><span class="row-title"><a class="rt" href="#card">{{r.title}}</a></span><span class="row-sub">{{r.sub}}</span></span>
+<span class="row-trail">
+<sc-if value="{{r.notionIn}}" hint-placeholder-val="{{false}}"><span class="in-notion"><svg class="ico" data-size="16" aria-hidden="true"><use href="#i-check"></use></svg>In Notion</span></sc-if>
+<sc-if value="{{r.notionAdd}}" hint-placeholder-val="{{false}}"><button class="icon-btn" type="button" aria-label="Add {{r.title}} to Notion"><svg class="ico" aria-hidden="true"><use href="#i-plus"></use></svg></button></sc-if>
+</span>
+</div>
+</sc-if>
+</sc-for>
+</div>
+</sc-for>
+<sc-if value="{{f.empty}}" hint-placeholder-val="{{false}}"><div class="empty"><span class="empty-art"><svg class="ico" data-size="32" aria-hidden="true"><use href="#i-{{f.e.icon}}"></use></svg></span><h3>{{f.e.title}}</h3><p>{{f.e.text}}</p><sc-if value="{{f.e.hasBtn}}" hint-placeholder-val="{{true}}"><button class="btn" type="button" data-variant="{{f.e.v}}">{{f.e.btn}}</button></sc-if></div></sc-if>
+</sc-for>
+</div>
+<div class="pane"><div class="pane-col">
+<sc-for list="{{st.cs}}" as="c" hint-placeholder-count="1">
+<sc-if value="{{c.top}}" hint-placeholder-val="{{true}}"><div class="pg-top"><button class="btn" type="button" data-variant="ghost"><svg class="ico" data-dir="back" aria-hidden="true"><use href="#i-chevron"></use></svg><span>{{c.back}}</span></button><button class="icon-btn" type="button" aria-label="More"><svg class="ico" aria-hidden="true"><use href="#i-more"></use></svg></button></div></sc-if>
+<article class="pg">
+<div class="card-top">
+<span class="cat" data-cat="{{c.cat}}" data-size="s"><svg class="ico" aria-hidden="true"><use href="#i-{{c.cat}}"></use></svg>{{c.catLabel}}</span>
+<span class="badge" data-status="{{c.status}}"><sc-if value="{{c.sDot}}" hint-placeholder-val="{{true}}"><span class="dot"></span></sc-if><sc-if value="{{c.sSpin}}" hint-placeholder-val="{{false}}"><span class="spin" data-size="s" aria-hidden="true"></span></sc-if><sc-if value="{{c.sRead}}" hint-placeholder-val="{{false}}"><svg class="ico" aria-hidden="true"><use href="#i-check"></use></svg></sc-if><sc-if value="{{c.sArch}}" hint-placeholder-val="{{false}}"><svg class="ico" aria-hidden="true"><use href="#i-archive"></use></svg></sc-if><sc-if value="{{c.sFail}}" hint-placeholder-val="{{false}}"><svg class="ico" aria-hidden="true"><use href="#i-alert"></use></svg></sc-if>{{c.statusLabel}}</span>
+<sc-if value="{{c.hasFlag}}" hint-placeholder-val="{{false}}"><span class="badge" data-flag="{{c.flag}}"><sc-if value="{{c.flagUnsure}}" hint-placeholder-val="{{false}}"><svg class="ico" aria-hidden="true"><use href="#i-alert"></use></svg></sc-if>{{c.flagLabel}}</span></sc-if>
+<sc-if value="{{c.priv}}" hint-placeholder-val="{{false}}"><span class="badge"><svg class="ico" aria-hidden="true"><use href="#i-lock"></use></svg>Private</span></sc-if>
+<sc-if value="{{c.hasMins}}" hint-placeholder-val="{{true}}"><span class="card-meta">{{c.mins}}</span></sc-if>
+</div>
+<h1 class="pg-title">{{c.title}}</h1>
+<sc-if value="{{c.hasSense}}" hint-placeholder-val="{{true}}"><p class="pg-sense">{{c.sense}}</p></sc-if>
+<sc-if value="{{c.hasCtx}}" hint-placeholder-val="{{true}}"><p class="card-context"><svg class="ico" aria-hidden="true"><use href="#i-quote"></use></svg><span>{{c.ctx}}</span></p></sc-if>
+<sc-if value="{{c.hasFacts}}" hint-placeholder-val="{{false}}"><div class="facts"><span class="badge">{{c.diff}}</span><button class="btn" type="button" data-variant="ghost" data-size="s"><svg class="ico" data-size="16" aria-hidden="true"><use href="#i-link"></use></svg><span>Hear it on YouGlish</span></button></div></sc-if>
+<sc-if value="{{c.hasLevels}}" hint-placeholder-val="{{true}}"><div class="seg" role="tablist" aria-label="Depth"><sc-for list="{{c.levels}}" as="lv" hint-placeholder-count="3"><button class="seg-item" type="button" role="tab" aria-selected="{{lv.on}}" data-ready="{{lv.ready}}"><span>{{lv.label}}</span><sc-if value="{{lv.hasDot}}" hint-placeholder-val="{{false}}"><span class="seg-dot" data-kind="{{lv.dot}}"></span></sc-if></button></sc-for></div></sc-if>
+<sc-if value="{{c.hasBanner}}" hint-placeholder-val="{{false}}"><div class="pg-banner"><svg class="ico" aria-hidden="true"><use href="#i-alert"></use></svg><span><b>{{c.bannerTitle}}.</b> {{c.banner}}</span></div></sc-if>
+<sc-if value="{{c.showBlocks}}" hint-placeholder-val="{{true}}">
+<sc-for list="{{c.blocks}}" as="b" hint-placeholder-count="4">
+<div class="blk">
+<sc-if value="{{b.hasH}}" hint-placeholder-val="{{true}}"><h4>{{b.h}}</h4></sc-if>
+<sc-if value="{{b.isP}}" hint-placeholder-val="{{true}}"><p>{{b.text}}</p></sc-if>
+<sc-if value="{{b.isMuted}}" hint-placeholder-val="{{false}}"><p class="pg-meta">{{b.text}}</p></sc-if>
+<sc-if value="{{b.isNote}}" hint-placeholder-val="{{false}}"><div class="blk-note"><p>{{b.text}}</p></div></sc-if>
+<sc-if value="{{b.isList}}" hint-placeholder-val="{{false}}"><ul><sc-for list="{{b.items}}" as="it" hint-placeholder-count="2"><li>{{it.t}}</li></sc-for></ul></sc-if>
+<sc-if value="{{b.isOl}}" hint-placeholder-val="{{false}}"><ol><sc-for list="{{b.items}}" as="it" hint-placeholder-count="2"><li><span class="n">{{it.n}}</span><span>{{it.t}}</span></li></sc-for></ol></sc-if>
+<sc-if value="{{b.isEx}}" hint-placeholder-val="{{false}}"><sc-for list="{{b.items}}" as="it" hint-placeholder-count="2"><div class="ex"><span class="ex-text">{{it.text}}</span><span class="ex-tr">{{it.tr}}</span></div></sc-for></sc-if>
+<sc-if value="{{b.isKv}}" hint-placeholder-val="{{false}}"><sc-for list="{{b.items}}" as="it" hint-placeholder-count="2"><div class="kv"><span class="kv-name">{{it.name}}</span><span class="kv-note">{{it.note}}</span></div></sc-for></sc-if>
+<sc-if value="{{b.isCmp}}" hint-placeholder-val="{{false}}"><sc-for list="{{b.items}}" as="it" hint-placeholder-count="3"><div class="cmp"><span class="cmp-name">{{it.name}}</span><span class="cmp-line"><span class="cmp-sign" aria-label="Pro">+</span><span>{{it.pros}}</span></span><span class="cmp-line"><span class="cmp-sign" aria-label="Con">−</span><span>{{it.cons}}</span></span></div></sc-for></sc-if>
+<sc-if value="{{b.isTags}}" hint-placeholder-val="{{false}}"><div class="pills"><sc-for list="{{b.items}}" as="it" hint-placeholder-count="3"><span class="pill">{{it.t}}</span></sc-for></div></sc-if>
+<sc-if value="{{b.isSrc}}" hint-placeholder-val="{{false}}"><div class="src"><sc-for list="{{b.items}}" as="it" hint-placeholder-count="2"><a href="#source"><svg class="ico" aria-hidden="true"><use href="#i-link"></use></svg><span class="src-text"><span class="src-title">{{it.title}}</span><span class="src-host">{{it.host}}</span></span></a></sc-for></div></sc-if>
+</div>
+</sc-for>
+</sc-if>
+<sc-if value="{{c.showWait}}" hint-placeholder-val="{{false}}">
+<div class="wait" data-tone="{{c.w.tone}}">
+<span class="empty-art"><sc-if value="{{c.w.spin}}" hint-placeholder-val="{{false}}"><span class="spin" aria-hidden="true"></span></sc-if><sc-if value="{{c.w.noSpin}}" hint-placeholder-val="{{true}}"><svg class="ico" data-size="24" aria-hidden="true"><use href="#i-{{c.w.icon}}"></use></svg></sc-if></span>
+<h3>{{c.w.title}}</h3>
+<p>{{c.w.text}}</p>
+<sc-if value="{{c.w.hasSteps}}" hint-placeholder-val="{{false}}"><div class="steps"><sc-for list="{{c.w.steps}}" as="sp" hint-placeholder-count="3"><div class="step-row" data-done="{{sp.done}}"><span class="step-mark"><sc-if value="{{sp.check}}" hint-placeholder-val="{{true}}"><svg class="ico" aria-hidden="true"><use href="#i-check"></use></svg></sc-if><sc-if value="{{sp.spin}}" hint-placeholder-val="{{false}}"><span class="spin" data-size="s" aria-hidden="true"></span></sc-if></span><span>{{sp.t}}</span></div></sc-for></div></sc-if>
+<sc-if value="{{c.w.hasBtns}}" hint-placeholder-val="{{false}}"><div class="wait-btns"><sc-for list="{{c.w.btns}}" as="bt" hint-placeholder-count="1"><button class="btn" type="button" data-variant="{{bt.v}}" data-size="s">{{bt.label}}</button></sc-for></div></sc-if>
+<sc-if value="{{c.w.hasMeta}}" hint-placeholder-val="{{false}}"><span class="wait-meta">{{c.w.meta}}</span></sc-if>
+</div>
+</sc-if>
+<sc-if value="{{c.showSkel}}" hint-placeholder-val="{{false}}"><div class="skel-lines" aria-busy="true"><span class="skel" style="display: block; width: 32%; height: 12px"></span><span class="skel" style="display: block; width: 100%; height: 16px"></span><span class="skel" style="display: block; width: 88%; height: 16px"></span><span class="skel" style="display: block; width: 40%; height: 12px; margin-top: 10px"></span><span class="skel" style="display: block; width: 96%; height: 16px"></span><span class="skel" style="display: block; width: 70%; height: 16px"></span></div></sc-if>
+<sc-if value="{{c.hasMeta}}" hint-placeholder-val="{{true}}"><p class="pg-meta">{{c.meta}}</p></sc-if>
+</article>
+<sc-if value="{{c.hasActions}}" hint-placeholder-val="{{true}}"><div class="pg-actions"><sc-for list="{{c.acts}}" as="a" hint-placeholder-count="4"><button class="card-action" type="button" data-tone="{{a.tone}}"><svg class="ico" aria-hidden="true"><use href="#i-{{a.icon}}"></use></svg>{{a.label}}</button></sc-for></div></sc-if>
+</sc-for>
+<sc-if value="{{st.paneEmpty}}" hint-placeholder-val="{{false}}">
+<div class="pane-empty">
+<span class="empty-art"><svg class="ico" data-size="32" aria-hidden="true"><use href="#i-list"></use></svg></span>
+<h3>3 notes selected</h3>
+<p>Research them now, move them to another category, or archive them.</p>
+<div class="wait-btns"><button class="btn" type="button" data-variant="tonal" data-size="s"><svg class="ico" data-size="16" aria-hidden="true"><use href="#i-bolt"></use></svg><span>Research now</span></button><button class="btn" type="button" data-variant="outline" data-size="s"><svg class="ico" data-size="16" aria-hidden="true"><use href="#i-tag"></use></svg><span>Change category</span></button><button class="btn" type="button" data-variant="outline" data-size="s"><svg class="ico" data-size="16" aria-hidden="true"><use href="#i-archive"></use></svg><span>Archive</span></button></div>
+</div>
+</sc-if>
+</div></div>
+</div>
+</div>
+</sc-for>
+</div>
+</section>
+</sc-for>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":3330,"height":2760}}'>
+class Component extends DCLogic {
+  renderVals() {
+    /* Shared data for the DES-3 boards: card content per format, note rows, Base rows. */
+    const L = { english: 'English', ai: 'AI', tech: 'Technology', concept: 'Concept', idea: 'Idea', other: 'Other' };
+    const SL = { new: 'New', queued: 'Queued', researching: 'Researching', ready: 'Ready', read: 'Read', archived: 'Archived', failed: 'Failed' };
+    const FL = { draft: 'Draft', unsure: 'Unsure' };
+    const badge = (status) => ({
+      status: status, statusLabel: SL[status],
+      sDot: status === 'new' || status === 'queued' || status === 'ready',
+      sSpin: status === 'researching', sRead: status === 'read', sArch: status === 'archived', sFail: status === 'failed',
+    });
+    const flag = (f) => ({ flag: f || '', hasFlag: !!f, flagLabel: f ? FL[f] : '', flagDraft: f === 'draft', flagUnsure: f === 'unsure' });
+
+    const B = (o) => Object.assign({ h: '', text: '', items: [], isP: false, isMuted: false, isNote: false, isList: false, isOl: false, isEx: false, isKv: false, isCmp: false, isTags: false, isSrc: false }, o, { hasH: !!o.h });
+    const P = (h, text) => B({ isP: true, h: h, text: text });
+    const MUTED = (h, text) => B({ isMuted: true, h: h, text: text });
+    const NOTE = (h, text) => B({ isNote: true, h: h, text: text });
+    const UL = (h, items) => B({ isList: true, h: h, items: items.map((t) => ({ t: t })) });
+    const OL = (h, items) => B({ isOl: true, h: h, items: items.map((t, i) => ({ n: String(i + 1), t: t })) });
+    const EX = (h, items) => B({ isEx: true, h: h, items: items });
+    const KV = (h, items) => B({ isKv: true, h: h, items: items });
+    const CMP = (h, items) => B({ isCmp: true, h: h, items: items });
+    const TAGS = (h, items) => B({ isTags: true, h: h, items: items.map((t) => ({ t: t })) });
+    const SRC = (items) => B({ isSrc: true, h: 'Sources', items: items });
+
+    const LV = { std: ['Card', 'How it works', 'Hands-on'], word: ['Card', 'Nuance', 'Practice'], report: ['Report', 'Feasibility', 'Build plan'] };
+    const levels = (kind, sel, states) => LV[kind].map((label, i) => {
+      const st = states[i];
+      return { label: label, on: i === sel, ready: st === 'ready', hasDot: st === 'queued' || st === 'researching', dot: st };
+    });
+    const ACT = {
+      got: { label: 'Got it', icon: 'check', tone: 'accent' },
+      deeper: { label: 'Deeper', icon: 'deeper', tone: '' },
+      keep: { label: 'Keep', icon: 'bookmark', tone: '' },
+      kept: { label: 'Kept', icon: 'bookmark', tone: 'accent' },
+      notion: { label: 'Notion', icon: 'plus', tone: '' },
+      inNotion: { label: 'In Notion', icon: 'check', tone: '' },
+      del: { label: 'Delete', icon: 'trash', tone: '' },
+    };
+
+    const CONTENT = {
+      english: { cat: 'english', title: 'serendipity', sense: 'noun · finding something good by chance', ctx: 'Heard on a podcast about city planning', mins: '1 min', kind: 'word', diff: 'Medium',
+        meta: 'Written by Gemini · fast · 19 Nov, 06:31 · translations in Russian, the card language',
+        actions: ['got', 'deeper', 'keep', 'notion', 'del'],
+        blocks: [
+          P('Translation', 'счастливая случайность, удачная находка'),
+          EX('Examples', [
+            { text: 'Meeting my co-founder at a bus stop was pure serendipity.', tr: 'Встреча с сооснователем на остановке была чистой случайностью.' },
+            { text: 'Good libraries leave room for serendipity.', tr: 'В хороших библиотеках есть место для случайных находок.' },
+          ]),
+          UL('Sentences to reuse', ['It was pure serendipity that we met.', 'Leave room for serendipity in your plans.']),
+          NOTE('Typical mistake', 'Using it for any coincidence. Serendipity is a lucky find; a bad coincidence is not serendipity.'),
+        ] },
+      tech: { cat: 'tech', title: 'Bun', sense: 'A JavaScript runtime and toolkit', ctx: 'Seen in the stockpot README', mins: '1 min', kind: 'std',
+        meta: 'Written by Gemini · standard · 19 Nov, 06:33',
+        blocks: [
+          P('What it is', 'A JavaScript runtime with a package manager, a test runner and a bundler built in.'),
+          P('In JS terms', 'Like Node.js, npm, Jest and esbuild rolled into one fast binary.'),
+          P('Why it matters to you', 'stockpot’s server, tests and scripts run on it, so its APIs come before Node’s.'),
+          SRC([{ title: 'Bun documentation', host: 'bun.sh/docs' }, { title: 'oven-sh/bun on GitHub', host: 'github.com/oven-sh/bun' }]),
+        ] },
+      ai: { cat: 'ai', title: 'Ollama', sense: 'A runner for local language models', ctx: 'Mentioned in a self-hosting thread', mins: '2 min', kind: 'std',
+        meta: 'Written by Gemini · standard · 19 Nov, 06:35',
+        blocks: [
+          P('What it is', 'Runs open-weight language models on your own machine, and serves them and streams tokens over a local HTTP API.'),
+          CMP('Against the alternatives', [
+            { name: 'LM Studio', pros: 'A desktop app with a model browser; no terminal needed', cons: 'Closed source; made for one machine, not for serving' },
+            { name: 'llama.cpp', pros: 'The engine many runners build on; the most control', cons: 'You build, tune and serve it yourself' },
+            { name: 'vLLM', pros: 'High throughput for many users on a GPU server', cons: 'Needs a capable GPU and more setup' },
+          ]),
+          TAGS('Works with', ['Open WebUI', 'LangChain', 'Continue', 'OpenAI-compatible clients']),
+          SRC([{ title: 'ollama/ollama on GitHub', host: 'github.com/ollama/ollama' }, { title: 'Model library', host: 'ollama.com/library' }, { title: 'llama.cpp', host: 'github.com/ggml-org/llama.cpp' }]),
+        ] },
+      concept: { cat: 'concept', title: 'Idempotency', sense: 'Repeating an operation changes nothing more', ctx: 'A code review comment on retries', mins: '1 min', kind: 'std',
+        meta: 'Written by Gemini · standard · 19 Nov, 06:37',
+        blocks: [
+          P('Explanation', 'An operation is idempotent when doing it twice has the same effect as doing it once. That makes retries safe, which is why networks, payment APIs and job queues rely on it.'),
+          P('Analogy', 'A lift call button: pressing it five times still brings one lift.'),
+          P('Example', 'PUT /notes/42 with the same body leaves the same note however often it is sent; POST /notes makes a new note every time.'),
+          UL('Where you will meet it', ['HTTP methods: GET, PUT and DELETE', 'Idempotency keys in payment APIs', 'Retries in a job queue', 'Infrastructure as code']),
+          SRC([{ title: 'RFC 9110: idempotent methods', host: 'rfc-editor.org/rfc/rfc9110' }, { title: 'Idempotent requests', host: 'docs.stripe.com/api/idempotent_requests' }]),
+        ] },
+      idea: { cat: 'idea', title: 'Voice capture from the Action button', sense: 'An idea for stockpot', ctx: 'Thought of on a walk', mins: '6 min', kind: 'report',
+        meta: 'Researched by Gemini · deep · 18 Nov, 22:10 · 31 pages read',
+        blocks: [
+          P('In short', 'One press of the Action button saves a note by voice, without opening the app: for the owner first, then for other self-hosters with an iPhone.'),
+          KV('What already exists', [
+            { name: 'Shortcuts with Dictate Text', note: 'Works on the Action button today, but has no category step and no suggestions.' },
+            { name: 'Drafts', note: 'Fast voice capture into its own inbox; the notes stay inside Drafts.' },
+            { name: 'Quick add in task apps', note: 'Voice into to-do lists; nothing explains what you saved.' },
+          ]),
+          KV('Approaches', [
+            { name: 'Extend the Shortcut', note: 'Ships now with no new code on the phone; menus only, no live suggestions.' },
+            { name: 'An App Intent in the iOS app', note: 'The best feel and an offline queue; waits for the native app.' },
+          ]),
+          UL('Risks', ['Dictation mishears rare terms and names', 'Only newer iPhones have the Action button', 'Without a queue on the phone, no signal means a lost note']),
+          OL('First steps', ['Dictate ten real notes and count the misheard terms', 'Add a voice path to the Shortcut', 'Time it from the press to the saved note']),
+          SRC([{ title: 'App Intents', host: 'developer.apple.com/documentation/appintents' }, { title: 'Use the Action button on iPhone', host: 'support.apple.com/guide/iphone' }]),
+        ] },
+      other: { cat: 'other', title: 'Bauhaus', sense: 'The German school of art and design', ctx: 'A chair in a museum shop', mins: '1 min', kind: 'std',
+        meta: 'Written by Gemini · standard · 19 Nov, 06:40',
+        blocks: [
+          P('Explanation', 'A German school of art, design and architecture, open from 1919 to 1933, that joined craft with industry: simple forms, honest materials, function first. Its ideas went mainstream in furniture, type and buildings.'),
+          SRC([{ title: 'Bauhaus Kooperation', host: 'bauhauskooperation.com' }, { title: 'Bauhaus', host: 'en.wikipedia.org/wiki/Bauhaus' }]),
+        ] },
+    };
+
+    /* A card for the templates: content plus status, flags, level and body mode. */
+    const card = (o) => {
+      const base = o.key ? CONTENT[o.key] : {};
+      const c = Object.assign({ status: 'ready', flag: '', priv: false, top: true, back: 'Notes', level: 0, levelStates: ['ready', 'none', 'none'],
+        mins: '', sense: '', ctx: '', diff: '', meta: '', blocks: [], actions: ['got', 'deeper', 'keep', 'del'], kind: 'std',
+        banner: '', bannerTitle: '', mode: 'blocks', w: {} }, base, o);
+      c.catLabel = L[c.cat];
+      Object.assign(c, badge(c.status), flag(c.flag));
+      c.hasMins = !!c.mins; c.hasSense = !!c.sense; c.hasCtx = !!c.ctx; c.hasFacts = !!c.diff; c.hasMeta = !!c.meta;
+      c.hasLevels = c.mode !== 'none-levels' && c.levelStates !== null;
+      c.levels = c.levelStates ? levels(c.kind, c.level, c.levelStates) : [];
+      c.hasLevels = c.levels.length > 0;
+      c.hasBanner = !!c.banner;
+      c.showBlocks = c.mode === 'blocks';
+      c.showWait = c.mode === 'wait';
+      c.showSkel = !!c.skel;
+      c.w = Object.assign({ tone: '', icon: 'clock', spin: false, title: '', text: '', steps: [], btns: [], meta: '' }, c.w);
+      c.w.noSpin = !c.w.spin;
+      c.w.hasSteps = c.w.steps.length > 0;
+      c.w.hasBtns = c.w.btns.length > 0;
+      c.w.hasMeta = !!c.w.meta;
+      c.w.steps = c.w.steps.map((s) => Object.assign({ done: 'true', check: false, spin: false, ring: false }, s));
+      c.acts = c.actions.map((k) => ACT[k]);
+      c.hasActions = c.showBlocks && c.acts.length > 0;
+      return c;
+    };
+
+    /* A note row for the lists. */
+    const row = (cat, title, sub, status, o) => {
+      const r = Object.assign({ cat: cat, title: title, segs: null, priv: false, flag: '', checked: false, cur: false, showBadge: true,
+        notionAdd: false, notionIn: false, selm: false }, o || {});
+      r.segs = (r.segs || [{ t: sub }]).map((s) => ({ t: s.t, m: !!s.m, plain: !s.m }));
+      r.sub = r.segs.map((s) => s.t).join('');
+      Object.assign(r, badge(status), flag(r.flag));
+      r.asDiv = r.notionAdd || r.notionIn;
+      r.asButton = !r.asDiv;
+      return r;
+    };
+    const NOTES = () => [
+      { isDay: true, isCat: false, label: 'Today', rows: [
+        row('tech', 'Kafka', 'A podcast on event-driven systems', 'new'),
+        row('tech', 'SABR', 'YouTube’s adaptive streaming protocol', 'new'),
+        row('tech', 'blue-green deployment', 'Release review at work', 'new', { priv: true }),
+        row('tech', 'WebTransport', 'Seen in a browser release note', 'researching'),
+        row('concept', 'Local-first software', 'Linked from the CRDT talk', 'queued'),
+      ] },
+      { isDay: true, isCat: false, label: 'Yesterday', rows: [
+        row('english', 'serendipity', 'finding something good by chance', 'ready'),
+        row('english', 'to hedge', 'to protect yourself against a loss', 'ready', { flag: 'draft' }),
+        row('ai', 'Ollama', 'A runner for local language models', 'ready'),
+        row('idea', 'Voice capture from the Action button', 'An idea for stockpot', 'ready'),
+        row('ai', 'MCP', 'Seen in an editor’s changelog', 'failed'),
+      ] },
+      { isDay: true, isCat: false, label: 'This week', rows: [
+        row('other', 'Hyperstition', 'An idea that makes itself real by spreading', 'ready', { flag: 'unsure' }),
+        row('concept', 'Idempotency', 'Repeating an operation changes nothing more', 'read'),
+        row('tech', 'Bun', 'A JavaScript runtime and toolkit', 'read'),
+        row('tech', 'Kubernetes', 'Unread for 7 days', 'archived'),
+      ] },
+    ];
+    const BASE = () => [
+      { isDay: false, isCat: true, cat: 'english', label: 'English', n: '12', rows: [
+        row('english', 'serendipity', 'finding something good by chance', 'read', { showBadge: false, notionIn: true }),
+        row('english', 'a far cry', 'very different from', 'read', { showBadge: false, notionAdd: true }),
+      ] },
+      { isDay: false, isCat: true, cat: 'tech', label: 'Technology', n: '9', rows: [
+        row('tech', 'Bun', 'A JavaScript runtime and toolkit', 'read', { showBadge: false }),
+        row('tech', 'WebAssembly', 'A portable binary format for the web', 'read', { showBadge: false }),
+      ] },
+      { isDay: false, isCat: true, cat: 'ai', label: 'AI', n: '6', rows: [
+        row('ai', 'Ollama', 'A runner for local language models', 'read', { showBadge: false }),
+        row('ai', 'RAG', 'Answering from retrieved documents', 'read', { showBadge: false }),
+      ] },
+      { isDay: false, isCat: true, cat: 'concept', label: 'Concept', n: '5', rows: [
+        row('concept', 'Idempotency', 'Repeating an operation changes nothing more', 'read', { showBadge: false }),
+      ] },
+    ];
+    const chips = (list) => list.map((c) => ({ label: c[0], n: c[1], on: !!c[2] }));
+    const ALLCHIPS = chips([['All', '128', true], ['New', '4'], ['Queued', '1'], ['Researching', '1'], ['Ready', '9'], ['Read', '98'], ['Failed', '1'], ['Archived', '14']]);
+
+    /* A list frame: Notes or Base, with its search, filters, groups or empty state. */
+    const list = (o) => {
+      const f = Object.assign({ title: 'Notes', selectBtn: true, selMode: false, count: '', searchLabel: 'Search notes and cards', query: '', searchOff: false,
+        filters: true, cat: '', chips: ALLCHIPS, res: '', groups: [], empty: false, e: {} }, o);
+      f.hasCount = !!f.count;
+      f.hasQuery = !!f.query; f.noQuery = !f.hasQuery;
+      f.searchState = f.searchOff ? 'disabled' : (f.hasQuery ? 'focus' : '');
+      f.catChip = { cat: f.cat || 'all', label: f.cat ? L[f.cat] : 'All categories', on: !!f.cat, hasIcon: !!f.cat };
+      f.hasRes = !!f.res;
+      f.e = Object.assign({ icon: 'pot', title: '', text: '', btn: '', v: 'primary' }, f.e);
+      f.e.hasBtn = !!f.e.btn;
+      if (f.selMode) f.groups.forEach((g) => g.rows.forEach((r) => { r.selm = true; }));
+      return f;
+    };
+    const CAPS = [
+      'The list stays on the left and the opened card fills the right; the selected row is tinted.',
+      'Filtered to Idea. The report reads in the right pane and scrolls on its own.',
+      'With rows selected, the right pane offers the bulk actions instead of a card.',
+      'Base keeps its category sections. The English card shows that it is already in Notion.',
+    ];
+    const idea = (title, sub, status, o) => row('idea', title, sub, status, o);
+    const SPLIT = (o) => ({ n: o.n, name: o.name, cap: o.cap,
+      curNotes: o.base ? false : 'page', curBase: o.base ? 'page' : false,
+      fs: [list(o.f)], cs: o.c ? [card(Object.assign({ top: false }, o.c))] : [], paneEmpty: !o.c });
+    const withCur = (groups, title) => { groups.forEach((g) => g.rows.forEach((r) => { r.cur = r.title === title; })); return groups; };
+    const selected = NOTES();
+    selected[0].rows.slice(0, 3).forEach((r) => { r.checked = true; });
+    const states = [
+      SPLIT({ n: '01', name: 'Notes and a card', cap: CAPS[0], f: { groups: withCur(NOTES(), 'Ollama') }, c: { key: 'ai' } }),
+      SPLIT({ n: '02', name: 'Filtered to Idea', cap: CAPS[1], f: { cat: 'idea', chips: chips([['All', '9', true], ['Researching', '1'], ['Ready', '3'], ['Read', '5']]), groups: [
+        { isDay: true, isCat: false, label: 'Yesterday', rows: [idea('Voice capture from the Action button', 'An idea for stockpot', 'ready', { cur: true })] },
+        { isDay: true, isCat: false, label: 'This week', rows: [idea('A shared reading list for friends', 'From a chat with friends', 'researching'), idea('Offline-first sync', 'For the capture sheet', 'read'), idea('Highlights from the e-reader', 'Straight into notes', 'read')] },
+      ] }, c: { key: 'idea' } }),
+      SPLIT({ n: '03', name: 'Multi-select', cap: CAPS[2], f: { title: '3 selected', selectBtn: false, selMode: true, groups: selected } }),
+      SPLIT({ n: '04', name: 'Base and a card', cap: CAPS[3], base: true, f: { title: 'Base', selectBtn: false, count: '36 kept', searchLabel: 'Search Base', filters: false, groups: withCur(BASE(), 'serendipity') },
+        c: { key: 'english', status: 'read', levelStates: ['ready', 'none', 'none'], actions: ['got', 'deeper', 'kept', 'inNotion', 'del'] } }),
+    ];
+    return {
+      schemes: [
+        { id: 'light', label: 'Light', states: states },
+        { id: 'dark', label: 'Dark', states: states },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

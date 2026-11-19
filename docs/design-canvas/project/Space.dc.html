@@ -1,0 +1,198 @@
+<!doctype html>
+<!--
+  SPDX-License-Identifier: AGPL-3.0-or-later
+  SPDX-FileCopyrightText: 2026 The stockpot authors
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kit: spacing, radius, elevation, motion</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./tokens.css">
+<link rel="stylesheet" href="./kit.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&amp;family=Literata:ital,opsz,wght@0,7..72,400..700;1,7..72,400..500&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#9D1E60}a:hover{color:#AC1E68}
+.sp-cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:32px;align-items:start}
+.sp-box{display:flex;flex-direction:column;gap:18px;padding:28px;border:1px solid var(--color-line);border-radius:24px;background:var(--color-surface)}
+.sp-row{display:grid;grid-template-columns:92px 72px minmax(0,1fr);gap:16px;align-items:center;min-height:28px}
+.sp-step{font:600 13px/18px var(--font-ui);color:var(--color-accent-ink)}
+.sp-bar{height:16px;border-radius:4px;background:var(--color-accent)}
+.sp-use{font:400 13px/18px var(--font-ui);color:var(--color-ink-2)}
+.rd-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:16px}
+.rd{display:flex;flex-direction:column;gap:8px}
+.rd-shape{height:72px;background:var(--color-accent-soft);border:1.5px solid var(--color-accent)}
+.rd-name{font:600 13px/18px var(--font-ui)}
+.rd-use{font:400 12px/16px var(--font-ui);color:var(--color-ink-2)}
+.el-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.el-panel{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;padding:20px;border-radius:18px;background:var(--color-canvas)}
+.el{display:flex;align-items:flex-end;height:84px;padding:10px 12px;font:600 12px/16px var(--font-ui);color:var(--color-ink-2);background:var(--color-surface)}
+.mo-row{display:grid;grid-template-columns:168px minmax(0,1fr);gap:16px;align-items:center}
+.mo-name{display:flex;flex-direction:column;gap:2px}
+.mo-name b{font:600 13px/18px var(--font-ui)}
+.mo-name span{font:400 12px/16px var(--font-ui);color:var(--color-ink-2)}
+.mo-track{position:relative;height:28px;border-radius:999px;background:var(--color-fill)}
+.mo-dot{position:absolute;top:4px;left:4px;width:20px;height:20px;border-radius:999px;background:var(--color-accent)}
+.mo-dot[data-ease='standard']{animation:mo-move 2400ms var(--ease-standard) infinite}
+.mo-dot[data-ease='enter']{animation:mo-move 2400ms var(--ease-enter) infinite}
+.mo-dot[data-ease='exit']{animation:mo-move 2400ms var(--ease-exit) infinite}
+@keyframes mo-move{0%,20%{transform:translateX(0)}50%,70%{transform:translateX(272px)}100%{transform:translateX(0)}}
+@media (prefers-reduced-motion: reduce){.mo-dot{animation:none !important}}
+.ly-grid{display:grid;grid-template-columns:120px 210px minmax(0,1fr);gap:16px;align-items:end}
+.ly-frame{position:relative;display:flex;gap:4px;padding:6px;border:1.5px solid var(--color-line-strong);border-radius:14px;background:var(--color-canvas)}
+.ly-part{border-radius:6px;background:var(--color-fill-strong)}
+.ly-part[data-tone='accent']{background:var(--color-accent-soft)}
+.ly-cap{display:flex;flex-direction:column;gap:2px;margin-top:8px}
+.ly-cap b{font:600 13px/18px var(--font-ui)}
+.ly-cap span{font:400 12px/16px var(--font-ui);color:var(--color-ink-2)}
+</style>
+</helmet>
+<div class="kit b-board" data-scheme="light" style="min-height: 1240px">
+<header class="b-head">
+<div>
+<p class="b-kicker">stockpot kit · 03</p>
+<h1 class="b-title">Spacing, radius, elevation, motion</h1>
+<p class="b-lede">A 4 px step, soft corners that grow with the surface, quiet shadows in light and borders in dark, and short motion that eases out. With reduced motion the kit keeps colour changes and drops movement.</p>
+</div>
+</header>
+
+<div class="sp-cols">
+<div style="display: flex; flex-direction: column; gap: 32px">
+<section class="sp-box">
+<h2 class="b-h">Spacing <small>Tailwind's 4 px step; these are the steps in use</small></h2>
+<sc-for list="{{space}}" as="s" hint-placeholder-count="10">
+<div class="sp-row">
+<span class="sp-step">{{s.step}}</span>
+<span class="sp-bar" style="width: {{s.px}}px"></span>
+<span class="sp-use">{{s.use}}</span>
+</div>
+</sc-for>
+</section>
+
+<section class="sp-box">
+<h2 class="b-h">Layout <small>proposal for the 768 and 1440 boards</small></h2>
+<div class="ly-grid">
+<div>
+<div class="ly-frame" style="flex-direction: column; height: 200px">
+<div class="ly-part" style="height: 22px"></div>
+<div class="ly-part" data-tone="accent" style="flex: 1"></div>
+<div class="ly-part" style="height: 22px"></div>
+</div>
+<div class="ly-cap"><b>390 phone</b><span>one column, 16 px gutter, tab bar</span></div>
+</div>
+<div>
+<div class="ly-frame" style="height: 200px">
+<div class="ly-part" style="width: 22px"></div>
+<div class="ly-part" style="width: 70px"></div>
+<div class="ly-part" data-tone="accent" style="flex: 1"></div>
+</div>
+<div class="ly-cap"><b>768 tablet</b><span>side rail, list and card, 24 px gutter</span></div>
+</div>
+<div>
+<div class="ly-frame" style="height: 200px">
+<div class="ly-part" style="width: 64px"></div>
+<div class="ly-part" style="width: 118px"></div>
+<div class="ly-part" data-tone="accent" style="flex: 1; max-width: 200px"></div>
+<div style="flex: 1"></div>
+</div>
+<div class="ly-cap"><b>1440 desktop</b><span>sidebar, list, reading column up to 680 px, 32 px gutter</span></div>
+</div>
+</div>
+</section>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 32px">
+<section class="sp-box">
+<h2 class="b-h">Radius</h2>
+<div class="rd-grid">
+<sc-for list="{{radii}}" as="r" hint-placeholder-count="6">
+<div class="rd">
+<span class="rd-shape" style="border-radius: {{r.px}}px"></span>
+<span class="rd-name">{{r.name}} · {{r.label}}</span>
+<span class="rd-use">{{r.use}}</span>
+</div>
+</sc-for>
+</div>
+</section>
+
+<section class="sp-box">
+<h2 class="b-h">Elevation <small>shadow in light; border and depth in dark</small></h2>
+<div class="el-grid">
+<div class="el-panel" data-scheme="light">
+<span class="el" style="border-radius: 20px; border: 1px solid var(--color-line); box-shadow: var(--shadow-card)">card</span>
+<span class="el" style="border-radius: 28px 28px 0 0; box-shadow: var(--shadow-sheet)">sheet</span>
+<span class="el" style="border-radius: 20px; background: var(--color-inverse); color: var(--color-on-inverse); box-shadow: var(--shadow-toast)">toast</span>
+</div>
+<div class="el-panel" data-scheme="dark">
+<span class="el" style="border-radius: 20px; border: 1px solid var(--color-line); box-shadow: var(--shadow-card)">card</span>
+<span class="el" style="border-radius: 28px 28px 0 0; box-shadow: var(--shadow-sheet)">sheet</span>
+<span class="el" style="border-radius: 20px; background: var(--color-inverse); color: var(--color-on-inverse); box-shadow: var(--shadow-toast)">toast</span>
+</div>
+</div>
+</section>
+
+<section class="sp-box">
+<h2 class="b-h">Motion <small>the dots loop; reduced motion stops them</small></h2>
+<sc-for list="{{motion}}" as="m" hint-placeholder-count="3">
+<div class="mo-row">
+<span class="mo-name"><b>{{m.name}}</b><span>{{m.spec}}</span></span>
+<span class="mo-track" style="width: 300px"><span class="mo-dot" data-ease="{{m.ease}}"></span></span>
+</div>
+</sc-for>
+<p class="b-note">Durations: fast 120 ms for press feedback, base 200 ms for state changes, slow 320 ms for a sheet or toast entering, shimmer 1400 ms. Pressed controls scale to 0.97, cards to 0.985. Reduced motion: no scale, no slide, a 1 ms colour change, spinners at a third of the speed, no shimmer.</p>
+</section>
+
+<section class="sp-box">
+<h2 class="b-h">Focus <small>keyboard and switch control</small></h2>
+<div class="b-wrap" style="gap: 24px">
+<button class="btn" data-variant="primary" type="button" style="outline: 2px solid var(--color-focus); outline-offset: 2px">Save</button>
+<button class="chip" type="button" style="outline: 2px solid var(--color-focus); outline-offset: 2px">Ready <span class="chip-count">4</span></button>
+<p class="b-note" style="max-width: 360px">A 2 px accent ring with a 2 px gap, on :focus-visible only, on every control.</p>
+</div>
+</section>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1680,"height":1240}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const s = (step, px, use) => ({ step, px, use });
+    const r = (name, px, label, use) => ({ name, px, label, use });
+    return {
+      space: [
+        s('1 · 4 px', 4, 'icon to its label in badges'),
+        s('2 · 8 px', 8, 'between chips, icon to label in buttons'),
+        s('3 · 12 px', 12, 'between cards in the digest, row gap'),
+        s('4 · 16 px', 16, 'phone gutter, card and sheet padding'),
+        s('5 · 20 px', 20, 'sheet bottom above the home indicator'),
+        s('6 · 24 px', 24, 'tablet gutter, empty-state padding'),
+        s('8 · 32 px', 32, 'desktop gutter, between sections'),
+        s('10 · 40 px', 40, 'above a screen title'),
+        s('12 · 48 px', 48, 'between groups on wide screens'),
+        s('16 · 64 px', 64, 'top of an empty state'),
+      ],
+      radii: [
+        r('xs', 6, '6 px', 'badges'),
+        r('sm', 10, '10 px', 'small buttons, tiles'),
+        r('md', 14, '14 px', 'buttons, fields, rows'),
+        r('lg', 20, '20 px', 'cards, lists, toasts'),
+        r('xl', 28, '28 px', 'sheet top corners'),
+        r('full', 999, 'full', 'chips, switch, tab pill'),
+      ],
+      motion: [
+        { name: 'ease-standard', spec: '0.2, 0, 0, 1 · state changes', ease: 'standard' },
+        { name: 'ease-enter', spec: '0.05, 0.7, 0.1, 1 · sheet, toast in', ease: 'enter' },
+        { name: 'ease-exit', spec: '0.3, 0, 0.8, 0.15 · dismiss', ease: 'exit' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

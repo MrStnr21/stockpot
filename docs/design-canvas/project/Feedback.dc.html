@@ -1,0 +1,160 @@
+<!doctype html>
+<!--
+  SPDX-License-Identifier: AGPL-3.0-or-later
+  SPDX-FileCopyrightText: 2026 The stockpot authors
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kit: feedback</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./tokens.css">
+<link rel="stylesheet" href="./kit.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&amp;family=Literata:ital,opsz,wght@0,7..72,400..700;1,7..72,400..500&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#9D1E60}a:hover{color:#AC1E68}
+.fb-frame{border:1px solid var(--color-line);border-radius:20px;background:var(--color-surface)}
+</style>
+</helmet>
+<div class="kit b-board" data-scheme="light" style="min-height: 1460px">
+<svg class="b-sprite" aria-hidden="true" focusable="false">
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"></path></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4 4"></path></symbol>
+<symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M7 3.75h10a1 1 0 0 1 1 1v15.5l-6-4.25-6 4.25V4.75a1 1 0 0 1 1-1z"></path></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></symbol>
+<symbol id="i-retry" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4.5h-4.5"></path></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16v-5a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20.5a2.2 2.2 0 0 0 4 0"></path></symbol>
+<symbol id="i-pot" viewBox="0 0 24 24"><path d="M3 10.5h18M5 10.5V15a5 5 0 0 0 5 5h4a5 5 0 0 0 5-5v-4.5M10 7.5c-.8-1 .8-2 0-3M14 7.5c-.8-1 .8-2 0-3"></path></symbol>
+</svg>
+
+<header class="b-head">
+<div>
+<p class="b-kicker">stockpot kit · 09</p>
+<h1 class="b-title">Feedback</h1>
+<p class="b-lede">Toast confirms what just happened and offers one action. EmptyState explains an empty tab and the next step. Skeleton holds the layout while content loads, so nothing jumps when it arrives.</p>
+</div>
+<span class="b-tag">Toast above the tab bar, 4 s, one action</span>
+</header>
+
+<div class="b-schemes">
+<sc-for list="{{schemes}}" as="s" hint-placeholder-count="2">
+<section class="b-panel" data-scheme="{{s.id}}">
+<p class="b-panel-label">{{s.label}}</p>
+<div class="b-two">
+<div class="b-stack" style="gap: 18px">
+<h2 class="b-h">Toast</h2>
+<div class="b-state">
+<span class="b-state-label">Default · saved</span>
+<div class="toast" role="status"><svg class="ico" aria-hidden="true"><use href="#i-check"></use></svg><span class="toast-text">Saved for tonight</span><button class="toast-action" type="button">Undo</button></div>
+</div>
+<div class="b-state">
+<span class="b-state-label">Pressed · undo</span>
+<div class="toast" role="status"><svg class="ico" aria-hidden="true"><use href="#i-check"></use></svg><span class="toast-text">Saved for tonight</span><button class="toast-action" type="button" data-state="pressed">Undo</button></div>
+</div>
+<div class="b-state">
+<span class="b-state-label">Disabled · action unavailable</span>
+<div class="toast" role="status"><svg class="ico" aria-hidden="true"><use href="#i-check"></use></svg><span class="toast-text">Moved to Base</span><button class="toast-action" type="button" disabled="{{true}}">Undo</button></div>
+</div>
+<div class="b-state">
+<span class="b-state-label">Loading · research started</span>
+<div class="toast" role="status" aria-busy="true"><span class="spin" aria-hidden="true"></span><span class="toast-text">Researching Bun…</span><button class="toast-action" type="button">Hide</button></div>
+</div>
+<div class="b-state">
+<span class="b-state-label">Ready · a research-now result</span>
+<div class="toast" role="status"><svg class="ico" aria-hidden="true"><use href="#i-bell"></use></svg><span class="toast-text">Ready: Bun</span><button class="toast-action" type="button">Open</button></div>
+</div>
+<div class="b-state">
+<span class="b-state-label">Error</span>
+<div class="toast" role="alert"><svg class="ico" aria-hidden="true"><use href="#i-retry"></use></svg><span class="toast-text">Couldn't save. Check the connection.</span><button class="toast-action" type="button">Retry</button></div>
+</div>
+
+<h2 class="b-h" style="margin-top: 18px">Skeleton</h2>
+<div class="b-state">
+<span class="b-state-label">Shapes</span>
+<div class="b-wrap" style="gap: 12px">
+<span class="skel" style="display: block; width: 120px; height: 14px"></span>
+<span class="skel" style="display: block; width: 160px; height: 26px"></span>
+<span class="skel" data-shape="pill" style="display: block; width: 96px; height: 24px"></span>
+<span class="skel" data-shape="tile" style="display: block; width: 40px; height: 40px"></span>
+</div>
+</div>
+<div class="b-state">
+<span class="b-state-label">Card loading</span>
+<div class="card" aria-busy="true" style="padding-bottom: 16px">
+<div class="card-top"><span class="skel" data-shape="pill" style="display: block; width: 104px; height: 24px"></span><span class="skel" style="display: block; width: 64px; height: 22px"></span></div>
+<span class="skel" style="display: block; width: 52%; height: 28px"></span>
+<span class="skel" style="display: block; width: 100%; height: 14px"></span>
+<span class="skel" style="display: block; width: 94%; height: 14px"></span>
+<span class="skel" style="display: block; width: 68%; height: 14px"></span>
+</div>
+</div>
+<p class="b-note">The shimmer passes every 1.4 s; with reduced motion the blocks stay still.</p>
+</div>
+
+<div class="b-stack" style="gap: 18px">
+<h2 class="b-h">EmptyState</h2>
+<div class="b-state">
+<span class="b-state-label">Default · Today before the first digest</span>
+<div class="fb-frame">
+<div class="empty">
+<span class="empty-art"><svg class="ico" data-size="32" aria-hidden="true"><use href="#i-pot"></use></svg></span>
+<h3>Nothing to read yet</h3>
+<p>Notes you save today are explained overnight and arrive here in the morning.</p>
+<button class="btn" type="button" data-variant="primary"><svg class="ico" aria-hidden="true"><use href="#i-plus"></use></svg><span>Add a note</span></button>
+</div>
+</div>
+</div>
+<div class="b-state">
+<span class="b-state-label">Pressed · disabled · loading</span>
+<div class="fb-frame" style="display: flex; flex-direction: column; gap: 16px; padding: 20px">
+<div class="b-wrap" style="gap: 12px">
+<button class="btn" type="button" data-variant="primary" data-state="pressed"><svg class="ico" aria-hidden="true"><use href="#i-plus"></use></svg><span>Add a note</span></button>
+<button class="btn" type="button" data-variant="primary" disabled="{{true}}"><svg class="ico" aria-hidden="true"><use href="#i-plus"></use></svg><span>Add a note</span></button>
+</div>
+<p class="b-note">Only the action has a pressed and a disabled state. While a tab loads it shows Skeleton, never an empty state, so "empty" always means empty.</p>
+</div>
+</div>
+<div class="b-state">
+<span class="b-state-label">Search with no results</span>
+<div class="fb-frame">
+<div class="empty">
+<span class="empty-art"><svg class="ico" data-size="32" aria-hidden="true"><use href="#i-search"></use></svg></span>
+<h3>Nothing matches “kafka”</h3>
+<p>Search looks through your notes and their cards.</p>
+<button class="btn" type="button" data-variant="ghost">Clear search</button>
+</div>
+</div>
+</div>
+<div class="b-state">
+<span class="b-state-label">Base before the first Keep</span>
+<div class="fb-frame">
+<div class="empty">
+<span class="empty-art"><svg class="ico" data-size="32" aria-hidden="true"><use href="#i-bookmark"></use></svg></span>
+<h3>Nothing kept yet</h3>
+<p>Tap Keep on a card and it stays here, sorted by category.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</sc-for>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1680,"height":1460}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      schemes: [ { id: 'light', label: 'Light' }, { id: 'dark', label: 'Dark' } ],
+    };
+  }
+}
+</script>
+</body>
+</html>
