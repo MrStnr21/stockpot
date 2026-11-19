@@ -126,6 +126,8 @@ describe('createOpenAiCompatibleEngine', () => {
 		['retry-after', 'Thu, 19 Nov 2026 12:05:00 GMT', '2026-11-19T12:05:00Z'],
 		['x-ratelimit-reset-requests', '1m30s', '2026-11-19T12:01:30Z'],
 		['x-unrelated', '1', '2026-11-19T12:01:00Z'],
+		['retry-after', '-5', '2026-11-19T12:01:00Z'],
+		['retry-after', 'Thu, 19 Nov 2026 11:00:00 GMT', '2026-11-19T12:00:00Z'],
 	])('maps a 429 with %s: %s to rate_limited until %s', async (header, value, resetsAt) => {
 		const expected = new Date(resetsAt)
 

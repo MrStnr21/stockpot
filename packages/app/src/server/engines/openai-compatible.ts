@@ -58,15 +58,18 @@ function durationMs(value: string): number | null {
 	}, 0)
 }
 
+// An HTTP date as `retry-after` carries it, such as "Thu, 19 Nov 2026 12:05:00 GMT".
+const httpDate = /^[A-Z][a-z]{2}, \d{2} [A-Z][a-z]{2} \d{4} \d{2}:\d{2}:\d{2} GMT$/u
+
 function retryAfter(value: string, now: number): number | null {
 	const delay = durationMs(value)
-	const date = Date.parse(value)
 
 	if (delay !== null) {
 		return now + delay
 	}
 
-	return Number.isNaN(date) ? null : date
+	// Anything else, such as "-5", would parse as some date in the past.
+	return httpDate.test(value) ? Date.parse(value) : null
 }
 
 /**
@@ -86,7 +89,8 @@ function resetTime(headers: Headers): Date {
 		...durations.map((duration) => (duration === null ? null : now + duration)),
 	].filter((time) => time !== null)
 
-	return new Date(times.length === 0 ? now + defaultResetMs : Math.max(...times))
+	// A reset in the past means the limit is over already.
+	return new Date(times.length === 0 ? now + defaultResetMs : Math.max(now, ...times))
 }
 
 interface Reply {
