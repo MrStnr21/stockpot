@@ -2,7 +2,7 @@
 
 How the eval runner judges an engine's answers to the [eval set](notes.jsonl). The automatic checks
 run on every answer they apply to; a person fills in the manual score sheet that each run writes.
-How to run it is in the README next to this file.
+How to run it is in the [README](README.md).
 
 ## Automatic checks
 
