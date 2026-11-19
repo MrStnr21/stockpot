@@ -171,6 +171,20 @@ describe('createOpenAiCompatibleEngine', () => {
 		expect(runRows()).toMatchObject([{ outcome: 'error' }])
 	})
 
+	it('keeps the key out of an error body that echoes it', async () => {
+		endpoint.respond = async (request) => {
+			const echoed = `bad gateway, headers: ${request.headers.get('authorization')}`
+
+			return new Response(echoed, { status: 502 })
+		}
+
+		const error = await errorOf(engine.suggest(input, options))
+
+		expect(error.message).toBe(
+			'The OpenAI-compatible endpoint answered 502: bad gateway, headers: Bearer [key]',
+		)
+	})
+
 	it.each([
 		{ missing: 'a base URL', change: { baseUrl: null }, message: 'no base URL', model: 'model-a' },
 		{

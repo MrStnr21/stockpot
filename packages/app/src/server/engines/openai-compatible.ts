@@ -135,7 +135,8 @@ async function post(
 	}
 }
 
-function failureFrom({ status, headers, text }: Reply): Error {
+/** The reply's error, which may echo the key: a gateway that reflects headers would put it in the job. */
+function failureFrom({ status, headers, text }: Reply, apiKey: string | null): Error {
 	if (status === 429) {
 		const resetsAt = resetTime(headers)
 
@@ -146,7 +147,9 @@ function failureFrom({ status, headers, text }: Reply): Error {
 		return new EngineError({ kind: 'auth' }, `The endpoint answered ${status}`)
 	}
 
-	return new Error(`The OpenAI-compatible endpoint answered ${status}: ${text.slice(0, bodyTail)}`)
+	const body = apiKey === null ? text : text.replaceAll(apiKey, '[key]')
+
+	return new Error(`The OpenAI-compatible endpoint answered ${status}: ${body.slice(0, bodyTail)}`)
 }
 
 const integer = v.pipe(v.number(), v.integer())
@@ -271,7 +274,7 @@ export function createOpenAiCompatibleEngine({ db, settings }: OpenAiCompatibleO
 				const reply = await post(endpoint.url, requestFor(input, endpoint), options)
 
 				if (reply.status < 200 || reply.status > 299) {
-					throw failureFrom(reply)
+					throw failureFrom(reply, endpoint.apiKey)
 				}
 
 				return readCompletion(input.output, reply.text, report)
