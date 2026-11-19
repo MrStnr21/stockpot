@@ -64,11 +64,24 @@ function cookieOptions({ secure }: SessionCookie): CookieOptions {
 // A token from randomToken(): 32 bytes as base64url, without padding.
 const tokenPattern = /^[\w-]{43}$/u
 
-/** The token in the request's cookie, when it has the shape of one. */
-function cookieToken({ cookies, cookie }: SessionContext) {
-	const token = cookies.get(cookie.name)?.value
+function asToken(value: string | undefined) {
+	return value !== undefined && tokenPattern.test(value) ? value : undefined
+}
 
-	return token !== undefined && tokenPattern.test(token) ? token : undefined
+/** The token in the cookie jar: the request's, or the one a rotation set during this request. */
+function cookieToken({ cookies, cookie }: SessionContext) {
+	return asToken(cookies.get(cookie.name)?.value)
+}
+
+/**
+ * The token the request itself carried, from its `Cookie` header. The jar returns a token set during
+ * the request instead, such as the one the middleware's rotation just sent.
+ */
+export function carriedToken(request: Request, cookie: SessionCookie): string | undefined {
+	const pairs = (request.headers.get('cookie') ?? '').split(';').map((pair) => pair.trim())
+	const prefix = `${cookie.name}=`
+
+	return asToken(pairs.find((pair) => pair.startsWith(prefix))?.slice(prefix.length))
 }
 
 /** Starts a session: stores the hash of a new token and sends the token in the cookie. */
@@ -83,16 +96,17 @@ export function startSession(context: SessionContext, now = new Date()): void {
 	cookies.set(cookie.name, token, { ...cookieOptions(cookie), maxAge: sessionLifetime / 1000 })
 }
 
-/** Deletes the session of the request's cookie, if it carries one. */
-function deleteCookieSession(context: SessionContext) {
-	const token = cookieToken(context)
-
+function deleteToken(db: Queryable, token: string | undefined) {
 	if (token !== undefined) {
-		context.db
-			.delete(sessions)
+		db.delete(sessions)
 			.where(eq(sessions.tokenHash, hashToken(token)))
 			.run()
 	}
+}
+
+/** Deletes the session of the cookie in the jar, if there is one. */
+function deleteCookieSession(context: SessionContext) {
+	deleteToken(context.db, cookieToken(context))
 }
 
 /**
@@ -113,8 +127,12 @@ function pruneSessions(db: Queryable, now: Date) {
 	db.delete(sessions).where(lte(sessions.createdAt, issuedBefore)).run()
 }
 
-/** Ends the session in the request's cookie, if any, and tells the browser to drop the cookie. */
-export function endSession(context: SessionContext): void {
+/**
+ * Ends the session and tells the browser to drop the cookie. Both the token the request carried and
+ * the one a rotation may have sent during it are deleted, so neither works for another minute.
+ */
+export function endSession(context: SessionContext & { request: Request }): void {
+	deleteToken(context.db, carriedToken(context.request, context.cookie))
 	deleteCookieSession(context)
 	context.cookies.delete(context.cookie.name, cookieOptions(context.cookie))
 }

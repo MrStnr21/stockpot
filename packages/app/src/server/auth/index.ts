@@ -166,7 +166,7 @@ export function createAuth({ db, publicOrigin, announce = printToLog }: AuthOpti
 		signOut({ request, cookies }) {
 			// A request whose cookie does not count is signed out already.
 			if (mayUseCookie(request)) {
-				endSession({ db, cookies, cookie })
+				endSession({ db, cookies, cookie, request })
 			}
 		},
 

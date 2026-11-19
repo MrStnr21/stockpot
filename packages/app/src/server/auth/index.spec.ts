@@ -19,6 +19,7 @@ import { owner } from '#/server/db/schema/auth'
 
 import { createAuth, type Auth } from '.'
 import { longestWait } from './backoff'
+import { rotationAge } from './sessions'
 
 const publicOrigin = 'http://127.0.0.1:4321'
 
@@ -179,6 +180,33 @@ describe('createAuth', () => {
 					await auth.resolveOwner(pageRequest(signedIn)),
 					signedOut.sent.get(cookieName)?.value,
 				]).toEqual([null, ''])
+			})
+		})
+
+		describe('on sign-out with a token due for rotation', () => {
+			let rotatedToken: string
+
+			beforeEach(async () => {
+				setSystemTime(new Date(start.getTime() + rotationAge))
+
+				const jar = nextRequestCookies(signedIn)
+				const carried = signedIn.get(cookieName)?.value ?? ''
+				const request = formPost(jar, { origin: publicOrigin, cookie: `${cookieName}=${carried}` })
+
+				// The middleware resolves the owner first, which rotates the token.
+				await auth.resolveOwner(request)
+				rotatedToken = jar.get(cookieName)?.value ?? ''
+				auth.signOut(request)
+			})
+
+			it('ends both the token the request carried and the one the rotation sent', async () => {
+				const rotated = createCookieJar({ [cookieName]: rotatedToken })
+
+				expect([
+					rotatedToken === signedIn.get(cookieName)?.value,
+					await auth.resolveOwner(pageRequest(signedIn)),
+					await auth.resolveOwner(pageRequest(rotated)),
+				]).toEqual([false, null, null])
 			})
 		})
 
