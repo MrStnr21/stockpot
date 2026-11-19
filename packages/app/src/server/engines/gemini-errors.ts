@@ -63,20 +63,21 @@ function isDailyQuota({ violations }: Detail) {
 }
 
 /**
- * When a 429's limit resets: after the `RetryInfo` delay, at midnight Pacific for a daily quota, or a
- * minute from now when the error says neither.
+ * When a 429's limit resets: the later of the `RetryInfo` delay and the next Pacific midnight for a
+ * daily quota, or a minute from now when the error names neither. A daily quota often comes with a
+ * short `RetryInfo`; reading only that would retry every minute until midnight.
  */
 function resetTime(details: readonly Detail[]): Date {
 	const now = Date.now()
 	const retryDelay = details.find((detail) => detail.retryDelay !== null)?.retryDelay ?? null
+	const isDaily = details.some((detail) => isDailyQuota(detail))
 
-	if (retryDelay !== null) {
-		return new Date(now + Number(retryDelay.slice(0, -1)) * 1000)
-	}
+	const times = [
+		retryDelay === null ? null : now + Number(retryDelay.slice(0, -1)) * 1000,
+		isDaily ? nextPacificMidnight(now).getTime() : null,
+	].filter((time) => time !== null)
 
-	return details.some((detail) => isDailyQuota(detail))
-		? nextPacificMidnight(now)
-		: new Date(now + defaultResetMs)
+	return new Date(times.length === 0 ? now + defaultResetMs : Math.max(...times))
 }
 
 // Gemini answers a bad key with 400 and the `API_KEY_INVALID` reason, not with 401.

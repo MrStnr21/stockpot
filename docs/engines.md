@@ -311,9 +311,11 @@ The Gemini engine
   day's counts, and Google's own quota still applies.
 - **Errors**
   ([`gemini-errors.ts`](../packages/app/src/server/engines/gemini-errors.ts)). 429 is
-  `rate_limited` until the `RetryInfo` delay, the next Pacific midnight when a `QuotaFailure` names a
-  per-day quota, or a minute from now when the error names neither (the recorded free-tier 429 names
-  neither). 401, 403, and 400 with the reason `API_KEY_INVALID` (how Gemini rejects a bad key) are
+  `rate_limited` until the later of the `RetryInfo` delay and the next Pacific midnight when a
+  `QuotaFailure` names a per-day quota, so a daily quota is not retried every minute, or a minute from
+  now when the error names neither. The recorded free-tier 429, from gemini-3-flash-preview asked to
+  search, names neither: its only detail is a help link, and it shows no quota of 0, so it cannot be
+  told apart from a limit that passes. 401, 403, and 400 with the reason `API_KEY_INVALID` (how Gemini rejects a bad key) are
   `auth`. Any other failing status, such as 503 when a model is overloaded, is an ordinary error. A
   blocked prompt, an answer that stops early (the token limit, safety), an empty answer, and text that
   is not JSON or breaks the format are `invalid`. No answer within the timeout, which covers both

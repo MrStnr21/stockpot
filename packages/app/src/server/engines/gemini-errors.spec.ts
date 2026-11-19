@@ -47,6 +47,17 @@ describe('geminiFailure', () => {
 				],
 				'2026-11-20T08:00:00.000Z',
 			],
+			[
+				'at midnight Pacific for a daily quota that also names a short retry delay',
+				[
+					{ '@type': 'type.googleapis.com/google.rpc.RetryInfo', retryDelay: '43s' },
+					{
+						'@type': 'type.googleapis.com/google.rpc.QuotaFailure',
+						violations: [{ quotaId: 'GenerateRequestsPerDayPerProjectPerModel-FreeTier' }],
+					},
+				],
+				'2026-11-20T08:00:00.000Z',
+			],
 			['a minute from now without either', [], '2026-11-19T15:01:00.000Z'],
 		])('is rate_limited until %s', (_, details, resetsAt) => {
 			expect(geminiFailure(apiError(429, details), apiKey)).toMatchObject({
