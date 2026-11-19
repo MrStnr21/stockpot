@@ -160,12 +160,12 @@ const textOrNull = v.fallback(v.nullable(v.string()), null)
 
 const usageSchema = v.object({ prompt_tokens: count, completion_tokens: count })
 
-const messageSchema = v.object({
-	content: v.nullable(v.string()),
-	refusal: textOrNull,
-})
+// A refusal may come without any content field at all.
+const messageSchema = v.object({ content: v.nullish(v.string()), refusal: textOrNull })
 
-const choicesSchema = v.pipe(v.array(v.object({ message: messageSchema })), v.minLength(1))
+const choiceSchema = v.object({ message: messageSchema, finish_reason: textOrNull })
+
+const choicesSchema = v.pipe(v.array(choiceSchema), v.minLength(1))
 
 const completionSchema = v.object({
 	model: textOrNull,
@@ -189,17 +189,22 @@ function readCompletion<TSchema extends v.GenericSchema>(
 	}
 
 	const { model, choices, usage } = completion.output
-	const [{ message }] = choices
+	const [{ message, finish_reason: finishReason }] = choices
+	const content = message.content ?? null
 
 	report.model = model ?? report.model
 	report.inputTokens = usage.prompt_tokens
 	report.outputTokens = usage.completion_tokens
 
-	if (message.content === null) {
+	if (content === null) {
 		throw invalid(`The model refused: ${message.refusal ?? 'no reason given'}`)
 	}
 
-	return parseOutput(output, parseJsonText(message.content))
+	if (finishReason === 'length') {
+		throw invalid('The answer was cut off at the token limit')
+	}
+
+	return parseOutput(output, parseJsonText(content))
 }
 
 type Settings = EngineSettings['openai-compatible']

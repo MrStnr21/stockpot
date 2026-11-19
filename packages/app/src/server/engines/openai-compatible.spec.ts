@@ -161,6 +161,30 @@ describe('createOpenAiCompatibleEngine', () => {
 		})
 	})
 
+	it.each([
+		{
+			reply: 'a refusal without content',
+			respond: () => completion({ refusal: 'I cannot help with that.' }),
+			issue: 'The model refused: I cannot help with that.',
+		},
+		{
+			reply: 'an answer cut off',
+			respond: () => completion({ content: '{"categories":["tech' }, 'length'),
+			issue: 'The answer was cut off at the token limit',
+		},
+		{
+			reply: 'a reply without choices',
+			respond: () => Response.json({ model: 'model-a', choices: [] }),
+			issue: 'The response is not a chat completion',
+		},
+	])('fails $reply with invalid and its reason', async ({ respond, issue }) => {
+		endpoint.respond = async () => respond()
+
+		const error = await errorOf(engine.suggest(input, options))
+
+		expect(error).toMatchObject({ failure: { kind: 'invalid', issues: [issue] } })
+	})
+
 	it('fails a server error with an ordinary error', async () => {
 		endpoint.respond = async () => new Response('down for maintenance', { status: 503 })
 

@@ -21,18 +21,34 @@ const allowedFormats = new Set([
 	'uuid',
 ])
 
-function adaptDefinition(definition: JsonSchema | boolean): JsonSchema | boolean {
+type Definition = JsonSchema | boolean
+
+function adaptDefinition(definition: Definition): Definition {
 	return definition === true || definition === false ? definition : strictSchema(definition)
+}
+
+function adaptList(definitions: readonly Definition[]): Definition[] {
+	return definitions.map((definition) => adaptDefinition(definition))
+}
+
+function adaptMap(definitions: Readonly<Record<string, Definition>>): Record<string, Definition> {
+	const entries = Object.entries(definitions)
+
+	return Object.fromEntries(
+		entries.map(([name, definition]) => [name, adaptDefinition(definition)]),
+	)
 }
 
 /**
  * The derived JSON Schema as strict mode accepts it: without `$schema`, `minLength`, `maxLength`
- * and disallowed formats, in every schema under `properties`, `items` and `anyOf`. The caps stay in
- * the descriptions, and the Valibot schema still checks them.
+ * and disallowed formats, in every schema under `properties`, `$defs`, `items`,
+ * `additionalProperties`, `anyOf`, `allOf` and `oneOf`. The caps stay in the descriptions, and the
+ * Valibot schema still checks them.
  */
 export function strictSchema(schema: JsonSchema): JsonSchema {
 	// oxlint-disable-next-line no-unused-vars -- The stripped keywords are named only to leave them out.
-	const { $schema, minLength, maxLength, format, properties, items, anyOf, ...kept } = schema
+	const { $schema, minLength, maxLength, format, ...rest } = schema
+	const { properties, $defs, items, additionalProperties, anyOf, allOf, oneOf, ...kept } = rest
 	const adapted: JsonSchema = kept
 
 	if (format !== undefined && allowedFormats.has(format)) {
@@ -40,21 +56,31 @@ export function strictSchema(schema: JsonSchema): JsonSchema {
 	}
 
 	if (properties !== undefined) {
-		const entries = Object.entries(properties)
+		adapted.properties = adaptMap(properties)
+	}
 
-		adapted.properties = Object.fromEntries(
-			entries.map(([name, property]) => [name, adaptDefinition(property)]),
-		)
+	if ($defs !== undefined) {
+		adapted.$defs = adaptMap($defs)
 	}
 
 	if (items !== undefined) {
-		adapted.items = Array.isArray(items)
-			? items.map((item) => adaptDefinition(item))
-			: adaptDefinition(items)
+		adapted.items = Array.isArray(items) ? adaptList(items) : adaptDefinition(items)
+	}
+
+	if (additionalProperties !== undefined) {
+		adapted.additionalProperties = adaptDefinition(additionalProperties)
 	}
 
 	if (anyOf !== undefined) {
-		adapted.anyOf = anyOf.map((option) => adaptDefinition(option))
+		adapted.anyOf = adaptList(anyOf)
+	}
+
+	if (allOf !== undefined) {
+		adapted.allOf = adaptList(allOf)
+	}
+
+	if (oneOf !== undefined) {
+		adapted.oneOf = adaptList(oneOf)
 	}
 
 	return adapted

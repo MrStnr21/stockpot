@@ -47,6 +47,25 @@ describe('strictSchema', () => {
 		})
 	})
 
+	it('recurses into $defs, allOf, oneOf and a schema in additionalProperties', () => {
+		const text = { type: 'string', maxLength: 10 } as const
+		const plain = { type: 'string' } as const
+
+		const schema = strictSchema({
+			$defs: { name: text },
+			allOf: [text],
+			oneOf: [text, { type: 'null' }],
+			additionalProperties: text,
+		})
+
+		expect(schema).toStrictEqual({
+			$defs: { name: plain },
+			allOf: [plain],
+			oneOf: [plain, { type: 'null' }],
+			additionalProperties: plain,
+		})
+	})
+
 	it('keeps a format strict mode allows', () => {
 		expect(strictSchema({ type: 'string', format: 'date-time' })).toStrictEqual({
 			type: 'string',

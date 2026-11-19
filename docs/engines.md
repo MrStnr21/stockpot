@@ -118,8 +118,7 @@ side. Whatever a provider drops or ignores, an answer that breaks the format fai
 
 - **OpenAI-compatible, strict mode** (ENG-5): strict mode rejects `minLength`, `maxLength`,
   `$schema`, and any `format` outside its allowed list, which excludes the `uri` our sources use. The
-  engine strips those keywords everywhere in the schema, recursing into `properties`, `items` and
-  `anyOf` (`strictSchema` in
+  engine strips those keywords everywhere in the schema, recursing into `properties`, `$defs`, `items`, `additionalProperties`, `anyOf`, `allOf` and `oneOf` (`strictSchema` in
   [`openai-strict-schema.ts`](../packages/app/src/server/engines/openai-strict-schema.ts)). The caps
   stay in the descriptions.
 - **Gemini** (ENG-4): Google's
@@ -296,8 +295,7 @@ ENG-5) posts to `<base URL>/chat/completions` on any endpoint that speaks that A
 - **Errors.** 429 is `rate_limited` until the latest of `retry-after` (seconds or an HTTP date),
   `x-ratelimit-reset-requests` and `x-ratelimit-reset-tokens` (durations such as `1m30s`), or a
   minute from now when none is given; 401 and 403 are `auth`; any other failing status is an ordinary
-  error. A reply that is not a chat completion, a refusal or content that breaks the format is
-  `invalid`, and no reply within the timeout is `timeout`.
+  error. A reply that is not a chat completion, a refusal, an answer cut off at the token limit or content that breaks the format is `invalid`, and no reply within the timeout is `timeout`.
 
 ## The agent command
 
