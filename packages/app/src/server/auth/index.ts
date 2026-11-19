@@ -11,6 +11,7 @@ import type { Db } from '#/server/db/client'
 import { instanceDb } from '#/server/db/instance'
 import { mayUseCookie, type CookieJar, type Owner, type ResolverContext } from '#/server/policy'
 
+import { createBackoff } from './backoff'
 import {
 	createSetupCode,
 	hashPassword,
@@ -19,7 +20,13 @@ import {
 	normalizeSetupCode,
 	verifyPassword,
 } from './owner'
-import { endAllSessions, replaceSession, resolveSession, sessionCookie } from './sessions'
+import {
+	endAllSessions,
+	endSession,
+	replaceSession,
+	resolveSession,
+	sessionCookie,
+} from './sessions'
 import { secretsMatch } from './tokens'
 
 export { passwordSchema } from './owner'
@@ -38,9 +45,17 @@ export interface SetupForm {
 
 export type SetupResult = 'created' | 'wrong_code' | 'already_set_up'
 
-export interface SignInResult {
+export interface ThrottledSignIn {
+	readonly status: 'throttled'
+	/** Whole seconds until the next attempt is checked, for `Retry-After`. */
+	readonly retryAfter: number
+}
+
+export interface CheckedSignIn {
 	readonly status: 'signed_in' | 'wrong_password' | 'no_owner'
 }
+
+export type SignInResult = CheckedSignIn | ThrottledSignIn
 
 export interface Auth {
 	/**
@@ -50,7 +65,10 @@ export interface Auth {
 	readonly needsSetup: () => boolean
 	/** Creates the owner when the setup code is right, and signs them in. */
 	readonly setUp: (cookies: CookieJar, form: SetupForm) => Promise<SetupResult>
+	/** Signs the owner in, after the backoff that repeated wrong passwords earn. */
 	readonly signIn: (cookies: CookieJar, password: string) => Promise<SignInResult>
+	/** Ends the request's session and drops its cookie. */
+	readonly signOut: (context: ResolverContext) => void
 	readonly resolveOwner: (context: ResolverContext) => Promise<Owner | null>
 }
 
@@ -66,6 +84,7 @@ function printToLog(message: string) {
 
 export function createAuth({ db, publicOrigin, announce = printToLog }: AuthOptions): Auth {
 	const cookie = sessionCookie(publicOrigin)
+	const backoff = createBackoff()
 	// Kept in memory only: a restart prints a new code, and creating the owner ends it.
 	const setup: PendingSetup = {}
 
@@ -123,15 +142,32 @@ export function createAuth({ db, publicOrigin, announce = printToLog }: AuthOpti
 				return { status: 'no_owner' }
 			}
 
+			const wait = backoff.wait()
+
+			// The password is not even checked during the wait, so guessing gains nothing from it.
+			if (wait > 0) {
+				return { status: 'throttled', retryAfter: Math.ceil(wait / 1000) }
+			}
+
+			backoff.fail()
+
 			if (!(await verifyPassword(db, password))) {
 				return { status: 'wrong_password' }
 			}
 
+			backoff.succeed()
 			db.transaction((tx) => {
 				replaceSession({ db: tx, cookies, cookie })
 			})
 
 			return { status: 'signed_in' }
+		},
+
+		signOut({ request, cookies }) {
+			// A request whose cookie does not count is signed out already.
+			if (mayUseCookie(request)) {
+				endSession({ db, cookies, cookie })
+			}
 		},
 
 		async resolveOwner({ request, cookies }) {
