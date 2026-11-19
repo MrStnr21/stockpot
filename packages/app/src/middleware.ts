@@ -23,8 +23,10 @@ type Middleware = (
  */
 export function createMiddleware({ resolveOwner, publicOrigin }: MiddlewareOptions): Middleware {
 	return async (context, next) => {
-		// Prerendering has no request to judge.
+		// Prerendering has no request to judge, and nobody is signed in.
 		if (context.isPrerendered) {
+			context.locals.owner = null
+
 			return next()
 		}
 
@@ -35,7 +37,7 @@ export function createMiddleware({ resolveOwner, publicOrigin }: MiddlewareOptio
 			})
 		}
 
-		context.locals.owner = await resolveOwner(context.request)
+		context.locals.owner = (await resolveOwner(context.request)) ?? null
 
 		return next()
 	}

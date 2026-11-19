@@ -14,16 +14,20 @@ export interface Owner {
 
 export type Access = 'public' | 'authorized'
 
-/** Finds the owner behind a request (a session cookie, later a device token), or `null`. */
-export type OwnerResolver = (request: Request) => Promise<Owner | null>
+/**
+ * Finds the owner behind a request (a session cookie, later a device token). `null` or `undefined`
+ * means nobody; the middleware stores either as `null`.
+ */
+export type OwnerResolver = (request: Request) => Promise<Owner | null | undefined>
 
 /** The stub until sign-in lands (SRV-4): nobody is signed in, so authorized routes answer 401. */
 export async function resolveNobody(): Promise<Owner | null> {
 	return null
 }
 
-export function isAllowed(access: Access, owner: Owner | null): boolean {
-	return access === 'public' || owner !== null
+/** Anything but an owner with an id, `undefined` and `{}` included, counts as signed out. */
+export function isAllowed(access: Access, owner: Owner | null | undefined): boolean {
+	return access === 'public' || Number.isInteger(owner?.id)
 }
 
 const safeMethods = new Set(['GET', 'HEAD', 'OPTIONS'])

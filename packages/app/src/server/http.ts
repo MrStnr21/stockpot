@@ -46,10 +46,14 @@ export class HttpError extends Error {
 	}
 }
 
-/** What the wrappers need from Astro's context; specs pass just these. */
+/**
+ * What the wrappers need from Astro's context; specs pass just these. `locals` is partial because
+ * nothing guarantees the middleware ran: a missing owner counts as nobody.
+ */
 export interface RouteContext {
 	readonly request: Request
-	readonly locals: App.Locals
+	readonly locals: Partial<App.Locals>
+	readonly isPrerendered?: boolean
 }
 
 type Reply = Response | Promise<Response>
@@ -66,7 +70,14 @@ function declare<TContext extends RouteContext>(
 	handler: (context: TContext, owner: Owner | null) => Reply,
 ): Route<TContext> {
 	async function declared(context: TContext) {
-		const { owner } = context.locals
+		const owner = context.locals.owner ?? null
+
+		// A prerendered response would be served as a file to anyone, signed in or not.
+		if (access === 'authorized' && context.isPrerendered === true) {
+			throw new Error(
+				'route.authorized cannot be prerendered: remove `export const prerender = true` from the route',
+			)
+		}
 
 		if (!isAllowed(access, owner)) {
 			return jsonError(401, unauthorized)

@@ -3,6 +3,7 @@
 
 import { beforeEach, describe, expect, it, mock, type Mock } from 'bun:test'
 
+import { route, type RouteContext } from '#/server/http'
 import type { Owner, OwnerResolver } from '#/server/policy'
 
 import { createMiddleware } from './middleware'
@@ -19,10 +20,15 @@ function formPost(origin: string) {
 	})
 }
 
+/** A resolver that never returns an owner or `null`, as a slip in a later one could. */
+async function forgetfulResolver(): Promise<undefined> {
+	// It returns nothing.
+}
+
 describe('middleware', () => {
 	let resolveOwner: Mock<OwnerResolver>
 	let next: Mock<() => Promise<Response>>
-	let locals: App.Locals
+	let locals: Partial<App.Locals>
 
 	beforeEach(() => {
 		resolveOwner = mock(async () => owner)
@@ -52,6 +58,43 @@ describe('middleware', () => {
 
 		it('runs neither the resolver nor the route', () => {
 			expect([resolveOwner.mock.calls.length, next.mock.calls.length]).toEqual([0, 0])
+		})
+	})
+
+	describe('with a resolver that returns undefined', () => {
+		let response: Response
+
+		beforeEach(async () => {
+			resolveOwner.mockImplementation(forgetfulResolver)
+
+			const authorizedRoute = route.authorized<RouteContext>(() => new Response('secret'))
+
+			next.mockImplementation(async () =>
+				authorizedRoute({ request: formPost(publicOrigin), locals }),
+			)
+			response = await run(formPost(publicOrigin))
+		})
+
+		it('stores nobody on locals', () => {
+			expect(locals.owner).toBeNull()
+		})
+
+		it('gets a 401 from an authorized route', () => {
+			expect(response.status).toBe(401)
+		})
+	})
+
+	describe('when prerendering', () => {
+		beforeEach(async () => {
+			locals = {}
+			await createMiddleware({ resolveOwner, publicOrigin })(
+				{ request: new Request(publicOrigin), locals, isPrerendered: true },
+				next,
+			)
+		})
+
+		it('stores nobody on locals', () => {
+			expect(locals.owner).toBeNull()
 		})
 	})
 

@@ -68,6 +68,31 @@ describe('http', () => {
 			})
 		})
 
+		describe('when the middleware set no owner', () => {
+			it('answers 401', async () => {
+				const response = await route.authorized<RouteContext>(handler)({
+					request: new Request(url),
+					locals: {},
+				})
+
+				expect([response.status, handler.mock.calls.length]).toEqual([401, 0])
+			})
+		})
+
+		describe('when prerendered', () => {
+			it('refuses to render', async () => {
+				const prerendered = route.authorized<RouteContext>(handler)({
+					request: new Request(url),
+					locals: { owner },
+					isPrerendered: true,
+				})
+
+				const failure = await prerendered.then(() => '', String)
+
+				expect(failure).toContain('route.authorized cannot be prerendered')
+			})
+		})
+
 		describe('when the owner is signed in', () => {
 			it('runs the handler with the owner', async () => {
 				const response = await route.authorized<RouteContext>(handler)(
