@@ -66,10 +66,10 @@ describe('policy', () => {
 		})
 
 		it('lets only the owner through an authorized route', () => {
-			expect([isAllowed('authorized', null), isAllowed('authorized', { id: 1 })]).toEqual([
-				false,
-				true,
-			])
+			expect([
+				isAllowed('authorized', null),
+				isAllowed('authorized', { id: 1, via: 'session' }),
+			]).toEqual([false, true])
 		})
 	})
 

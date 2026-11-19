@@ -35,7 +35,7 @@ export async function routeProblems(pagesFolder: string): Promise<string[]> {
 				const exports = v.parse(routeModuleSchema, module)
 
 				const undeclared = undeclaredHandlers(exports).map(
-					(method) => `${file}: ${method} has no route.public or route.authorized`,
+					(method) => `${file}: ${method} has no route.public, route.authorized or route.session`,
 				)
 
 				// ALL also answers GET, which the cross-site check lets through, so each method is its own export.

@@ -39,6 +39,8 @@ export const devices = sqliteTable('devices', {
 	id: integer('id').primaryKey(),
 	name: text('name').notNull(),
 	tokenHash: text('token_hash').notNull().unique(),
+	/** The token masked to its prefix and last characters, so the owner can tell tokens apart. */
+	tokenHint: text('token_hint').notNull(),
 	createdAt,
 	lastUsedAt: integer('last_used_at', { mode: 'timestamp_ms' }),
 })

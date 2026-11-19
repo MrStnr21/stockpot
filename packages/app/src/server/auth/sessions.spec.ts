@@ -80,7 +80,7 @@ describe('sessions', () => {
 			const cookies = nextRequestCookies(signedIn)
 
 			expect([resolveSession({ db, cookies, cookie }, later(1000)), cookies.sent.size]).toEqual([
-				{ id: 1 },
+				{ id: 1, via: 'session' },
 				0,
 			])
 		})
@@ -112,6 +112,7 @@ describe('sessions', () => {
 			it('signs the owner in with the new token', () => {
 				expect(resolveSession({ db, cookies: afterRotation, cookie }, later(rotationAge))).toEqual({
 					id: 1,
+					via: 'session',
 				})
 			})
 
@@ -121,7 +122,7 @@ describe('sessions', () => {
 				expect([
 					resolveSession({ db, cookies: parallel, cookie }, later(rotationAge + 1000)),
 					parallel.sent.size,
-				]).toEqual([{ id: 1 }, 0])
+				]).toEqual([{ id: 1, via: 'session' }, 0])
 			})
 
 			it('ends the old token after the grace period', () => {
@@ -166,6 +167,7 @@ describe('sessions', () => {
 
 				expect(resolveSession({ db, cookies: next, cookie }, later(sessionLifetime))).toEqual({
 					id: 1,
+					via: 'session',
 				})
 			})
 		})
@@ -198,7 +200,7 @@ describe('sessions', () => {
 		it('keeps the owner signed in', async () => {
 			const after = await openDatabase({ path: join(directory, 'stockpot.db'), migrationsFolder })
 
-			expect(resolveSession({ db: after.db, cookies, cookie })).toEqual({ id: 1 })
+			expect(resolveSession({ db: after.db, cookies, cookie })).toEqual({ id: 1, via: 'session' })
 			after.sqlite.close()
 		})
 	})

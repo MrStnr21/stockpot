@@ -104,7 +104,8 @@ nothing else.
 Validate everything that comes from outside (request bodies, query strings, environment, engine
 output) with Valibot at the edge, before it reaches feature code. Invalid input from a client is a
 400 with a JSON error, never an exception from deep inside. API routes declare their access with
-`route.public` or `route.authorized` from `src/server/http.ts`; there are no bare routes.
+`route.public`, `route.authorized` or `route.session` (the owner signed in on the web, not with a
+device token) from `src/server/http.ts`; there are no bare routes.
 
 ## Dependencies
 

@@ -76,6 +76,14 @@ reach it. The code stops working once the owner exists, and a restart replaces i
   someone copied it, and stockpot ends every session: whichever browser got the new token first may
   be the copy. The same happens, rarely, when a response carrying a new token never reaches your
   browser, for example when the connection drops; then you sign in again.
+- **Device tokens.** A Shortcut, an MCP client or the iOS app signs in with a named token of its
+  own, sent as `Authorization: Bearer <token>`. While signed in on the web, `POST /api/devices` with
+  `{"name": "iPhone Shortcut"}` creates one: the answer holds the token, which starts with `sp1_`,
+  and it is shown only that once, because the database stores just its hash. `GET /api/devices`
+  lists each device's name, when it was created and last used (updated at most once a minute), and
+  a hint with the token's last four characters. `DELETE /api/devices/<id>` revokes a device, and its
+  token stops working on the next request. Managing devices needs the web session, so a device
+  token cannot create, list or revoke them.
 - **Backoff.** Three wrong passwords in a row are free. After that each attempt waits twice as long
   as the one before, from 1 second up to 5 minutes, and an hour without a wrong password resets the
   count. Every browser you have signed in from gets a second, long-lived cookie (a year, stored only
@@ -86,7 +94,8 @@ reach it. The code stops working once the owner exists, and a restart replaces i
   restarts.
 - **A forgotten password.** Stop stockpot, delete the owner with
   `sqlite3 <data directory>/stockpot.db "DELETE FROM owner"`, and start it again: it prints a new
-  setup code, and creating the owner again ends every old session.
+  setup code, and creating the owner again ends every old session and revokes every device token,
+  so each device must be paired again with a new token.
 
 ## Health, logs and metrics
 

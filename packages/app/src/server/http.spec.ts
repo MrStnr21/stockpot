@@ -9,7 +9,7 @@ import type { Owner } from './policy'
 
 const url = 'http://localhost:4321/api/notes'
 
-const owner: Owner = { id: 1 }
+const owner: Owner = { id: 1, via: 'session' }
 
 function contextFor(request: Request, signedIn: Owner | null): RouteContext {
 	return { request, locals: { owner: signedIn } }

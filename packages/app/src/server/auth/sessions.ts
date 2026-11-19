@@ -224,5 +224,5 @@ export function resolveSession(
 		rotate(context, session, now)
 	}
 
-	return { id: session.ownerId }
+	return { id: session.ownerId, via: 'session' }
 }

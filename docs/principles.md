@@ -107,8 +107,8 @@ separate lanes. These rules keep them out of each other's way.
    stub and delete the stub when the real module lands. Capture, for example, can save notes against
    a `suggest` stub that returns no categories while the engines are still being built.
 4. **Access goes through one place.** Pages read the signed-in owner from `Astro.locals`, which the
-   middleware sets. API routes declare their access with `route.public` or `route.authorized` from
-   `src/server/http.ts`. Device tokens are checked in `src/server/auth/`. No story reads cookies,
+   middleware sets. API routes declare their access with `route.public`, `route.authorized` or
+   `route.session` from `src/server/http.ts`. Device tokens are checked in `src/server/auth/`. No story reads cookies,
    sessions or tokens on its own, so sign-in can change without touching the stories that depend on
    it.
 
