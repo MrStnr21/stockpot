@@ -159,10 +159,22 @@ describe('http', () => {
 			])
 		})
 
-		it('refuses a body not sent as JSON with 415', async () => {
-			const response = await post('text=Bun', 'application/x-www-form-urlencoded')
+		it.each(['application/x-www-form-urlencoded', 'application/jsonfoo', 'text/json'])(
+			'refuses a body sent as %s with 415',
+			async (contentType) => {
+				const response = await post(JSON.stringify({ text: 'Bun' }), contentType)
 
-			expect(response.status).toBe(415)
+				expect(response.status).toBe(415)
+			},
+		)
+
+		it('accepts the JSON media type in any case and with parameters', async () => {
+			const response = await post(
+				JSON.stringify({ text: 'Bun' }),
+				'Application/JSON; charset=utf-8',
+			)
+
+			expect(response.status).toBe(200)
 		})
 
 		it('refuses text that is not JSON with 400', async () => {

@@ -17,8 +17,13 @@ export const POST = route.public(() => new Response())
 
 const bare = 'export const GET = () => new Response()\n'
 
+const catchAll = `import { route } from ${http}
+export const ALL = route.authorized(() => new Response())
+`
+
 const fixtures = {
 	'api/notes.ts': declared,
+	'api/everything.ts': catchAll,
 	'.well-known/security.ts': bare,
 	'_lib/helper.ts': bare,
 	'api/_draft/index.ts': bare,
@@ -45,10 +50,11 @@ describe('routeProblems', () => {
 		await $`rm -rf ${pagesFolder}`
 	})
 
-	it('reports bare handlers and specs Astro would serve, and skips what it does not', async () => {
+	it('reports bare handlers, ALL and specs Astro would serve, and skips what it does not', async () => {
 		expect(await routeProblems(pagesFolder)).toEqual([
 			'.well-known/security.ts: GET has no route.public or route.authorized',
 			'api/boom.spec.ts: a spec in src/pages must start with _, or Astro serves it as a route',
+			'api/everything.ts: ALL is not allowed; export one handler per method',
 		])
 	})
 })

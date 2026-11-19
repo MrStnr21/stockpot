@@ -185,6 +185,13 @@ function describeIssue(issue: v.BaseIssue<unknown>) {
 	return `${v.getDotPath(issue) ?? 'body'}: ${issue.message}`
 }
 
+/** The media type, compared without case and without parameters such as `charset`. */
+function isJsonBody(request: Request) {
+	const [mediaType = ''] = (request.headers.get('content-type') ?? '').split(';')
+
+	return mediaType.trim().toLowerCase() === 'application/json'
+}
+
 /**
  * Reads a JSON body: 415 unless it is sent as JSON, 413 past `maxBytes`, 400 when it is not JSON or
  * does not match the schema, with one issue per field.
@@ -194,7 +201,7 @@ export async function readJson<TSchema extends v.GenericSchema>(
 	schema: TSchema,
 	maxBytes = defaultBodyLimit,
 ): Promise<v.InferOutput<TSchema>> {
-	if (!(request.headers.get('content-type') ?? '').startsWith('application/json')) {
+	if (!isJsonBody(request)) {
 		throw new HttpError(415, {
 			code: 'unsupported_media_type',
 			message: 'Send the body as application/json.',
