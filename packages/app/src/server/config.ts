@@ -27,6 +27,11 @@ export interface Config {
 	 * stockpot must withstand the open internet (D6). Clients only learn whether it is set.
 	 */
 	readonly agentCommand: string | null
+	/**
+	 * The bearer token a scraper sends to read `/metrics`, or `null` when metrics are off and the
+	 * route answers 404. Set in the environment, next to the scraper's own configuration.
+	 */
+	readonly metricsToken: string | null
 }
 
 const defaults = {
@@ -78,12 +83,22 @@ const httpUrl = v.pipe(
 	v.check((value) => isHttpUrl(parseUrl(value)), 'must be an http or https URL'),
 )
 
+/* `/metrics` may face the open internet (D6) and has no backoff, so the token must be too long to
+ * guess: at least 32 characters (`openssl rand -hex 32` prints 64). Printable ASCII without spaces,
+ * so that it goes into an Authorization header as it is. */
+const metricsToken = v.pipe(
+	v.string(),
+	v.minLength(32, 'must be at least 32 characters, such as the output of openssl rand -hex 32'),
+	v.regex(/^[!-~]+$/u, 'must be printable ASCII without spaces'),
+)
+
 const variables = v.object({
 	STOCKPOT_DATA_DIR: v.optional(v.string(), defaults.STOCKPOT_DATA_DIR),
 	PORT: v.optional(port, defaults.PORT),
 	STOCKPOT_PUBLIC_ORIGIN: v.optional(origin),
 	STOCKPOT_SOURCE_URL: v.optional(httpUrl, defaults.STOCKPOT_SOURCE_URL),
 	STOCKPOT_AGENT_COMMAND: v.optional(v.string()),
+	STOCKPOT_METRICS_TOKEN: v.optional(metricsToken),
 })
 
 function toConfig(environment: v.InferOutput<typeof variables>): Config {
@@ -93,6 +108,7 @@ function toConfig(environment: v.InferOutput<typeof variables>): Config {
 		publicOrigin: environment.STOCKPOT_PUBLIC_ORIGIN ?? `http://localhost:${environment.PORT}`,
 		sourceUrl: environment.STOCKPOT_SOURCE_URL,
 		agentCommand: environment.STOCKPOT_AGENT_COMMAND ?? null,
+		metricsToken: environment.STOCKPOT_METRICS_TOKEN ?? null,
 	}
 }
 

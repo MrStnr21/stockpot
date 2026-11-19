@@ -20,6 +20,8 @@ function failureOf(source: Record<string, string>) {
 	}
 }
 
+const metricsToken = 'a'.repeat(32)
+
 describe('parseConfig', () => {
 	describe('with nothing set', () => {
 		it('falls back to the defaults', () => {
@@ -29,6 +31,7 @@ describe('parseConfig', () => {
 				publicOrigin: 'http://localhost:4321',
 				sourceUrl: 'https://github.com/MrStnr21/stockpot',
 				agentCommand: null,
+				metricsToken: null,
 			})
 		})
 
@@ -48,6 +51,7 @@ describe('parseConfig', () => {
 				STOCKPOT_PUBLIC_ORIGIN: 'https://stockpot.example.com/',
 				STOCKPOT_SOURCE_URL: 'https://example.com/stockpot-fork',
 				STOCKPOT_AGENT_COMMAND: 'agent --print --tier {tier}',
+				STOCKPOT_METRICS_TOKEN: metricsToken,
 			})
 
 			expect(config).toEqual({
@@ -56,6 +60,7 @@ describe('parseConfig', () => {
 				publicOrigin: 'https://stockpot.example.com',
 				sourceUrl: 'https://example.com/stockpot-fork',
 				agentCommand: 'agent --print --tier {tier}',
+				metricsToken,
 			})
 		})
 
@@ -73,6 +78,8 @@ describe('parseConfig', () => {
 			['STOCKPOT_PUBLIC_ORIGIN', 'https://stockpot.example.com/app'],
 			['STOCKPOT_PUBLIC_ORIGIN', 'ftp://stockpot.example.com'],
 			['STOCKPOT_SOURCE_URL', 'not a url'],
+			['STOCKPOT_METRICS_TOKEN', 'too-short'],
+			['STOCKPOT_METRICS_TOKEN', `${metricsToken} with spaces`],
 		])('names %s=%s in the message', (name, value) => {
 			const message = failureOf({ [name]: value })
 
