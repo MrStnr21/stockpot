@@ -70,8 +70,16 @@ function boot(): AstroIntegration {
 
 export default defineConfig({
 	output: 'server',
-	adapter: node({ mode: 'standalone' }),
+	// The backstop for every body; API routes read theirs through readJson with a tighter limit.
+	adapter: node({ mode: 'standalone', bodySizeLimit: 1024 * 1024 }),
 	server: { port: 4321 },
+	security: {
+		/* Cross-site requests are refused in src/middleware.ts instead. Without `allowedDomains`, fixed
+		 * at build time, Astro compares Origin with a URL whose host is always localhost, so on plain
+		 * HTTP to a LAN or tailnet name, where browsers send no Sec-Fetch-Site, it refuses the owner's
+		 * own form posts. The middleware compares with STOCKPOT_PUBLIC_ORIGIN, read at runtime. */
+		checkOrigin: false,
+	},
 	integrations: [svelte(), boot()],
 	vite: {
 		plugins: [tailwindcss()],
