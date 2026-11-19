@@ -48,7 +48,13 @@ export function fakeEngine(script: Script): Engine {
 			throw answer
 		}
 
-		return { output: parseOutput(input.output, answer), engine: 'fake', model: null, elapsedMs: 0 }
+		return {
+			output: parseOutput(input.output, answer),
+			engine: 'fake',
+			model: null,
+			elapsedMs: 0,
+			searchSuggestions: null,
+		}
 	}
 
 	return { id: 'fake', suggest: run, explain: run, research: run }
