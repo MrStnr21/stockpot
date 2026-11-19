@@ -6,8 +6,9 @@
  * A stored section is read as a patch over the defaults, so a missing row, or a field added after the
  * row was written, reads as its default. The engine sections are defined in src/server/engines/.
  *
- * Engine keys and the agent command never leave the server: everything sent to a client goes through
- * `toPublicSettings`, which shows each one only as "set" or "not set". They are stored as plain text.
+ * Engine keys never leave the server: everything sent to a client goes through `toPublicSettings`,
+ * which shows each one, and the agent command from the environment, only as "set" or "not set".
+ * Keys are stored as plain text.
  * The nightly batch uses them unattended, so an encryption key would have to live on the same machine
  * as the database, and whoever can read the data directory could read both; the directory's
  * permissions and the owner's backups protect them instead (decided 2026-11-19).
@@ -15,6 +16,7 @@
 import { sql } from 'drizzle-orm'
 import * as v from 'valibot'
 
+import { config } from '#/server/config'
 import type { Db } from '#/server/db/client'
 import { settings as settingsTable } from '#/server/db/schema/settings'
 import {
@@ -171,11 +173,9 @@ export interface PublicSettings {
 }
 
 /** The one serializer for settings sent to a client. */
-export function toPublicSettings({
-	digest,
-	cardLanguage,
-	engines,
-	routing,
-}: Settings): PublicSettings {
-	return { digest, cardLanguage, engines: toPublicEngines(engines), routing }
+export function toPublicSettings(
+	{ digest, cardLanguage, engines, routing }: Settings,
+	agentCommand = config.agentCommand,
+): PublicSettings {
+	return { digest, cardLanguage, engines: toPublicEngines(engines, agentCommand), routing }
 }

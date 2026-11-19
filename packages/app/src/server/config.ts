@@ -20,6 +20,13 @@ export interface Config {
 	readonly publicOrigin: string
 	/** Where the source of this instance is published, as AGPL-3.0 section 13 asks. */
 	readonly sourceUrl: string
+	/**
+	 * The command line that runs the owner's agent (the agent command engine), or `null` when that
+	 * engine is not configured. It is set here and never in settings: a shell command that could be
+	 * edited over HTTP would turn any stolen session into shell access on the owner's machine, and
+	 * stockpot must withstand the open internet (D6). Clients only learn whether it is set.
+	 */
+	readonly agentCommand: string | null
 }
 
 const defaults = {
@@ -76,6 +83,7 @@ const variables = v.object({
 	PORT: v.optional(port, defaults.PORT),
 	STOCKPOT_PUBLIC_ORIGIN: v.optional(origin),
 	STOCKPOT_SOURCE_URL: v.optional(httpUrl, defaults.STOCKPOT_SOURCE_URL),
+	STOCKPOT_AGENT_COMMAND: v.optional(v.string()),
 })
 
 function toConfig(environment: v.InferOutput<typeof variables>): Config {
@@ -84,6 +92,7 @@ function toConfig(environment: v.InferOutput<typeof variables>): Config {
 		port: environment.PORT,
 		publicOrigin: environment.STOCKPOT_PUBLIC_ORIGIN ?? `http://localhost:${environment.PORT}`,
 		sourceUrl: environment.STOCKPOT_SOURCE_URL,
+		agentCommand: environment.STOCKPOT_AGENT_COMMAND ?? null,
 	}
 }
 

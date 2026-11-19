@@ -5,6 +5,8 @@
  * Engine settings (docs/engines.md, "Routing"): each engine's key and the model ID behind each tier,
  * per-category routing overrides and the fallback order. They live next to the contract so the router
  * (ENG-6) and the concrete engines can use them; the settings feature stores them with the rest.
+ * The agent command is not among them: it comes from the environment (`config.agentCommand`), so
+ * routing may name `agent-command`, but that engine is configured only when the variable is set.
  */
 import * as v from 'valibot'
 
@@ -21,7 +23,7 @@ function textOrNull(maxLength: number) {
 	return v.nullable(v.pipe(v.string(), v.trim(), v.nonEmpty(), v.maxLength(maxLength)))
 }
 
-/** An API key or the agent command: write-only, shown to clients as "set" or "not set". */
+/** An API key: write-only, shown to clients as "set" or "not set". */
 const secret = textOrNull(4096)
 
 const modelId = textOrNull(200)
@@ -44,17 +46,11 @@ const fallbackOrder = v.pipe(
 /** The model ID behind each tier; model IDs change often, so they live in settings, never in code. */
 const modelsSchema = v.object({ fast: modelId, standard: modelId, deep: modelId })
 
-const agentCommandSchema = v.object({
-	/** The command line that runs the owner's agent; no vendor default ships (D3). */
-	command: secret,
-})
-
 const geminiSchema = v.object({ apiKey: secret, models: modelsSchema })
 
 const openAiCompatibleSchema = v.object({ baseUrl, apiKey: secret, models: modelsSchema })
 
 export const enginesSchema = v.object({
-	'agent-command': agentCommandSchema,
 	gemini: geminiSchema,
 	'openai-compatible': openAiCompatibleSchema,
 })
@@ -81,7 +77,6 @@ const openAiCompatiblePatch = v.partial(
 
 /** A change to the engines: a field left out keeps its value, `null` clears a key or a model. */
 export const enginesPatchSchema = v.object({
-	'agent-command': v.optional(v.partial(agentCommandSchema)),
 	gemini: v.optional(geminiPatch),
 	'openai-compatible': v.optional(openAiCompatiblePatch),
 })
@@ -96,7 +91,6 @@ const noModels = { fast: null, standard: null, deep: null }
 /** No engine is configured on a new instance. */
 export function defaultEngines(): EngineSettings {
 	return {
-		'agent-command': { command: null },
 		gemini: { apiKey: null, models: noModels },
 		'openai-compatible': { baseUrl: null, apiKey: null, models: noModels },
 	}
@@ -118,7 +112,6 @@ function mergeEngine<TEngine extends { models: Models }>(
 
 export function applyEnginesPatch(engines: EngineSettings, patch: EnginesPatch): EngineSettings {
 	return {
-		'agent-command': { ...engines['agent-command'], ...patch['agent-command'] },
 		gemini: mergeEngine(engines.gemini, patch.gemini),
 		'openai-compatible': mergeEngine(engines['openai-compatible'], patch['openai-compatible']),
 	}
@@ -126,7 +119,25 @@ export function applyEnginesPatch(engines: EngineSettings, patch: EnginesPatch):
 
 export type SecretState = 'set' | 'not set'
 
-/** Engine settings as they may leave the server: every key reduced to its state. */
+/**
+ * The engines that can take a call: the agent command when its variable is set, Gemini with a key,
+ * and an OpenAI-compatible endpoint with a base URL (a local model may need no key). The router
+ * skips the rest, in routing and in the fallback order.
+ */
+export function configuredEngines(
+	engines: EngineSettings,
+	agentCommand: string | null,
+): EngineId[] {
+	const isConfigured = {
+		'agent-command': agentCommand !== null,
+		gemini: engines.gemini.apiKey !== null,
+		'openai-compatible': engines['openai-compatible'].baseUrl !== null,
+	} satisfies Record<EngineId, boolean>
+
+	return engineIds.filter((id) => isConfigured[id])
+}
+
+/** Engine settings as they may leave the server: each key, and the agent command, as its state. */
 export interface PublicEngines {
 	'agent-command': { command: SecretState }
 	gemini: { apiKey: SecretState; models: Models }
@@ -141,12 +152,15 @@ function stateOf(value: string | null): SecretState {
  * Rebuilds each engine field by field, so a field added to an engine later stays on the server
  * until it is added here. The settings feature's `toPublicSettings` is its only caller.
  */
-export function toPublicEngines(engines: EngineSettings): PublicEngines {
+export function toPublicEngines(
+	engines: EngineSettings,
+	agentCommand: string | null,
+): PublicEngines {
 	const { gemini } = engines
 	const openAiCompatible = engines['openai-compatible']
 
 	return {
-		'agent-command': { command: stateOf(engines['agent-command'].command) },
+		'agent-command': { command: stateOf(agentCommand) },
 		gemini: { apiKey: stateOf(gemini.apiKey), models: gemini.models },
 		'openai-compatible': {
 			baseUrl: openAiCompatible.baseUrl,

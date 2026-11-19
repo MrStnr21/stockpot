@@ -39,10 +39,14 @@ variable when one is invalid. Every other setting is changed in the app and stor
 | `HOST`                   | `localhost`                            | The address the server listens on; `0.0.0.0` for every interface                                                           |
 | `STOCKPOT_PUBLIC_ORIGIN` | `http://localhost:` and the port       | The address you open stockpot at, such as `https://stockpot.example.ts.net`; set it when that is not the default           |
 | `STOCKPOT_SOURCE_URL`    | `https://github.com/MrStnr21/stockpot` | Where the source of your instance is published; point it at your fork if you change the code, as the AGPL asks (see below) |
+| `STOCKPOT_AGENT_COMMAND` | unset                                  | The command line that runs your agent for the agent command engine; that engine is configured only when this is set        |
 
-Engine keys and the agent command are stored in the database as plain text and never sent back to
-a browser, so keep the data directory readable only by the account that runs stockpot, and treat its
-backups the same way.
+The agent command is set only here, never in the app: a shell command that could be edited over
+HTTP would turn any stolen session into shell access on your machine, and stockpot is built to
+stay safe on the open internet. The app shows only whether it is set.
+
+Engine keys are stored in the database as plain text and never sent back to a browser, so keep the
+data directory readable only by the account that runs stockpot, and treat its backups the same way.
 
 ## License
 

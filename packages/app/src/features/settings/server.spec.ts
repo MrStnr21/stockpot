@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
 import { beforeEach, describe, expect, it } from 'bun:test'
-import { configuredSettingsFactory } from '#tests/factories/settings'
+import { agentCommand, configuredSettingsFactory } from '#tests/factories/settings'
 import { createTestDb, type TestDb } from '#tests/setup/db'
 import * as v from 'valibot'
 
@@ -18,13 +18,11 @@ import {
 	type Settings,
 } from './server'
 
-/** Every key and the agent command in the settings, the values no client may ever receive. */
+/** Every key in the settings, the values no client may ever receive. */
 function secretsOf({ engines }: Settings) {
-	return [
-		engines['agent-command'].command,
-		engines.gemini.apiKey,
-		engines['openai-compatible'].apiKey,
-	].filter((secret) => secret !== null)
+	return [engines.gemini.apiKey, engines['openai-compatible'].apiKey].filter(
+		(secret) => secret !== null,
+	)
 }
 
 describe('settings', () => {
@@ -129,32 +127,35 @@ describe('settings', () => {
 
 	describe('toPublicSettings', () => {
 		let configured: Settings
+		let command: string
 
 		beforeEach(async () => {
 			await updateSettings(db, configuredSettingsFactory.build())
 			configured = await readSettings(db)
+			command = agentCommand()
 		})
 
-		it('contains no key, at any depth', () => {
-			const serialized = JSON.stringify(toPublicSettings(configured))
+		it('contains no key and not the agent command, at any depth', () => {
+			const serialized = JSON.stringify(toPublicSettings(configured, command))
+			const secrets = [...secretsOf(configured), command]
 
-			expect(secretsOf(configured)).toHaveLength(3)
+			expect(secrets).toHaveLength(3)
 
-			for (const secret of secretsOf(configured)) {
+			for (const secret of secrets) {
 				expect(serialized).not.toContain(secret)
 			}
 		})
 
-		it('shows each key as set', () => {
-			expect(toPublicSettings(configured).engines).toMatchObject({
+		it('shows each key and the agent command as set', () => {
+			expect(toPublicSettings(configured, command).engines).toMatchObject({
 				'agent-command': { command: 'set' },
 				gemini: { apiKey: 'set' },
 				'openai-compatible': { apiKey: 'set' },
 			})
 		})
 
-		it('shows a missing key as not set', () => {
-			expect(toPublicSettings(defaultSettings()).engines).toMatchObject({
+		it('shows a missing key and a missing agent command as not set', () => {
+			expect(toPublicSettings(defaultSettings(), null).engines).toMatchObject({
 				'agent-command': { command: 'not set' },
 				gemini: { apiKey: 'not set' },
 				'openai-compatible': { apiKey: 'not set' },
@@ -162,7 +163,7 @@ describe('settings', () => {
 		})
 
 		it('keeps everything that is not a key', () => {
-			const { engines, ...rest } = toPublicSettings(configured)
+			const { engines, ...rest } = toPublicSettings(configured, command)
 
 			expect(rest).toEqual({
 				digest: configured.digest,

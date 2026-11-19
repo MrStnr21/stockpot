@@ -28,6 +28,7 @@ describe('parseConfig', () => {
 				port: 4321,
 				publicOrigin: 'http://localhost:4321',
 				sourceUrl: 'https://github.com/MrStnr21/stockpot',
+				agentCommand: null,
 			})
 		})
 
@@ -46,6 +47,7 @@ describe('parseConfig', () => {
 				PORT: '8080',
 				STOCKPOT_PUBLIC_ORIGIN: 'https://stockpot.example.com/',
 				STOCKPOT_SOURCE_URL: 'https://example.com/stockpot-fork',
+				STOCKPOT_AGENT_COMMAND: 'agent --print --tier {tier}',
 			})
 
 			expect(config).toEqual({
@@ -53,6 +55,7 @@ describe('parseConfig', () => {
 				port: 8080,
 				publicOrigin: 'https://stockpot.example.com',
 				sourceUrl: 'https://example.com/stockpot-fork',
+				agentCommand: 'agent --print --tier {tier}',
 			})
 		})
 
