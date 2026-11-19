@@ -254,12 +254,16 @@ export function createOpenAiCompatibleEngine({ db, settings }: OpenAiCompatibleO
 		input: Redacted<EngineInput & { readonly output: OutputFormat<TSchema> }>,
 		options: RunOptions,
 	) {
-		return inTurn(options.signal, async () => {
-			const endpoint = endpointFor(settings(), options.tier)
-			const { model } = endpoint
-			const record = { db, engine: engineId, task: input.task, jobId: options.jobId ?? null, model }
+		const record = { db, engine: engineId, task: input.task, jobId: options.jobId ?? null }
 
-			return recordRun(record, async (report) => {
+		return inTurn(options.signal, async () =>
+			recordRun(record, async (report) => {
+				const current = settings()
+
+				// Recorded even when the base URL is missing, so the row says what the call was for.
+				report.model = current.models[options.tier]
+
+				const endpoint = endpointFor(current, options.tier)
 				const reply = await post(endpoint.url, requestFor(input, endpoint), options)
 
 				if (reply.status < 200 || reply.status > 299) {
@@ -267,8 +271,8 @@ export function createOpenAiCompatibleEngine({ db, settings }: OpenAiCompatibleO
 				}
 
 				return readCompletion(input.output, reply.text, report)
-			})
-		})
+			}),
+		)
 	}
 
 	return { id: engineId, suggest: run, explain: run, research: run }

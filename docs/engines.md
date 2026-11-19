@@ -286,7 +286,7 @@ ENG-5) posts to `<base URL>/chat/completions` on any endpoint that speaks that A
 
 - **Settings only.** The base URL, the key and the model for each tier are read from settings at
   every call, so switching provider is a settings change. The key is optional, for a local model; a
-  call fails with an ordinary error when the base URL or the tier's model is not set.
+  call fails with an ordinary error, and records its run, when the base URL or the tier's model is not set.
 - **Text only.** It cannot search or open pages, so the prompt asks it to leave every list of
   sources empty, and it writes from what the call carries, such as the earlier cards.
 - **Strict schema.** The format's schema goes in `response_format` as `json_schema` with `strict`,
