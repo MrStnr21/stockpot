@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
-import { afterEach, beforeEach, describe, expect, it, setSystemTime } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, it, mock, setSystemTime } from 'bun:test'
 import { faker } from '@faker-js/faker'
 import { sendThroughMiddleware, signedInInstance, type SignedInInstance } from '#tests/setup/auth'
-import { nextRequestCookies } from '#tests/setup/cookies'
+import { createCookieJar, nextRequestCookies } from '#tests/setup/cookies'
 import { createTestDb, type TestDb } from '#tests/setup/db'
 
+import { createAuth } from '#/server/auth'
 import { devices, owner } from '#/server/db/schema/auth'
 import { route, type RouteContext } from '#/server/http'
 
@@ -259,6 +260,30 @@ describe('devices', () => {
 			const response = await post({ origin: publicOrigin }, true)
 
 			expect(await response.json()).toEqual({ id: 1, via: 'session' })
+		})
+
+		describe('after the owner is deleted and a new owner is created', () => {
+			beforeEach(async () => {
+				const announce = mock<(message: string) => void>()
+				const auth = createAuth({ db, publicOrigin, announce })
+
+				db.delete(owner).run()
+				auth.needsSetup()
+
+				const [message] = announce.mock.calls[0] ?? ['']
+				const code = /setup code (?<code>\S+)\./u.exec(message)?.groups?.code ?? ''
+
+				await auth.setUp(createCookieJar(), {
+					code,
+					password: faker.internet.password({ length: 16 }),
+				})
+			})
+
+			it('answers 401 to the old token, whose device is gone', async () => {
+				const response = await post({ authorization: `Bearer ${created.token}` })
+
+				expect([response.status, listDevices(db)]).toEqual([401, []])
+			})
 		})
 	})
 

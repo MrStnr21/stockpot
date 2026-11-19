@@ -94,8 +94,8 @@ reach it. The code stops working once the owner exists, and a restart replaces i
   restarts.
 - **A forgotten password.** Stop stockpot, delete the owner with
   `sqlite3 <data directory>/stockpot.db "DELETE FROM owner"`, and start it again: it prints a new
-  setup code, and creating the owner again ends every old session. Device tokens sign nobody in
-  while there is no owner, and work again once it exists.
+  setup code, and creating the owner again ends every old session and revokes every device token,
+  so each device must be paired again with a new token.
 
 ## Health, logs and metrics
 

@@ -19,6 +19,7 @@ import {
 	listDevices,
 	presentedDeviceToken,
 	resolveDevice,
+	revokeAllDevices,
 	revokeDevice,
 	type CreatedDevice,
 	type Device,
@@ -106,6 +107,14 @@ function printToLog(message: string) {
 	log.info(message)
 }
 
+function deviceTokens(db: Db): DeviceTokens {
+	return {
+		create: (name) => createDevice(db, name),
+		list: () => listDevices(db),
+		revoke: (id) => revokeDevice(db, id),
+	}
+}
+
 export function createAuth({ db, publicOrigin, announce = printToLog }: AuthOptions): Auth {
 	const cookie = sessionCookie(publicOrigin)
 	const browser = authCookie(publicOrigin, 'browser')
@@ -168,8 +177,9 @@ export function createAuth({ db, publicOrigin, announce = printToLog }: AuthOpti
 					return false
 				}
 
-				// Sessions of an owner deleted by hand, to reset a forgotten password, end with it.
+				// Sessions and device tokens of an owner deleted by hand (a password reset) end with it.
 				endAllSessions(tx)
+				revokeAllDevices(tx)
 				replaceSession({ db: tx, cookies, cookie })
 				rememberBrowser({ db: tx, cookies, cookie: browser })
 
@@ -240,11 +250,7 @@ export function createAuth({ db, publicOrigin, announce = printToLog }: AuthOpti
 			})
 		},
 
-		devices: {
-			create: (name) => createDevice(db, name),
-			list: () => listDevices(db),
-			revoke: (id) => revokeDevice(db, id),
-		},
+		devices: deviceTokens(db),
 	}
 }
 

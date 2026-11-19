@@ -93,6 +93,14 @@ export function revokeDevice(db: Queryable, id: number): boolean {
 	return db.delete(devices).where(eq(devices.id, id)).run().changes > 0
 }
 
+/**
+ * Deletes every device, as creating an owner does: whoever creates the new owner may not be the person
+ * who paired those devices, so no token issued before signs the new owner in.
+ */
+export function revokeAllDevices(db: Queryable): void {
+	db.delete(devices).run()
+}
+
 const bearerPattern = /^Bearer +(?<token>\S+) *$/iu
 
 /**
