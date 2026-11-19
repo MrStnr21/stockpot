@@ -6,8 +6,9 @@ import { dirname } from 'node:path'
 import { faker } from '@faker-js/faker'
 import { expect, test } from '@playwright/test'
 
-// A server of its own, on a fresh data directory, so the owner it creates is gone after the test.
-const port = '4402'
+/* A server of its own, on a fresh data directory, so the owner it creates is gone after the test. Its
+ * port is derived from the shared server's (playwright.config.ts), so setting E2E_PORT moves both. */
+const port = String(Number(env.E2E_PORT ?? '4400') + 2)
 
 const origin = `http://127.0.0.1:${port}`
 

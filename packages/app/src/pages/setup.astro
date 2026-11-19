@@ -30,6 +30,7 @@ async function handle(): Promise<Response | string | undefined> {
 
 	if (!form.success) {
 		Astro.response.status = 400
+		Astro.response.statusText = 'Bad Request'
 
 		return form.issues[0].message
 	}
@@ -41,6 +42,7 @@ async function handle(): Promise<Response | string | undefined> {
 	}
 
 	Astro.response.status = 403
+	Astro.response.statusText = 'Forbidden'
 
 	return 'That is not the setup code in the server log.'
 }

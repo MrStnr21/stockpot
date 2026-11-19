@@ -30,6 +30,7 @@ async function handle(): Promise<Response | string | undefined> {
 
 	if (!form.success) {
 		Astro.response.status = 400
+		Astro.response.statusText = 'Bad Request'
 
 		return form.issues[0].message
 	}
@@ -46,12 +47,14 @@ async function handle(): Promise<Response | string | undefined> {
 
 	if (result.status === 'throttled') {
 		Astro.response.status = 429
+		Astro.response.statusText = 'Too Many Requests'
 		Astro.response.headers.set('retry-after', String(result.retryAfter))
 
 		return `Too many wrong passwords. Try again in ${result.retryAfter} seconds.`
 	}
 
 	Astro.response.status = 401
+	Astro.response.statusText = 'Unauthorized'
 
 	return 'That password is wrong.'
 }

@@ -171,6 +171,7 @@ function rotate(context: SessionContext & { db: Db }, session: SessionRow, now: 
 			.where(eq(sessions.tokenHash, session.tokenHash))
 			.run()
 		startSession({ ...context, db: tx }, now)
+		pruneSessions(tx, now)
 		context.onRotate?.(tx, now)
 	})
 }
