@@ -4,7 +4,7 @@
 import { insertJob, requeueInterrupted } from './queue'
 import { toPlan } from './schedules'
 import type { JobDefinition, Runner, RunnerHealth, RunnerOptions } from './types'
-import { planSchedules, planWake, type Worker } from './worker'
+import { planSchedules, planWake, stopWorker, type Worker } from './worker'
 
 function registerJobs(jobs: readonly JobDefinition<never>[]) {
 	const handlers = new Map<string, JobDefinition<never>>()
@@ -69,11 +69,7 @@ export function createRunner({
 		},
 
 		async stop() {
-			worker.running = false
-			clearTimeout(worker.timer)
-			delete worker.timer
-			worker.stopping.abort()
-			await worker.draining
+			await stopWorker(worker)
 		},
 
 		async idle() {

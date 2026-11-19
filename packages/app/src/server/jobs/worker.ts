@@ -37,6 +37,8 @@ export interface Worker {
 	draining?: Promise<void>
 	/** Set from a database error until the worker next gets through the queue. */
 	failure?: Failure
+	/** The stop that gave up waiting for the job in hand: that job writes nothing more. */
+	abandoned?: AbortController
 }
 
 const defaultMaxAttempts = 5
@@ -44,6 +46,11 @@ const defaultMaxAttempts = 5
 const firstRetryDelay = 30_000
 
 const longestRetryDelay = 3_600_000
+
+const defaultTimeout = 30 * 60_000
+
+// How long a stop waits for the job in hand before it leaves the job for the next start.
+const stopWait = 10_000
 
 const firstFailureDelay = 30_000
 
@@ -79,15 +86,27 @@ async function execute(worker: Worker, job: JobRow) {
 		return
 	}
 
-	const { signal } = worker.stopping
+	const { stopping } = worker
+	const timeout = handler.timeout ?? defaultTimeout
+	const timedOut = new AbortController()
+	const { promise: expired, reject: expire } = Promise.withResolvers<never>()
+	const signal = AbortSignal.any([stopping.signal, timedOut.signal])
+
+	// A handler that never settles is left behind when its time is up, so it cannot stall the queue.
+	const timer = setTimeout(() => {
+		timedOut.abort()
+		expire(new Error(`Timed out after ${timeout / 1000} s`))
+	}, timeout)
 
 	try {
 		// SAFETY: enqueue stored this payload for this kind, typed by the same definition.
 		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- See the SAFETY note above.
-		await handler.run(job.payload as never, { id: job.id, attempt: job.attempts, signal })
+		const run = handler.run(job.payload as never, { id: job.id, attempt: job.attempts, signal })
+
+		await Promise.race([run, expired])
 	} catch (error) {
 		// The row stays running, so the next start requeues it as it would after a crash.
-		if (signal.aborted) {
+		if (stopping.signal.aborted) {
 			return
 		}
 
@@ -102,9 +121,13 @@ async function execute(worker: Worker, job: JobRow) {
 		}
 
 		return
+	} finally {
+		clearTimeout(timer)
 	}
 
-	finishJob(worker.db, job.id, new Date())
+	if (worker.abandoned !== stopping) {
+		finishJob(worker.db, job.id, new Date())
+	}
 }
 
 function claimAndPlan(worker: Worker, db: Queryable) {
@@ -224,4 +247,35 @@ export function planSchedules(worker: Worker): void {
 	}
 
 	planWake(worker)
+}
+
+async function settlesWithin(promise: Promise<void>, milliseconds: number) {
+	const { promise: late, resolve } = Promise.withResolvers<boolean>()
+
+	const timer = setTimeout(() => {
+		resolve(false)
+	}, milliseconds)
+
+	const settled = await Promise.race([promise.then(() => true), late])
+
+	clearTimeout(timer)
+
+	return settled
+}
+
+/*
+ * Takes no new job, aborts the one in hand and waits up to 10 s for its handler. A job still in hand
+ * then stays running, and the next start requeues it as it would after a crash.
+ */
+export async function stopWorker(worker: Worker): Promise<void> {
+	const { draining, stopping } = worker
+
+	worker.running = false
+	clearTimeout(worker.timer)
+	delete worker.timer
+	stopping.abort()
+
+	if (draining !== undefined && !(await settlesWithin(draining, stopWait))) {
+		worker.abandoned = stopping
+	}
 }

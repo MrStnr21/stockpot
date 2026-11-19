@@ -10,7 +10,10 @@ export interface JobContext {
 	id: number
 	/** 1 on the first run; a run that a restart interrupted counts too. */
 	attempt: number
-	/** Aborted when the runner stops. A run that ends early because of it starts again on the next start. */
+	/**
+	 * Aborted when the run times out, which counts as a failed attempt, or when the runner stops, after
+	 * which the job runs again on the next start.
+	 */
 	signal: AbortSignal
 }
 
@@ -23,6 +26,8 @@ export interface JobDefinition<Payload> {
 	kind: string
 	/** Runs before the job is marked failed, the first one included. Default 5. */
 	maxAttempts?: number
+	/** Milliseconds a run may take before it counts as a failed attempt. Default 30 minutes: research runs up to 15. */
+	timeout?: number
 	/** The payload is stored as JSON, so it holds plain data: no dates, maps or class instances. */
 	run: (payload: Payload, context: JobContext) => Promise<void>
 }

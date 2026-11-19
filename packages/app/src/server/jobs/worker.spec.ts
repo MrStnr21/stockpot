@@ -123,6 +123,61 @@ describe('worker', () => {
 			expect(runner.health()).toEqual({ status: 'healthy' })
 		})
 	})
+	describe('when a handler never settles', () => {
+		let sqlite: Database
+		let db: TestDb
+		let runner: Runner
+		let signals: AbortSignal[]
+
+		async function stopWithinTenSeconds() {
+			const stopped = runner.stop()
+
+			jest.advanceTimersByTime(10_000)
+			await stopped
+		}
+
+		beforeEach(async () => {
+			jest.useFakeTimers({ now: new Date('2026-11-18T12:00:00Z') })
+			;({ sqlite, db } = await createTestDb())
+			signals = []
+
+			const research: JobDefinition<object> = {
+				kind: 'research',
+				timeout: 60_000,
+				run: async (_payload, { signal }) => {
+					signals.push(signal)
+					await Promise.withResolvers<never>().promise
+				},
+			}
+
+			runner = createRunner({ db, jobs: [research] })
+			runner.enqueue(research, {})
+			runner.start()
+			jest.advanceTimersByTime(0)
+		})
+
+		afterEach(async () => {
+			await stopWithinTenSeconds()
+			sqlite.close()
+		})
+
+		it('fails the attempt when its timeout passes and queues the job again', async () => {
+			await advanceBy(runner, 60_000)
+
+			expect(signals[0]?.aborted).toBe(true)
+			expect(jobRows(db)).toMatchObject([
+				{ status: 'queued', attempts: 1, lastError: 'Timed out after 60 s' },
+			])
+		})
+
+		it('stops within 10 seconds and leaves the job running for the next start', async () => {
+			await stopWithinTenSeconds()
+
+			expect(signals[0]?.aborted).toBe(true)
+			expect(jobRows(db)).toMatchObject([{ status: 'running', attempts: 1 }])
+		})
+	})
+
 	describe('with jobs left running when the process stopped', () => {
 		let db: TestDb
 		let run: Handler<object>
