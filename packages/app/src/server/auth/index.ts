@@ -29,7 +29,7 @@ import {
 } from './sessions'
 import { secretsMatch } from './tokens'
 
-export { passwordSchema } from './owner'
+export { setupFormSchema, signInFormSchema } from './owner'
 
 export interface AuthOptions {
 	readonly db: Db

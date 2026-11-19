@@ -19,6 +19,34 @@ export const passwordSchema = v.pipe(
 	v.maxLength(1000, 'Use at most 1,000 characters.'),
 )
 
+/** The setup form: the code from the server log and the owner's new password, typed twice. */
+const setupCodeSchema = v.pipe(
+	v.string(),
+	v.nonEmpty('Enter the setup code from the server log.'),
+	v.maxLength(64, 'A setup code is 19 characters long.'),
+)
+
+const setupFields = v.object({
+	code: setupCodeSchema,
+	password: passwordSchema,
+	confirmation: v.string(),
+})
+
+const passwordsMatch = v.check(
+	(input: v.InferOutput<typeof setupFields>) => input.password === input.confirmation,
+	'The passwords do not match.',
+)
+
+export const setupFormSchema = v.pipe(setupFields, v.forward(passwordsMatch, ['confirmation']))
+
+export const signInFormSchema = v.object({
+	password: v.pipe(
+		v.string(),
+		v.nonEmpty('Enter your password.'),
+		v.maxLength(1000, 'A password is at most 1,000 characters long.'),
+	),
+})
+
 export function hasOwner(db: Pick<Db, 'select'>): boolean {
 	return db.select({ id: owner.id }).from(owner).get() !== undefined
 }

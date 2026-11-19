@@ -1,0 +1,90 @@
+---
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 The stockpot authors
+
+import { Wordmark } from '@stockpot/ui/wordmark'
+
+import Layout from '#/layouts/layout.astro'
+import { instanceAuth, signInFormSchema } from '#/server/auth'
+import { readForm } from '#/server/http'
+
+// A placeholder form: the first-run screens are styled in a WEB story.
+
+/** A redirect, or the error to show with the form (none on a first visit). */
+async function handle(): Promise<Response | string | undefined> {
+	const auth = await instanceAuth()
+
+	if (Astro.locals.owner !== null) {
+		return Astro.redirect('/', 303)
+	}
+
+	if (auth.needsSetup()) {
+		return Astro.redirect('/setup', 303)
+	}
+
+	if (Astro.request.method !== 'POST') {
+		return undefined
+	}
+
+	const form = await readForm(Astro.request, signInFormSchema)
+
+	if (!form.success) {
+		Astro.response.status = 400
+
+		return form.issues[0].message
+	}
+
+	const result = await auth.signIn(Astro.cookies, form.output.password)
+
+	if (result.status === 'signed_in') {
+		return Astro.redirect('/', 303)
+	}
+
+	if (result.status === 'no_owner') {
+		return Astro.redirect('/setup', 303)
+	}
+
+	if (result.status === 'throttled') {
+		Astro.response.status = 429
+		Astro.response.headers.set('retry-after', String(result.retryAfter))
+
+		return `Too many wrong passwords. Try again in ${result.retryAfter} seconds.`
+	}
+
+	Astro.response.status = 401
+
+	return 'That password is wrong.'
+}
+
+const outcome = await handle()
+
+if (outcome instanceof Response) {
+	// oxlint-disable-next-line unicorn/prefer-module -- Astro runs the frontmatter as a function, and a page redirects by returning the response.
+	return outcome
+}
+
+const error = outcome
+---
+
+<Layout title="Sign in to stockpot">
+	<main class="mx-auto flex min-h-dvh max-w-xl flex-col justify-center gap-8 px-6">
+		<Wordmark />
+		<form method="post" class="flex flex-col gap-4">
+			<h1 class="text-xl font-semibold">Sign in</h1>
+			{error && <p role="alert">{error}</p>}
+			<label class="flex flex-col gap-1">
+				Password
+				<input
+					name="password"
+					type="password"
+					required
+					autocomplete="current-password"
+					class="rounded border px-3 py-2"
+				/>
+			</label>
+			<button type="submit" class="rounded border px-3 py-2">
+				Sign in
+			</button>
+		</form>
+	</main>
+</Layout>

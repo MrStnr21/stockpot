@@ -12,11 +12,7 @@ export function randomToken(): string {
 }
 
 function sha256(value: string) {
-	const digest = new Uint8Array(32)
-
-	new CryptoHasher('sha256').update(value).digest(digest)
-
-	return digest
+	return new CryptoHasher('sha256').update(value).digest('hex')
 }
 
 /**
@@ -24,21 +20,21 @@ function sha256(value: string) {
  * enough: a slow one would only slow down every request that carries a cookie.
  */
 export function hashToken(token: string): string {
-	return new CryptoHasher('sha256').update(token).digest('hex')
+	return sha256(token)
 }
 
 /**
  * Whether two secrets are equal, in a time that does not depend on where they differ. Both are hashed
- * first, so the comparison always runs over 32 bytes and does not reveal the length either.
+ * first, so the comparison always runs over 64 hex digits and does not reveal the length either.
  */
 export function secretsMatch(given: string, expected: string): boolean {
 	const left = sha256(given)
 	const right = sha256(expected)
 	let difference = 0
 
-	for (const [index, byte] of left.entries()) {
+	for (let index = 0; index < left.length; index += 1) {
 		// oxlint-disable-next-line no-bitwise -- XOR, then OR, is the constant-time comparison.
-		difference |= byte ^ (right[index] ?? 0)
+		difference |= left.charCodeAt(index) ^ right.charCodeAt(index)
 	}
 
 	return difference === 0

@@ -5,11 +5,22 @@
 import { Wordmark } from '@stockpot/ui/wordmark'
 
 import Layout from '#/layouts/layout.astro'
+
+// Sign-in sends a visitor on to setup while the instance has no owner.
+if (Astro.locals.owner === null) {
+	// oxlint-disable-next-line unicorn/prefer-module -- Astro runs the frontmatter as a function, and a page redirects by returning the response.
+	return Astro.redirect('/signin')
+}
 ---
 
 <Layout title="stockpot">
 	<main class="mx-auto flex min-h-dvh max-w-xl flex-col justify-center px-6">
 		<Wordmark tagline="Toss in the scraps of your day. Wake up to broth." />
 		<p class="text-broth-900/70 mt-8">Work in progress: nothing to capture yet.</p>
+		<form method="post" action="/signout" class="mt-8">
+			<button type="submit" class="rounded border px-3 py-2">
+				Sign out
+			</button>
+		</form>
 	</main>
 </Layout>
