@@ -19,7 +19,10 @@ helpers through the `#tests/` alias, such as `#tests/setup/db`.
 ## Spec files
 
 Every unit test is a spec next to the module it tests: `runner.ts` is tested in `runner.spec.ts`,
-and a route `[id].ts` in `[id].spec.ts`. Import the test API from `bun:test`. A spec keeps the
+and a route `[id].ts` in `_[id].spec.ts`. Specs in `src/pages/` start with an underscore because
+Astro serves every file there whose path has no segment starting with one: `[id].spec.ts` would
+become a route of its own and bundle `bun:test` into the server. The route check in
+`src/pages/_routes.spec.ts` fails on such a spec. Import the test API from `bun:test`. A spec keeps the
 import rules of the folder it sits in, and may also import packages, runtime built-ins such as
 `bun:test`, and the helpers in `tests/`, whatever its layer. Only specs and other files in
 `tests/` may import `tests/`; app code never does (see the

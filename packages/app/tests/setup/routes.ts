@@ -14,7 +14,8 @@ function isServed(file: string) {
 
 /**
  * The route check: every problem in the endpoints under a pages folder, one line each. Dot folders
- * such as `.well-known` are scanned too, since Astro serves them.
+ * such as `.well-known` are scanned too, since Astro serves them, and so is a spec that does not
+ * start with `_`, which Astro would serve as a route with `bun:test` in it.
  */
 export async function routeProblems(pagesFolder: string): Promise<string[]> {
 	const files = await Array.fromAsync(
@@ -26,6 +27,10 @@ export async function routeProblems(pagesFolder: string): Promise<string[]> {
 			.filter((file) => isServed(file))
 			.toSorted()
 			.map(async (file) => {
+				if (file.endsWith('.spec.ts')) {
+					return [`${file}: a spec in src/pages must start with _, or Astro serves it as a route`]
+				}
+
 				const module: unknown = await import(join(pagesFolder, file))
 				const exports = v.parse(routeModuleSchema, module)
 

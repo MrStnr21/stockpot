@@ -22,6 +22,8 @@ const fixtures = {
 	'.well-known/security.ts': bare,
 	'_lib/helper.ts': bare,
 	'api/_draft/index.ts': bare,
+	'api/boom.spec.ts': 'throw new Error("a spec Astro would serve")\n',
+	'api/_notes.spec.ts': 'throw new Error("a spec Astro skips")\n',
 }
 
 describe('routeProblems', () => {
@@ -43,9 +45,10 @@ describe('routeProblems', () => {
 		await $`rm -rf ${pagesFolder}`
 	})
 
-	it('reports bare handlers, dot folders included, and skips what Astro does not serve', async () => {
+	it('reports bare handlers and specs Astro would serve, and skips what it does not', async () => {
 		expect(await routeProblems(pagesFolder)).toEqual([
 			'.well-known/security.ts: GET has no route.public or route.authorized',
+			'api/boom.spec.ts: a spec in src/pages must start with _, or Astro serves it as a route',
 		])
 	})
 })
