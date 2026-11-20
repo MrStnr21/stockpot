@@ -47,7 +47,7 @@ Use a Node API only where Bun has no equivalent:
   with the tsrs binary so oxlint keeps its standard streams;
 - `process.kill` with a negative process id in `src/server/engines/agent-process.ts`, which signals
   the agent command's whole process group: a subprocess's own `kill` reaches one process only;
-- `process.once` for `SIGTERM` and `SIGINT` in `src/server/boot.ts`, which stops the job runner
+- `process.once` for `SIGTERM` and `SIGINT` in `src/boot.ts`, which stops the job runner
   before the server exits: Bun has no signal API of its own;
 - configuration files loaded by Node-based tools may read `process.env`.
 

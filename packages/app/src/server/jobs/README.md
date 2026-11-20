@@ -93,7 +93,7 @@ the health check (SRV-7). A handler's own errors stay on its job and do not coun
 seconds for it; a job still in hand stays `running` and is requeued on the next start, as after a
 crash. The runner counts as started until its stop has finished.
 
-[`src/server/boot.ts`](../boot.ts), which the `boot` integration in `astro.config.ts` runs when the
+[`src/boot.ts`](../../boot.ts), which the `boot` integration in `astro.config.ts` runs when the
 built server starts, calls `startRunner()` after it opens the database, and calls `stopRunner()` on
 `SIGTERM` and `SIGINT` before the process exits; the Node adapter installs no signal handlers of its
 own. The dev server does not run `boot.ts`, so no runner works there and `/healthz` reports it as
@@ -103,6 +103,6 @@ Routes reach the runner through `currentRunner()`: the build bundles `runner.ts`
 and `boot.ts` share its module instance. `/healthz` reads `health()` this way, and the first route
 that enqueues will call `enqueue` on it.
 
-`boot.ts` registers no jobs yet. It sits in `server/`, which may not import features, so the first
-story with a feature job moves the start into an entry module that may, and passes the definitions
-and the `timeZone` setting from there.
+`boot.ts` is an entry module, so unlike `server/` it may import features: it passes the runner every
+feature's job definitions, built once in [`src/instance.ts`](../../instance.ts), and the `timeZone`
+setting. The research job is the first.
