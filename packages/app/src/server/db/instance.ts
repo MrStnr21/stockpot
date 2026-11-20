@@ -31,8 +31,8 @@ async function open() {
 
 /**
  * The database of this instance, `stockpot.db` in the data directory, opened on first use and shared
- * by everything in the process. src/server/boot.ts opens it at startup, so a failed migration stops
- * the server before it takes a request.
+ * by everything in the process. src/boot.ts opens it at startup, so a failed migration stops the
+ * server before it takes a request.
  */
 export async function instanceDb(): Promise<Db> {
 	thisProcess.db ??= open()

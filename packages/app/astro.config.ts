@@ -13,13 +13,13 @@ import { defineConfig } from 'astro/config'
 const adapterEntry = '@astrojs/node/server.js'
 
 /*
- * Imports src/server/boot.ts from the adapter's server entry, so the built server runs it on start;
+ * Imports src/boot.ts from the adapter's server entry, so the built server runs it on start;
  * Astro would otherwise load the code behind a request only when the first one arrives. An absolute
  * path, because a `#/` import resolves against the importer's package, here the adapter's. When the
  * entry is never seen, as after an adapter upgrade that renames it, the server build fails.
  */
 function boot(): AstroIntegration {
-	const bootModule = join(import.meta.dirname, 'src/server/boot.ts')
+	const bootModule = join(import.meta.dirname, 'src/boot.ts')
 	let entryId: string | null = null
 	let isInjected = false
 
@@ -56,7 +56,7 @@ function boot(): AstroIntegration {
 								buildEnd(error) {
 									if (error === undefined && !isInjected) {
 										this.error(
-											`stockpot:boot found no ${adapterEntry} in the server build, so src/server/boot.ts would not run at startup. Update adapterEntry in astro.config.ts.`,
+											`stockpot:boot found no ${adapterEntry} in the server build, so src/boot.ts would not run at startup. Update adapterEntry in astro.config.ts.`,
 										)
 									}
 								},

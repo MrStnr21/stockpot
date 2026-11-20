@@ -28,6 +28,8 @@ export const explanations = sqliteTable(
 		language: text('language').notNull(),
 		body: text('body', { mode: 'json' }).$type<unknown>().notNull(),
 		sources: text('sources', { mode: 'json' }).$type<CardSource[]>().notNull().default([]),
+		// Google's grounding terms require showing a Gemini answer's Search Suggestions with it.
+		searchSuggestions: text('search_suggestions'),
 		isUncertain: integer('is_uncertain', { mode: 'boolean' }).notNull().default(false),
 		// Written by a fallback engine; the primary engine redoes it once its limit resets.
 		isDraft: integer('is_draft', { mode: 'boolean' }).notNull().default(false),

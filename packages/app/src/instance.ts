@@ -2,21 +2,29 @@
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
 import { createSuggester, type Suggester } from '#/features/capture/server/suggest'
+import { learnAliases, learnSense } from '#/features/notes/server/learn'
+import { createResearchJob, type ResearchPayload } from '#/features/research/server/pipeline'
 import { readSettings } from '#/features/settings/server'
 import { config } from '#/server/config'
+import type { Db } from '#/server/db/client'
 import { instanceDb } from '#/server/db/instance'
 import { createRouter, type Router } from '#/server/engines/router'
+import { currentRunner } from '#/server/jobs/runner'
+import type { JobDefinition } from '#/server/jobs/types'
+import { log } from '#/server/log'
 
 /*
  * The process's shared services that are built from features: the router reads the settings feature,
- * the suggester belongs to capture. server/ may not import features, so they live in this entry
- * module, opened on first use like the database. One router keeps each engine and Gemini's usage
- * counters once per process; one suggester keeps one cache.
+ * the suggester belongs to capture, the research job composes research, notes and settings. server/
+ * may not import features, so they live in this entry module, opened on first use like the database.
+ * One router keeps each engine and Gemini's usage counters once per process; one suggester keeps one
+ * cache; the runner accepts only the job definition it was started with.
  */
 
 interface ProcessServices {
 	router?: Promise<Router>
 	suggester?: Suggester
+	researchJob?: Promise<JobDefinition<ResearchPayload>>
 }
 
 const thisProcess: ProcessServices = {}
@@ -49,4 +57,52 @@ export async function instanceSuggester(): Promise<Suggester> {
 	})
 
 	return thisProcess.suggester
+}
+
+function queueAgain(job: JobDefinition<ResearchPayload>, payload: ResearchPayload, runAt: Date) {
+	const runner = currentRunner()
+
+	// Only the built server runs a runner (src/boot.ts); without one the note waits for the next queue.
+	if (runner === undefined) {
+		log.warn('No job runner to queue research again', { noteId: payload.noteId })
+
+		return
+	}
+
+	runner.enqueue(job, payload, { runAt })
+}
+
+function buildResearchJob(db: Db): JobDefinition<ResearchPayload> {
+	const job = createResearchJob({
+		db,
+		router: {
+			async explain(input, options) {
+				const router = await instanceRouter()
+
+				return router.explain(input, options)
+			},
+			async research(input, options) {
+				const router = await instanceRouter()
+
+				return router.research(input, options)
+			},
+		},
+		language: () => readSettings(db).cardLanguage,
+		later: (payload, runAt) => {
+			queueAgain(job, payload, runAt)
+		},
+		learn: (termId, { sense, aliases }) => {
+			learnAliases(db, termId, aliases)
+			learnSense(db, termId, sense)
+		},
+	})
+
+	return job
+}
+
+/** The research job src/boot.ts registers, and the one every enqueue must pass. */
+export async function instanceResearchJob(): Promise<JobDefinition<ResearchPayload>> {
+	thisProcess.researchJob ??= instanceDb().then(buildResearchJob)
+
+	return thisProcess.researchJob
 }

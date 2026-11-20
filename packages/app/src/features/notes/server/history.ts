@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
-import { and, count, desc, eq, inArray, isNotNull, isNull, or } from 'drizzle-orm'
+import { and, desc, eq, inArray, isNotNull, isNull, or } from 'drizzle-orm'
 
-import { normalizeTerm, seededAliases, termVariants } from '#/lib/normalize'
+import { normalizeTerm, termVariants } from '#/lib/normalize'
 import type { Db } from '#/server/db/client'
 import { explanations, type CardSource } from '#/server/db/schema/explanations'
 import { aliases, notes, terms, type NoteStatus } from '#/server/db/schema/notes'
@@ -234,66 +234,4 @@ export function matchHistory(db: Db, text: string, isPrivate?: boolean): History
 					: []
 			})
 	})
-}
-
-const aliasLimit = 10
-
-const seededSpellings = seededAliases.flat()
-
-/** Take the write lock before checking ownership, so competing writes cannot claim the same alias. */
-export function learnAliases(db: Db, termId: number, texts: readonly string[]): string[] {
-	return db.transaction(
-		(tx) => {
-			const row = tx.select({ term: terms.term }).from(terms).where(eq(terms.id, termId)).get()
-
-			if (row === undefined) {
-				return []
-			}
-
-			const existing = tx
-				.select({ count: count() })
-				.from(aliases)
-				.where(eq(aliases.termId, termId))
-				.get()
-
-			const remaining = aliasLimit - (existing?.count ?? 0)
-			const reserved = new Set([...seededSpellings, ...termVariants(row.term)])
-			const termWords = row.term.split(' ')
-			const stored: string[] = []
-
-			for (const text of texts) {
-				if (stored.length >= remaining) {
-					break
-				}
-
-				const alias = normalizeTerm(text)
-
-				if (alias === null || alias.length < 3 || termWords.includes(alias)) {
-					continue
-				}
-
-				if (termVariants(alias).some((variant) => reserved.has(variant))) {
-					continue
-				}
-
-				if (findTermRows(tx, alias).some(({ row: match }) => match.id !== termId)) {
-					continue
-				}
-
-				const inserted = tx
-					.insert(aliases)
-					.values({ alias, termId })
-					.onConflictDoNothing()
-					.returning({ alias: aliases.alias })
-					.get()
-
-				if (inserted !== undefined) {
-					stored.push(inserted.alias)
-				}
-			}
-
-			return stored
-		},
-		{ behavior: 'immediate' },
-	)
 }

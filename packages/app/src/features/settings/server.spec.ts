@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
-import { beforeEach, describe, expect, it } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, it, spyOn } from 'bun:test'
 import { agentCommand, configuredSettingsFactory } from '#tests/factories/settings'
 import { createTestDb, type TestDb } from '#tests/setup/db'
 import * as v from 'valibot'
 
 import { settings as settingsTable } from '#/server/db/schema/settings'
+import { log } from '#/server/log'
 
 import {
 	defaultSettings,
@@ -191,13 +192,35 @@ describe('settings', () => {
 			])
 		})
 
-		describe('when a stored zone is invalid', () => {
-			beforeEach(async () => {
-				await db.insert(settingsTable).values({ key: 'digest', value: { timeZone: '+05:00' } })
+		describe('when a stored section is invalid', () => {
+			let warn: ReturnType<typeof spyOn<typeof log, 'warn'>>
+
+			beforeEach(() => {
+				warn = spyOn(log, 'warn').mockImplementation(() => {
+					// The warning is asserted in place of writing to stderr.
+				})
 			})
 
-			it('is never returned', () => {
-				expect(() => readTimeZone(db)).toThrow('Stored settings are invalid: digest.timeZone')
+			afterEach(() => {
+				warn.mockRestore()
+			})
+
+			it.each([
+				[{ timeZone: '+05:00' }, 'digest.timeZone'],
+				[{ timeZone: 'America/New_York', limit: 0 }, 'digest.limit'],
+			] as const)('defaults the digest and warns about %j', (value, path) => {
+				db.insert(settingsTable).values({ key: 'digest', value }).run()
+
+				expect(readTimeZone(db)).toBe(defaultSettings().digest.timeZone)
+				expect(warn.mock.calls).toEqual([['Invalid stored settings', { paths: [path] }]])
+			})
+
+			it('keeps the stored zone when another section is invalid', () => {
+				updateSettings(db, { digest: { timeZone: 'Europe/Berlin' } })
+				db.insert(settingsTable).values({ key: 'cardLanguage', value: 'English' }).run()
+
+				expect(readTimeZone(db)).toBe('Europe/Berlin')
+				expect(warn.mock.calls).toEqual([['Invalid stored settings', { paths: ['cardLanguage'] }]])
 			})
 		})
 	})
