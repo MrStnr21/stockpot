@@ -275,11 +275,21 @@ single category, and set the fallback order.
   the agent command's template receives the tier. Model IDs change often and live in settings; the
   only ones in code are Gemini's starting models for a new instance (see [The Gemini engine](#the-gemini-engine)).
 - **Fallback** happens on `rate_limited` and `auth` only, to the next configured engine in the
-  order; an engine that is not configured is skipped. `research` has no default fallback, because
+  order. An engine that is not configured is skipped, the routed one included: the first configured
+  engine on the path is then the primary. `research` has no fallback beyond that engine, because
   the OpenAI-compatible engine writes from text only and cannot search; the job waits for the reset.
-- **Drafts.** A card from a fallback engine is marked a draft and redone by the primary engine once
-  its limit resets. Drafts apply to cards only: a suggestion is not stored, so one from a fallback
-  engine is simply shown.
+  It still runs on a text-only engine when that is the only one configured.
+- **Remembered limits.** After `rate_limited`, the router keeps the reset in memory for that engine
+  and tier (Gemini counts requests per model) and skips the engine without a call until then. A
+  rejected key is not remembered, so a fixed key works on the next call.
+- **Drafts.** A card from a fallback engine while the primary engine is limited comes back marked a
+  draft, with `redoAt`, the primary engine's reset. The router never stores a card or queues a job:
+  the research feature (RES-1) stores the draft and queues its redo with `runAt: redoAt`, when the
+  call goes to the primary engine again. A card written after the primary engine rejected its key
+  is not a draft: there is no reset to wait for. Drafts apply to cards only: a suggestion is not
+  stored, so one from a fallback engine is simply shown.
+- **One router per process**, built and shared by the feature that first needs it (RES-1 or
+  CAP-3), so each engine and Gemini's usage counters exist once. Settings are read at every call.
 
 ## The Gemini engine
 
