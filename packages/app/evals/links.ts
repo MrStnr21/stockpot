@@ -10,8 +10,8 @@
 import { dns } from 'bun'
 
 import { abortReason } from '#/server/engines/runs'
+import { isIpLiteral, isPublicAddress } from '#/server/links/addresses'
 
-import { isIpLiteral, isPublicAddress } from './addresses'
 import type { CheckResult } from './checks'
 
 export type Lookup = (hostname: string) => Promise<readonly string[]>

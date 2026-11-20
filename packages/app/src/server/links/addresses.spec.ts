@@ -27,6 +27,7 @@ describe('link addresses', () => {
 			'64:ff9b::8.8.8.8',
 			'2002:7f00:1::1',
 			'2002:a00:1::',
+			'2002:c000:201::',
 			'fd00::1',
 			'fe80::1',
 			'fec0::1',
@@ -34,9 +35,28 @@ describe('link addresses', () => {
 			'fe80::1%eth0',
 			'1::2::3',
 			'::ffff:999.0.0.1',
+			'0x7f.0.0.1',
+			'1e2.0.0.1',
+			'1..2.3',
+			'010.0.0.1',
+			'::ffff:0x7f.0.0.1',
 			'localhost',
 		])('refuses %p', (address) => {
 			expect(isPublicAddress(address)).toBe(false)
+		})
+
+		it.each([
+			['192.0.2.255', '192.0.3.0'],
+			['192.88.99.255', '192.88.100.0'],
+			['198.51.100.255', '198.51.101.0'],
+			['203.0.113.255', '203.0.114.0'],
+			['64:ff9b:1:ffff:ffff:ffff:ffff:ffff', '64:ff9b:2::'],
+			['100::', 'ff:ffff:ffff:ffff:ffff:ffff:ffff:ffff'],
+			['2001:1ff:ffff:ffff:ffff:ffff:ffff:ffff', '2001:200::'],
+			['2001:db8:ffff:ffff:ffff:ffff:ffff:ffff', '2001:db9::'],
+			['3fff:fff:ffff:ffff:ffff:ffff:ffff:ffff', '3fff:1000::'],
+		])('refuses %p and allows the address across the prefix boundary', (inside, outside) => {
+			expect([isPublicAddress(inside), isPublicAddress(outside)]).toEqual([false, true])
 		})
 
 		it.each(['93.184.215.14', '172.32.0.1', '2606:4700::1111', '2002:5db8:d70e::1'])(
