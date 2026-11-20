@@ -26,3 +26,17 @@ export const noteRowFactory = Factory.define<
 		context: faker.lorem.sentence(),
 	}
 })
+
+/** The body of a POST /api/notes, as the capture sheet or the Shortcut sends it. */
+export const newNoteFactory = Factory.define<{
+	text: string
+	context?: string | null
+	url?: string | null
+	source?: string
+	categoryId?: number | null
+	private?: boolean
+}>(() => ({
+	text: faker.word.noun(),
+	context: faker.lorem.sentence(),
+	url: faker.internet.url(),
+}))
