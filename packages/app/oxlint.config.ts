@@ -8,7 +8,7 @@ import { componentConfig, specOverride } from '../../tools/lint/base.ts'
 /*
  * Layers from docs/architecture.md ("Dependency rules"). Patterns match whole file paths, and the
  * first layer that matches wins, so the more specific feature layers come before `feature-root`
- * and `entry` takes whatever is left in src/ (pages/, layouts/, middleware.ts).
+ * and `entry` takes whatever is left in src/ (pages/, layouts/, instance.ts, middleware.ts).
  */
 function layer(category: string, pattern: string | string[], capture?: string[]) {
 	return { category, pattern, stopMatching: true, ...(capture && { capture }) }
