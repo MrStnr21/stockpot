@@ -12,6 +12,7 @@ import {
 	defaultSettings,
 	readSettings,
 	readTimeZone,
+	removeCategoryRouting,
 	settingsPatchSchema,
 	toPublicSettings,
 	updateSettings,
@@ -113,6 +114,32 @@ describe('settings', () => {
 			updateSettings(db, { digest: { timeZone: 'America/New_York' } })
 
 			expect(readTimeZone(db)).toBe('America/New_York')
+		})
+	})
+
+	describe('removeCategoryRouting', () => {
+		it('removes just the requested override', () => {
+			const configured = configuredSettingsFactory.build()
+			updateSettings(db, configured)
+			updateSettings(db, {
+				routing: {
+					categories: { ...configured.routing.categories, '7': { engine: 'gemini', tier: 'fast' } },
+				},
+			})
+
+			db.transaction((tx) => {
+				removeCategoryRouting(tx, 7)
+			})
+
+			expect(readSettings(db)).toEqual(configured)
+		})
+
+		it('leaves routing at its defaults when nothing was stored', () => {
+			db.transaction((tx) => {
+				removeCategoryRouting(tx, 7)
+			})
+
+			expect(db.select().from(settingsTable).all()).toEqual([])
 		})
 	})
 

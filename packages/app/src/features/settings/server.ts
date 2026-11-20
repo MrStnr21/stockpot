@@ -13,7 +13,7 @@
  * as the database, and whoever can read the data directory could read both; the directory's
  * permissions and the owner's backups protect them instead (decided 2026-11-19).
  */
-import { sql } from 'drizzle-orm'
+import { and, eq, isNotNull, sql } from 'drizzle-orm'
 import * as v from 'valibot'
 
 import { config } from '#/server/config'
@@ -209,6 +209,17 @@ export function updateSettings(db: Db, patch: SettingsPatch): Settings {
 
 		return next
 	})
+}
+
+/** SQLite may reuse a deleted category's id, so clear its override in the deletion transaction. */
+export function removeCategoryRouting(tx: Queries, categoryId: number): void {
+	const path = `$.categories."${categoryId}"`
+	const { key, value } = settingsTable
+
+	tx.update(settingsTable)
+		.set({ value: sql`json_remove(${value}, ${path})` })
+		.where(and(eq(key, 'routing'), isNotNull(sql`json_type(${value}, ${path})`)))
+		.run()
 }
 
 /**

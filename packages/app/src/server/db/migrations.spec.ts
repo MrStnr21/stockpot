@@ -54,6 +54,23 @@ describe('migrations', () => {
 			expect(tables.map(({ name }) => name)).toEqual(schemaTables)
 		})
 
+		it('seed the built-in categories in display order', () => {
+			const rows = sqlite
+				.query(
+					'SELECT position, name, format, icon, color, instructions FROM categories ORDER BY position',
+				)
+				.values()
+
+			expect(rows).toEqual([
+				[0, 'English', 'vocabulary', 'english', 'english', ''],
+				[1, 'AI', 'comparison', 'ai', 'ai', ''],
+				[2, 'Technology', 'technology', 'tech', 'tech', ''],
+				[3, 'Concept', 'concept', 'concept', 'concept', ''],
+				[4, 'Idea', 'report', 'idea', 'idea', ''],
+				[5, 'Other', 'brief', 'other', 'other', ''],
+			])
+		})
+
 		it('keep the instance to one owner', () => {
 			sqlite.run("INSERT INTO owner (id, password_hash) VALUES (1, 'hash')")
 
