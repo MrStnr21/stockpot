@@ -3,6 +3,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, jest, spyOn } from 'bun:test'
 import { faker } from '@faker-js/faker'
+import { sourceFactory } from '#tests/factories/cards'
 import { categoryRowFactory } from '#tests/factories/categories'
 import { noteRowFactory } from '#tests/factories/notes'
 import { termRowFactory } from '#tests/factories/terms'
@@ -87,6 +88,58 @@ describe('research job', () => {
 
 		expect(harness.gemini.calls).toMatchObject([{ method: 'research', tier: 'deep' }])
 		expect(harness.cardsOf(note.id)).toMatchObject([{ format: 'report', isDraft: false }])
+	})
+
+	describe('source checks', () => {
+		let info: ReturnType<typeof spyOn<typeof log, 'info'>>
+
+		beforeEach(() => {
+			info = spyOn(log, 'info').mockImplementation(() => {
+				// Keep the expected link counts out of the test log.
+			})
+		})
+
+		afterEach(() => {
+			info.mockRestore()
+		})
+
+		it('saves the open source and leaves the card certain when another source is dead', async () => {
+			const term = await termRowFactory.transient({ db: harness.db }).create()
+
+			const note = await noteRowFactory.transient({ db: harness.db }).create({
+				termId: term.id,
+				isPrivate: true,
+			})
+
+			const [deadSource, openSource] = sourceFactory.buildList(2)
+			harness.gemini.sources = [deadSource, openSource]
+			harness.links.set(deadSource.url, { kind: 'dead', reason: 'HTTP 404' })
+
+			await harness.research([note.id])
+
+			expect(harness.cardsOf(note.id)).toMatchObject([
+				{ sources: [openSource], isUncertain: false },
+			])
+			expect(info).toHaveBeenCalledWith('Checked card links', {
+				noteId: note.id,
+				kept: 1,
+				dropped: 1,
+			})
+		})
+
+		it('saves an uncertain card without sources when every source is dead', async () => {
+			const note = await noteRowFactory.transient({ db: harness.db }).create()
+			const sources = sourceFactory.buildList(2)
+			harness.gemini.sources = sources
+
+			for (const { url } of sources) {
+				harness.links.set(url, { kind: 'dead', reason: 'HTTP 404' })
+			}
+
+			await harness.research([note.id])
+
+			expect(harness.cardsOf(note.id)).toMatchObject([{ sources: [], isUncertain: true }])
+		})
 	})
 
 	it('stores a draft while the primary engine is limited and replaces it at the reset', async () => {

@@ -11,6 +11,7 @@ import { instanceDb } from '#/server/db/instance'
 import { createRouter, type Router } from '#/server/engines/router'
 import { currentRunner } from '#/server/jobs/runner'
 import type { JobDefinition } from '#/server/jobs/types'
+import { openLink } from '#/server/links/open-link'
 import { log } from '#/server/log'
 
 /*
@@ -87,6 +88,7 @@ function buildResearchJob(db: Db): JobDefinition<ResearchPayload> {
 				return router.research(input, options)
 			},
 		},
+		openLink: async (url, signal) => openLink(url, { signal }),
 		language: () => readSettings(db).cardLanguage,
 		later: (payload, runAt) => {
 			queueAgain(job, payload, runAt)

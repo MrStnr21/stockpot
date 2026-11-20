@@ -16,6 +16,7 @@ import {
 	type LearnedCard,
 	type ResearchPayload,
 } from '#/features/research/server/pipeline'
+import type { Source } from '#/features/research/shared/formats'
 import { explanations } from '#/server/db/schema/explanations'
 import { notes, type NoteStatus } from '#/server/db/schema/notes'
 import {
@@ -32,6 +33,7 @@ import { defaultRouting, type EngineId } from '#/server/engines/settings'
 import type { Priority } from '#/server/jobs/queue'
 import { createRunner } from '#/server/jobs/runner'
 import type { JobDefinition, Runner } from '#/server/jobs/types'
+import type { LinkOutcome } from '#/server/links/open-link'
 
 export interface EngineCall {
 	readonly method: 'explain' | 'research'
@@ -44,6 +46,7 @@ export interface FakeEngine {
 	readonly calls: EngineCall[]
 	/** The cards it answered with, in order. */
 	readonly answers: LearnedCard[]
+	sources?: Source[]
 	failure: Error | null
 	/** Runs inside each call, before it answers. */
 	during: () => void | Promise<void>
@@ -75,12 +78,13 @@ function fakeEngine(id: EngineId) {
 				throw state.failure
 			}
 
-			const aliases = [faker.word.noun()]
+			const { sources } = state
+			const params = { aliases: [faker.word.noun()], ...(sources !== undefined && { sources }) }
 
 			const answer =
 				input.output.id === 'report'
-					? reportCardFactory.build({ aliases })
-					: briefCardFactory.build({ aliases })
+					? reportCardFactory.build(params)
+					: briefCardFactory.build(params)
 
 			state.answers.push(answer)
 
@@ -107,6 +111,7 @@ export interface ResearchHarness {
 	readonly job: JobDefinition<ResearchPayload>
 	readonly gemini: FakeEngine
 	readonly openAi: FakeEngine
+	readonly links: Map<string, LinkOutcome>
 	readonly statusOf: (noteId: number) => NoteStatus | undefined
 	readonly cardsOf: (noteId: number) => (typeof explanations.$inferSelect)[]
 	readonly later: Mock<(payload: ResearchPayload, runAt: Date) => void>
@@ -123,6 +128,7 @@ export async function startResearch(): Promise<ResearchHarness> {
 	const { engines } = configuredSettingsFactory.build()
 	const gemini = fakeEngine('gemini')
 	const openAi = fakeEngine('openai-compatible')
+	const links = new Map<string, LinkOutcome>()
 
 	const router = createRouter({
 		db,
@@ -144,7 +150,16 @@ export async function startResearch(): Promise<ResearchHarness> {
 	})
 
 	const { cardLanguage } = configuredSettingsFactory.build()
-	const job = createResearchJob({ db, router, language: () => cardLanguage, later, learn })
+
+	const job = createResearchJob({
+		db,
+		router,
+		language: () => cardLanguage,
+		later,
+		learn,
+		openLink: async (url) => links.get(url) ?? { kind: 'open', status: 200 },
+	})
+
 	const runner = createRunner({ db, jobs: [job] })
 
 	runner.start()
@@ -186,6 +201,7 @@ export async function startResearch(): Promise<ResearchHarness> {
 		job,
 		gemini: gemini.state,
 		openAi: openAi.state,
+		links,
 		later,
 		learn,
 		statusOf,

@@ -14,9 +14,11 @@ import { EngineError } from '#/server/engines/contract'
 import type { Router } from '#/server/engines/router'
 import type { Priority } from '#/server/jobs/queue'
 import type { JobContext, JobDefinition } from '#/server/jobs/types'
+import type { LinkOutcome } from '#/server/links/open-link'
 import { log } from '#/server/log'
 
 import { assemble, type ResearchTask } from './assemble'
+import { checkSources } from './links'
 import { save } from './save'
 
 export interface ResearchPayload {
@@ -32,6 +34,7 @@ export interface LearnedCard {
 export interface ResearchDependencies {
 	readonly db: Db
 	readonly router: Pick<Router, 'explain' | 'research'>
+	readonly openLink: (url: string, signal: AbortSignal) => Promise<LinkOutcome>
 	/** The card language from settings, read when a run starts. */
 	readonly language: () => string
 	/** Queues the same job again at `runAt`: a draft's redo, or a run after an engine's reset. */
@@ -157,7 +160,17 @@ async function research(
 		}
 
 		const result = await callRouter(deps.router, task, context)
-		const saved = save(db, task, result)
+		const card = await checkSources(result.output, { open: deps.openLink, signal: context.signal })
+		context.signal.throwIfAborted()
+
+		const kept = card.sources.length
+		const dropped = result.output.sources.length - kept
+
+		if (dropped > 0) {
+			log.info('Checked card links', { noteId, kept, dropped })
+		}
+
+		const saved = save(db, task, { ...result, output: card })
 
 		if (saved === null) {
 			return
@@ -169,7 +182,7 @@ async function research(
 
 		// Depth is always 1 here, so every card names its sense and aliases.
 		if (saved.termId !== null) {
-			learnFrom(deps, { noteId, termId: saved.termId, card: result.output })
+			learnFrom(deps, { noteId, termId: saved.termId, card })
 		}
 	} catch (error) {
 		if (!(error instanceof EngineError && settleEngineFailure(deps, payload, error))) {

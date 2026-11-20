@@ -6,11 +6,22 @@
  * private, link-local or otherwise reserved, in any IPv4 or IPv6 notation.
  */
 
-export function ipv4Parts(address: string): number[] | null {
-	const parts = address.split('.').map(Number)
-	const isValid = parts.length === 4 && parts.every((part) => Number.isInteger(part) && part <= 255)
+/*
+ * Plain dotted decimal only. `Number` alone would also take "0x7f", "1e2" or an empty group, and a
+ * string that passed as an address here but not in a URL would let the pinned request resolve a name.
+ */
+const decimalGroup = /^(?:0|[1-9]\d{0,2})$/u
 
-	return isValid ? parts : null
+export function ipv4Parts(address: string): number[] | null {
+	const groups = address.split('.')
+
+	if (groups.length !== 4 || !groups.every((group) => decimalGroup.test(group))) {
+		return null
+	}
+
+	const parts = groups.map(Number)
+
+	return parts.every((part) => part <= 255) ? parts : null
 }
 
 // Not public, from the IANA special-purpose registry; 224.0.0.0/3 is multicast and reserved.
@@ -22,8 +33,12 @@ const reservedIpv4: readonly (readonly [string, number])[] = [
 	['169.254.0.0', 16],
 	['172.16.0.0', 12],
 	['192.0.0.0', 24],
+	['192.0.2.0', 24],
+	['192.88.99.0', 24],
 	['192.168.0.0', 16],
 	['198.18.0.0', 15],
+	['198.51.100.0', 24],
+	['203.0.113.0', 24],
 	['224.0.0.0', 3],
 ]
 
@@ -92,27 +107,45 @@ export function ipv6Hextets(address: string): number[] | null {
 	return missing >= 1 ? [...head, ...Array.from({ length: missing }, () => 0), ...rest] : null
 }
 
-/*
- * IPv6 ranges that are not public, from the IANA special-purpose registry: ::/96 (unspecified,
- * loopback and IPv4-compatible), ::ffff:0:0/96 (IPv4-mapped, in either notation), 64:ff9b::/96
- * (NAT64), and everything from fc00:: up (unique local, link-local, site-local, multicast). 2002::/16
- * (6to4) carries an IPv4 address, which must be public itself.
- */
-const reservedPrefixes = new Set(
+// Block special-purpose ranges and address formats that can reach an embedded IPv4 address.
+const reservedIpv6 = (
 	[
-		[0, 0, 0, 0, 0, 0],
-		[0, 0, 0, 0, 0, 0xff_ff],
-		[0x64, 0xff_9b, 0, 0, 0, 0],
-	].map((prefix) => prefix.join(':')),
-)
+		['::', 96],
+		['::ffff:0:0', 96],
+		['64:ff9b::', 96],
+		['64:ff9b:1::', 48],
+		['100::', 64],
+		['2001::', 23],
+		['2001:db8::', 32],
+		['3fff::', 20],
+	] as const
+).map(([address, prefix]) => {
+	const hextets = ipv6Hextets(address)
+
+	if (hextets === null) {
+		throw new Error(`Invalid reserved IPv6 address: ${address}`)
+	}
+
+	return { base: hextets.slice(0, Math.ceil(prefix / 16)), prefix }
+})
 
 function isPublicIpv6(hextets: readonly number[]): boolean {
-	if (reservedPrefixes.has(hextets.slice(0, 6).join(':'))) {
+	const isReserved = reservedIpv6.some(({ base, prefix }) =>
+		base.every((part, index) => {
+			const size = 2 ** Math.max(0, 16 * (index + 1) - prefix)
+			const group = hextets[index] ?? 0
+
+			return group >= part && group < part + size
+		}),
+	)
+
+	if (isReserved) {
 		return false
 	}
 
 	const [h0 = 0, h1 = 0, h2 = 0] = hextets
 
+	// 6to4 inherits the restrictions on the IPv4 address it carries.
 	if (h0 === 0x20_02) {
 		return isPublicIpv4([Math.floor(h1 / 256), h1 % 256, Math.floor(h2 / 256), h2 % 256])
 	}
