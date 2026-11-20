@@ -80,6 +80,9 @@ a feature.
 | `report`     | `research` | An idea the owner might build                                   | Idea              |
 | `brief`      | `explain`  | Anything else: a short explanation with links                   | Other             |
 
+The app seeds the built-ins once, then treats them as ordinary categories and adds each category's
+extra instructions to every prompt in it, including prompts for private notes.
+
 Format ids are stored with each category, so renaming one needs a migration.
 
 ### Defining a format once
