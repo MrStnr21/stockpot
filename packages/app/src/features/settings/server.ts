@@ -30,6 +30,7 @@ import {
 	toPublicEngines,
 	type PublicEngines,
 } from '#/server/engines/settings'
+import { log } from '#/server/log'
 
 /** The runtime's spelling of a zone, such as `Europe/Berlin` for `europe/berlin`; throws on an unknown one. */
 function canonicalTimeZone(value: string) {
@@ -140,8 +141,8 @@ function applyPatch(settings: Settings, patch: SettingsPatch): Settings {
 	}
 }
 
-function describeIssue(issue: v.BaseIssue<unknown>) {
-	return `${v.getDotPath(issue) ?? 'settings'}: ${issue.message}`
+function issuePath(issue: v.BaseIssue<unknown>) {
+	return v.getDotPath(issue) ?? 'settings'
 }
 
 /** The database or a transaction on it: both run the same synchronous queries. */
@@ -150,8 +151,7 @@ type Queries = Db | Parameters<Parameters<Db['transaction']>[0]>[0]
 interface StoredSettings {
 	/** Every stored section that validates, as a patch over the defaults. */
 	readonly sections: SettingsPatch
-	/** One line per field of a stored section that no longer validates. */
-	readonly issues: readonly string[]
+	readonly issues: readonly v.BaseIssue<unknown>[]
 }
 
 /** Parses each stored section on its own, so one invalid section leaves the others readable. */
@@ -166,7 +166,7 @@ function readStored(db: Queries): StoredSettings {
 
 				return result.success
 					? { sections: { ...sections, ...result.output }, issues }
-					: { sections, issues: [...issues, ...result.issues.map(describeIssue)] }
+					: { sections, issues: [...issues, ...result.issues] }
 			},
 			{ sections: {}, issues: [] },
 		)
@@ -177,7 +177,9 @@ export function readSettings(db: Queries): Settings {
 	const { sections, issues } = readStored(db)
 
 	if (issues.length > 0) {
-		throw new Error(`Stored settings are invalid: ${issues.join('; ')}`)
+		const details = issues.map((issue) => `${issuePath(issue)}: ${issue.message}`)
+
+		throw new Error(`Stored settings are invalid: ${details.join('; ')}`)
 	}
 
 	return applyPatch(defaultSettings(), sections)
@@ -223,11 +225,17 @@ export function removeCategoryRouting(tx: Queries, categoryId: number): void {
 }
 
 /**
- * The time zone daily schedules fire in. `server/` cannot import a feature, so whatever starts the
- * job runner (SRV-6) hands it `() => readTimeZone(db)`.
+ * The time zone for the job runner started by `src/boot.ts`. Invalid stored sections use their
+ * defaults so the server can start and the owner can repair them.
  */
 export function readTimeZone(db: Db): string {
-	return readSettings(db).digest.timeZone
+	const { sections, issues } = readStored(db)
+
+	if (issues.length > 0) {
+		log.warn('Invalid stored settings', { paths: issues.map((issue) => issuePath(issue)) })
+	}
+
+	return sections.digest?.timeZone ?? defaultSettings().digest.timeZone
 }
 
 /** Settings as they may leave the server: every key and the agent command reduced to its state. */

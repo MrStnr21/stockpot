@@ -141,14 +141,25 @@ describe('save', () => {
 		},
 	)
 
+	it('leaves a note deleted during research new and without a card', () => {
+		const byId = eq(notes.id, task.noteId)
+		db.update(notes).set({ deletedAt: faker.date.past() }).where(byId).run()
+
+		expect(save(db, task, answer())).toBeNull()
+		expect(savedCards()).toEqual([])
+		expect(db.select().from(notes).where(byId).get()?.status).toBe('new')
+	})
+
 	it('discards the result and retains the draft when the note was soft-deleted', async () => {
 		const draft = await explanationRowFactory
 			.transient({ db })
 			.create({ noteId: task.noteId, isDraft: true })
 
-		db.update(notes).set({ deletedAt: faker.date.past() }).where(eq(notes.id, task.noteId)).run()
+		const byId = eq(notes.id, task.noteId)
+		db.update(notes).set({ status: 'ready', deletedAt: faker.date.past() }).where(byId).run()
 		expect(save(db, task, answer())).toBeNull()
 		expect(savedCards()).toEqual([draft])
+		expect(db.select().from(notes).where(byId).get()?.status).toBe('ready')
 	})
 
 	it('discards the result when the note no longer exists', () => {

@@ -11,7 +11,7 @@ import { notes } from '#/server/db/schema/notes'
 import { promptVersion } from '#/server/engines/prompt'
 import type { CardResult } from '#/server/engines/router'
 
-import type { ResearchTask } from './assemble'
+import { resetDeletedNote, type ResearchTask } from './assemble'
 
 export function save(
 	db: Db,
@@ -29,6 +29,8 @@ export function save(
 				.get()
 
 			if (note === undefined) {
+				resetDeletedNote(tx, noteId)
+
 				return null
 			}
 
@@ -40,8 +42,7 @@ export function save(
 				.where(and(firstCards, eq(explanations.isDraft, false)))
 				.get()
 
-			/* Another run of the same job may have finished first: a handler that outlived its timeout
-			 * keeps going while the runner retries the row (src/server/jobs/README.md). Keep its card. */
+			// Separate jobs for the same note may finish in either order. Keep the first completed card.
 			if (finished !== undefined) {
 				return null
 			}

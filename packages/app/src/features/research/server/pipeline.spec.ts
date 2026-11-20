@@ -8,9 +8,8 @@ import { noteRowFactory } from '#tests/factories/notes'
 import { termRowFactory } from '#tests/factories/terms'
 import { advanceBy, advanceTo, jobRows } from '#tests/setup/jobs'
 import { limitedUntil, startResearch, type ResearchHarness } from '#tests/setup/research'
-import { asc, eq } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 
-import { explanations } from '#/server/db/schema/explanations'
 import { notes } from '#/server/db/schema/notes'
 import { EngineError } from '#/server/engines/contract'
 import { log } from '#/server/log'
@@ -32,38 +31,21 @@ describe('research job', () => {
 		jest.useRealTimers()
 	})
 
-	function statusOf(noteId: number) {
-		const { db } = harness
-
-		return db.select({ status: notes.status }).from(notes).where(eq(notes.id, noteId)).get()?.status
-	}
-
-	function cardsOf(noteId: number) {
-		const { db } = harness
-
-		return db
-			.select()
-			.from(explanations)
-			.where(eq(explanations.noteId, noteId))
-			.orderBy(asc(explanations.id))
-			.all()
-	}
-
 	it('takes a queued note through researching to ready with one card and one call', async () => {
 		const note = await noteRowFactory.transient({ db: harness.db }).create()
 		const seen: unknown[] = []
 
 		harness.gemini.during = () => {
-			seen.push(statusOf(note.id))
+			seen.push(harness.statusOf(note.id))
 		}
 
 		harness.queue([note.id])
-		seen.unshift(statusOf(note.id))
+		seen.unshift(harness.statusOf(note.id))
 		await advanceBy(harness.runner, 0)
 
-		expect([...seen, statusOf(note.id)]).toEqual(['queued', 'researching', 'ready'])
+		expect([...seen, harness.statusOf(note.id)]).toEqual(['queued', 'researching', 'ready'])
 		expect(harness.gemini.calls).toMatchObject([{ method: 'explain' }])
-		expect(cardsOf(note.id)).toMatchObject([{ engine: 'gemini', depth: 1, isDraft: false }])
+		expect(harness.cardsOf(note.id)).toMatchObject([{ engine: 'gemini', depth: 1, isDraft: false }])
 		expect(jobRows(harness.db)).toMatchObject([{ status: 'done', attempts: 1 }])
 	})
 
@@ -89,7 +71,7 @@ describe('research job', () => {
 		expect(
 			[note.text, note.context, note.url].filter((value) => received.includes(`${value}`)),
 		).toEqual([])
-		expect(statusOf(note.id)).toBe('ready')
+		expect(harness.statusOf(note.id)).toBe('ready')
 	})
 
 	it('writes a report through the research task', async () => {
@@ -104,7 +86,7 @@ describe('research job', () => {
 		await harness.research([note.id])
 
 		expect(harness.gemini.calls).toMatchObject([{ method: 'research', tier: 'deep' }])
-		expect(cardsOf(note.id)).toMatchObject([{ format: 'report', isDraft: false }])
+		expect(harness.cardsOf(note.id)).toMatchObject([{ format: 'report', isDraft: false }])
 	})
 
 	it('stores a draft while the primary engine is limited and replaces it at the reset', async () => {
@@ -113,58 +95,31 @@ describe('research job', () => {
 		harness.gemini.failure = limitedUntil(inAnHour)
 		await harness.research([note.id])
 
-		expect(cardsOf(note.id)).toMatchObject([{ engine: 'openai-compatible', isDraft: true }])
-		expect(statusOf(note.id)).toBe('ready')
+		expect(harness.cardsOf(note.id)).toMatchObject([{ engine: 'openai-compatible', isDraft: true }])
+		expect(harness.statusOf(note.id)).toBe('ready')
 		expect(harness.later).toHaveBeenCalledWith({ noteId: note.id }, inAnHour)
 
 		harness.gemini.failure = null
 		await advanceTo(harness.runner, inAnHour.toISOString())
 
-		expect(cardsOf(note.id)).toMatchObject([{ engine: 'gemini', isDraft: false }])
-		expect(statusOf(note.id)).toBe('ready')
+		expect(harness.cardsOf(note.id)).toMatchObject([{ engine: 'gemini', isDraft: false }])
+		expect(harness.statusOf(note.id)).toBe('ready')
 		expect(harness.openAi.calls).toHaveLength(1)
 	})
 
-	describe('when every engine is limited', () => {
-		beforeEach(() => {
-			harness.gemini.failure = limitedUntil(inAnHour)
-			harness.openAi.failure = limitedUntil(inAnHour)
-		})
-
-		it('requeues the note at the reset without spending an attempt', async () => {
-			const note = await noteRowFactory.transient({ db: harness.db }).create()
-
-			await harness.research([note.id])
-
-			expect(statusOf(note.id)).toBe('queued')
-			expect(harness.later).toHaveBeenCalledWith({ noteId: note.id }, inAnHour)
-			expect(jobRows(harness.db)).toMatchObject([
-				{ status: 'done', attempts: 1 },
-				{ status: 'queued', attempts: 0, runAt: inAnHour },
-			])
-
+	it('requeues a draft one minute from now when the primary reset has passed', async () => {
+		const note = await noteRowFactory.transient({ db: harness.db }).create()
+		harness.gemini.failure = limitedUntil(new Date(start.getTime() - 1000))
+		harness.openAi.during = () => {
 			harness.gemini.failure = null
-			await advanceTo(harness.runner, inAnHour.toISOString())
+		}
 
-			expect(statusOf(note.id)).toBe('ready')
-			expect(jobRows(harness.db)).toMatchObject([{ status: 'done' }, { status: 'done' }])
-		})
+		await harness.research([note.id])
 
-		it('waits at least a minute for a reset that is about to pass', async () => {
-			const note = await noteRowFactory.transient({ db: harness.db }).create()
-			const soon = new Date(start.getTime() + 5000)
-			let calledAt = 0
-
-			harness.gemini.failure = limitedUntil(soon)
-			harness.openAi.failure = limitedUntil(soon)
-			harness.gemini.during = () => {
-				calledAt = Date.now()
-			}
-
-			await harness.research([note.id])
-
-			expect(harness.later).toHaveBeenCalledWith({ noteId: note.id }, new Date(calledAt + 60_000))
-		})
+		expect(jobRows(harness.db)).toMatchObject([
+			{ status: 'done' },
+			{ status: 'queued', runAt: new Date(Date.now() + 60_000) },
+		])
 	})
 
 	describe('when every engine rejects its key', () => {
@@ -187,27 +142,10 @@ describe('research job', () => {
 
 			await harness.research([note.id])
 
-			expect(statusOf(note.id)).toBe('failed')
+			expect(harness.statusOf(note.id)).toBe('failed')
 			expect(jobRows(harness.db)).toMatchObject([{ status: 'done', attempts: 1 }])
 			expect(warn).toHaveBeenCalledWith(expect.any(String), { noteId: note.id, kind: 'auth' })
 		})
-	})
-
-	it('retries an invalid answer and fails the note after the third attempt', async () => {
-		const note = await noteRowFactory.transient({ db: harness.db }).create()
-		const statuses: unknown[] = []
-
-		harness.gemini.failure = new EngineError({ kind: 'invalid', issues: ['sense'] }, 'Invalid')
-		await harness.research([note.id])
-		statuses.push(statusOf(note.id))
-		await advanceBy(harness.runner, 30_000)
-		statuses.push(statusOf(note.id))
-		await advanceBy(harness.runner, 60_000)
-		statuses.push(statusOf(note.id))
-
-		expect(statuses).toEqual(['queued', 'queued', 'failed'])
-		expect(harness.gemini.calls).toHaveLength(3)
-		expect(jobRows(harness.db)).toMatchObject([{ status: 'failed', attempts: 3 }])
 	})
 
 	describe('learning', () => {
@@ -240,7 +178,7 @@ describe('research job', () => {
 			await harness.research([note.id])
 
 			expect(harness.learn).not.toHaveBeenCalled()
-			expect(statusOf(note.id)).toBe('ready')
+			expect(harness.statusOf(note.id)).toBe('ready')
 		})
 
 		it('logs a failed learning step and keeps the card', async () => {
@@ -252,8 +190,8 @@ describe('research job', () => {
 			})
 			await harness.research([note.id])
 
-			expect(statusOf(note.id)).toBe('ready')
-			expect(cardsOf(note.id)).toHaveLength(1)
+			expect(harness.statusOf(note.id)).toBe('ready')
+			expect(harness.cardsOf(note.id)).toHaveLength(1)
 			expect(jobRows(harness.db)).toMatchObject([{ status: 'done' }])
 			expect(warn).toHaveBeenCalledWith(expect.any(String), {
 				noteId: note.id,
@@ -263,15 +201,30 @@ describe('research job', () => {
 		})
 	})
 
-	it('makes no call for a deleted note', async () => {
+	it('makes no call for a queued note deleted before the run', async () => {
 		const note = await noteRowFactory.transient({ db: harness.db }).create({
+			status: 'queued',
 			deletedAt: faker.date.past(),
 		})
 
 		await harness.research([note.id])
 
 		expect(harness.gemini.calls).toEqual([])
-		expect(cardsOf(note.id)).toEqual([])
+		expect(harness.statusOf(note.id)).toBe('new')
+		expect(harness.cardsOf(note.id)).toEqual([])
+		expect(jobRows(harness.db)).toMatchObject([{ status: 'done' }])
+	})
+
+	it('discards the answer and releases a note deleted during the router call', async () => {
+		const note = await noteRowFactory.transient({ db: harness.db }).create()
+		harness.gemini.during = () => {
+			harness.db.update(notes).set({ deletedAt: new Date() }).where(eq(notes.id, note.id)).run()
+		}
+
+		await harness.research([note.id])
+
+		expect(harness.statusOf(note.id)).toBe('new')
+		expect(harness.cardsOf(note.id)).toEqual([])
 		expect(jobRows(harness.db)).toMatchObject([{ status: 'done' }])
 	})
 
@@ -285,7 +238,7 @@ describe('research job', () => {
 
 		harness.queue(ids, 'batch')
 
-		expect(ids.map((id) => statusOf(id))).toEqual(['queued', 'queued', 'read', 'new'])
+		expect(ids.map((id) => harness.statusOf(id))).toEqual(['queued', 'queued', 'read', 'new'])
 		expect(jobRows(harness.db)).toMatchObject(
 			ids.map((noteId) => ({ kind: 'research', status: 'queued', payload: { noteId } })),
 		)

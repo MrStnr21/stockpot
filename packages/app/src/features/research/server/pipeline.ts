@@ -61,11 +61,29 @@ async function callRouter(
 	{ categoryId, input }: ResearchTask,
 	{ id, signal }: JobContext,
 ) {
+	signal.throwIfAborted()
 	const options = { categoryId, signal, jobId: id }
 
-	return input.task === 'research'
-		? router.research(input, options)
-		: router.explain(input, options)
+	const call =
+		input.task === 'research' ? router.research(input, options) : router.explain(input, options)
+
+	/* The signal may have aborted inside the router call. The engine can still reject its promise
+	 * after this attempt has given up on it. */
+	call.catch(() => null)
+	signal.throwIfAborted()
+	const { promise: aborted, reject } = Promise.withResolvers<never>()
+
+	function abort() {
+		reject(signal.reason)
+	}
+
+	signal.addEventListener('abort', abort, { once: true })
+
+	try {
+		return await Promise.race([call, aborted])
+	} finally {
+		signal.removeEventListener('abort', abort)
+	}
 }
 
 function learnFrom(
@@ -84,6 +102,12 @@ function learnFrom(
 	}
 }
 
+function queueAfterReset(deps: ResearchDependencies, payload: ResearchPayload, reset: Date) {
+	const now = deps.now?.() ?? new Date()
+	const runAt = new Date(Math.max(reset.getTime(), now.getTime() + shortestWaitMs))
+	deps.later(payload, runAt)
+}
+
 /*
  * Settles the engine failures a retry cannot help with, and returns whether it did. A limit with no
  * engine left waits for its reset in a new job, so it spends no attempt; a rejected key needs the
@@ -94,15 +118,12 @@ function settleEngineFailure(
 	payload: ResearchPayload,
 	error: EngineError,
 ): boolean {
-	const { db, now = () => new Date() } = deps
+	const { db } = deps
 	const { failure } = error
 
 	if (failure.kind === 'rate_limited') {
-		const soonest = now().getTime() + shortestWaitMs
-		const runAt = new Date(Math.max(failure.resetsAt.getTime(), soonest))
-
 		setUnfinishedStatus(db, payload.noteId, 'queued')
-		deps.later(payload, runAt)
+		queueAfterReset(deps, payload, failure.resetsAt)
 
 		return true
 	}
@@ -143,7 +164,7 @@ async function research(
 		}
 
 		if (result.draft) {
-			deps.later(payload, result.redoAt)
+			queueAfterReset(deps, payload, result.redoAt)
 		}
 
 		// Depth is always 1 here, so every card names its sense and aliases.
@@ -151,14 +172,9 @@ async function research(
 			learnFrom(deps, { noteId, termId: saved.termId, card: result.output })
 		}
 	} catch (error) {
-		if (error instanceof EngineError && settleEngineFailure(deps, payload, error)) {
-			return
+		if (!(error instanceof EngineError && settleEngineFailure(deps, payload, error))) {
+			throw error
 		}
-
-		// Anything else goes back to the runner, which retries it until the job's last attempt.
-		setUnfinishedStatus(db, noteId, context.attempt < maxAttempts ? 'queued' : 'failed')
-
-		throw error
 	}
 }
 
@@ -169,7 +185,24 @@ export function createResearchJob(deps: ResearchDependencies): JobDefinition<Res
 		maxAttempts,
 		// Just above the engine's own 15-minute research timeout, so that one fires first.
 		timeout: 16 * 60_000,
-		run: async (payload, context) => research(deps, payload, context),
+		run: async (payload, context) => {
+			try {
+				await research(deps, payload, context)
+			} catch (error) {
+				setUnfinishedStatus(
+					deps.db,
+					payload.noteId,
+					context.attempt < maxAttempts ? 'queued' : 'failed',
+				)
+
+				// The runner stores the message, and a provider may echo the note in its error.
+				if (error instanceof EngineError) {
+					throw new EngineError(error.failure, `The engine failed: ${error.kind}`, { cause: error })
+				}
+
+				throw error
+			}
+		},
 	}
 }
 

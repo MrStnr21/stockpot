@@ -7,6 +7,7 @@ import { briefCardFactory, reportCardFactory } from '#tests/factories/cards'
 import { configuredSettingsFactory } from '#tests/factories/settings'
 import { createTestDb, type TestDb } from '#tests/setup/db'
 import { advanceBy } from '#tests/setup/jobs'
+import { asc, eq } from 'drizzle-orm'
 import type * as v from 'valibot'
 
 import {
@@ -15,6 +16,8 @@ import {
 	type LearnedCard,
 	type ResearchPayload,
 } from '#/features/research/server/pipeline'
+import { explanations } from '#/server/db/schema/explanations'
+import { notes, type NoteStatus } from '#/server/db/schema/notes'
 import {
 	EngineError,
 	parseOutput,
@@ -43,7 +46,7 @@ export interface FakeEngine {
 	readonly answers: LearnedCard[]
 	failure: Error | null
 	/** Runs inside each call, before it answers. */
-	during: () => void
+	during: () => void | Promise<void>
 }
 
 async function neverSuggest(): Promise<never> {
@@ -66,7 +69,7 @@ function fakeEngine(id: EngineId) {
 			{ tier }: RunOptions,
 		) => {
 			state.calls.push({ method: name, input, tier })
-			state.during()
+			await state.during()
 
 			if (state.failure !== null) {
 				throw state.failure
@@ -104,6 +107,8 @@ export interface ResearchHarness {
 	readonly job: JobDefinition<ResearchPayload>
 	readonly gemini: FakeEngine
 	readonly openAi: FakeEngine
+	readonly statusOf: (noteId: number) => NoteStatus | undefined
+	readonly cardsOf: (noteId: number) => (typeof explanations.$inferSelect)[]
 	readonly later: Mock<(payload: ResearchPayload, runAt: Date) => void>
 	readonly learn: Mock<(termId: number, card: LearnedCard) => void>
 	/** Queues the notes' research as a route would. */
@@ -157,6 +162,19 @@ export async function startResearch(): Promise<ResearchHarness> {
 		)
 	}
 
+	function statusOf(noteId: number) {
+		return db.select({ status: notes.status }).from(notes).where(eq(notes.id, noteId)).get()?.status
+	}
+
+	function cardsOf(noteId: number) {
+		return db
+			.select()
+			.from(explanations)
+			.where(eq(explanations.noteId, noteId))
+			.orderBy(asc(explanations.id))
+			.all()
+	}
+
 	async function research(noteIds: readonly number[]) {
 		queue(noteIds)
 		await advanceBy(runner, 0)
@@ -170,6 +188,8 @@ export async function startResearch(): Promise<ResearchHarness> {
 		openAi: openAi.state,
 		later,
 		learn,
+		statusOf,
+		cardsOf,
 		queue,
 		research,
 	}

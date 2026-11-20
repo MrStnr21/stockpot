@@ -12,6 +12,7 @@ import { createTestDb, type TestDb } from '#tests/setup/db'
 import { eq } from 'drizzle-orm'
 
 import { formats } from '#/features/research/shared/formats'
+import { explanations } from '#/server/db/schema/explanations'
 import { categories, notes } from '#/server/db/schema/notes'
 
 import { assemble } from './assemble'
@@ -35,11 +36,14 @@ describe('assemble', () => {
 
 	it('skips missing, deleted and archived notes', async () => {
 		const captures = noteRowFactory.transient({ db })
-		const deleted = await captures.create({ deletedAt: faker.date.past() })
+		const deleted = await captures.create({ deletedAt: faker.date.past(), status: 'queued' })
 		const archived = await captures.create({ status: 'archived' })
 
 		expect([task(archived.id + 1), task(deleted.id), task(archived.id)]).toEqual([null, null, null])
 		expect([status(deleted.id), status(archived.id)]).toEqual(['new', 'archived'])
+		expect(db.select().from(explanations).where(eq(explanations.noteId, deleted.id)).all()).toEqual(
+			[],
+		)
 	})
 
 	it.each(['new', 'queued', 'researching', 'failed', 'ready', 'read'] as const)(

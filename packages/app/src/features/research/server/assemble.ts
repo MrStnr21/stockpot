@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
-import { and, desc, eq, isNull, ne, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, isNotNull, isNull, ne, sql } from 'drizzle-orm'
 
 import { cardFormat, formats, type CardSchema } from '#/features/research/shared/formats'
 import { isFormatId, type FormatId } from '#/lib/format-ids'
@@ -18,6 +18,20 @@ export interface ResearchTask {
 	readonly noteId: number
 	readonly categoryId: number
 	readonly input: CardInput<'explain', Schema> | CardInput<'research', Schema>
+}
+
+/** After an undo, the note must no longer appear to be waiting for the job that skipped it. */
+export function resetDeletedNote(tx: Transaction, noteId: number): void {
+	tx.update(notes)
+		.set({ status: 'new' })
+		.where(
+			and(
+				eq(notes.id, noteId),
+				isNotNull(notes.deletedAt),
+				inArray(notes.status, ['queued', 'researching']),
+			),
+		)
+		.run()
 }
 
 function readSubject(tx: Transaction, noteId: number) {
@@ -61,6 +75,8 @@ export function assemble(
 			const subject = readSubject(tx, noteId)
 
 			if (subject === undefined) {
+				resetDeletedNote(tx, noteId)
+
 				return null
 			}
 
