@@ -3,6 +3,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, mock, setSystemTime, spyOn } from 'bun:test'
 import { noteRowFactory } from '#tests/factories/notes'
+import { termRowFactory } from '#tests/factories/terms'
 import { createTestDb } from '#tests/setup/db'
 
 import { createRouter } from '#/server/engines/router'
@@ -19,7 +20,7 @@ const router = createRouter({
 	agentCommand: null,
 })
 
-const unconfigured = 'No engine is configured for suggest'
+const warning = 'Category suggestion failed'
 
 function request() {
 	const { text, context } = noteRowFactory.build()
@@ -47,7 +48,7 @@ describe('category suggestion warnings', () => {
 	it('logs a missing engine once across captures and again ten minutes after the first warning', async () => {
 		const service = createSuggester({ router })
 		await service.suggest(db, request())
-		expect(log.warn).toHaveBeenCalledWith(unconfigured)
+		expect(log.warn).toHaveBeenCalledWith(warning, { name: 'Error' })
 
 		setSystemTime(new Date('2026-11-20T12:09:59Z'))
 		await service.suggest(db, request())
@@ -56,24 +57,45 @@ describe('category suggestion warnings', () => {
 		setSystemTime(new Date('2026-11-20T12:10:00Z'))
 		await service.suggest(db, request())
 		expect(log.warn).toHaveBeenCalledTimes(2)
-		expect(log.warn).toHaveBeenLastCalledWith(unconfigured)
+		expect(log.warn).toHaveBeenLastCalledWith(warning, { name: 'Error' })
 	})
 
-	it('logs a different warning line within the same interval', async () => {
-		let message = unconfigured
+	it('logs only the error name even when a provider echoes a JSON-escaped term', async () => {
+		const { term } = termRowFactory.build()
+		const capture = request()
+		capture.note.text = `${term} "${term}" term`
 
 		const service = createSuggester({
 			router: {
-				async suggest() {
-					throw new Error(message)
+				async suggest(input) {
+					throw new TypeError(JSON.stringify(input.note.term))
+				},
+			},
+		})
+
+		await service.suggest(db, capture)
+		expect(log.warn).toHaveBeenCalledTimes(1)
+		expect(log.warn).toHaveBeenCalledWith(warning, { name: 'TypeError' })
+	})
+
+	it('rate limits by error name across different provider messages', async () => {
+		let ErrorType = Error
+
+		const service = createSuggester({
+			router: {
+				async suggest(input) {
+					throw new ErrorType(input.note.term)
 				},
 			},
 		})
 
 		await service.suggest(db, request())
-		message = 'Connection closed'
+		await service.suggest(db, request())
+		expect(log.warn).toHaveBeenCalledTimes(1)
+		expect(log.warn).toHaveBeenCalledWith(warning, { name: 'Error' })
+		ErrorType = RangeError
 		await service.suggest(db, request())
 		expect(log.warn).toHaveBeenCalledTimes(2)
-		expect(log.warn).toHaveBeenLastCalledWith(message)
+		expect(log.warn).toHaveBeenLastCalledWith(warning, { name: 'RangeError' })
 	})
 })

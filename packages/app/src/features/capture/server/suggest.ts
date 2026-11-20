@@ -6,9 +6,9 @@ import { normalizeTerm } from '#/lib/normalize'
 import type { Db } from '#/server/db/client'
 import { categories } from '#/server/db/schema/notes'
 import {
+	defaultTimeoutMs,
 	EngineError,
 	redactPrivate,
-	type EngineNote,
 	type SuggestInput,
 } from '#/server/engines/contract'
 import type { Router } from '#/server/engines/router'
@@ -59,6 +59,7 @@ export interface Suggester {
 interface SuggesterOptions {
 	readonly router: Pick<Router, 'suggest'>
 	readonly waitMs?: number
+	readonly callLimitMs?: number
 	readonly cacheSize?: number
 }
 
@@ -109,10 +110,11 @@ function fromHistory(
 	}
 }
 
-function fromEngine(db: Db, output: Suggestion): CategorySuggestion {
-	// A category can be removed while the engine is answering.
-	const rows = db.select({ id: categories.id }).from(categories).all()
-	const current = new Set(rows.map(({ id }) => id))
+function fromEngine(db: Db, output: Suggestion, choices: Input['categories']): CategorySuggestion {
+	// SQLite can reuse a deleted category's id while the engine is answering.
+	const rows = db.select({ id: categories.id, name: categories.name }).from(categories).all()
+	const names = new Map(choices.map(({ id, name }) => [Number(id), name]))
+	const current = new Set(rows.filter(({ id, name }) => names.get(id) === name).map(({ id }) => id))
 	const ids = output.categories.map(Number).filter((id) => current.has(id))
 
 	const senses = output.senses.map(({ sense, category }) => ({
@@ -129,18 +131,10 @@ function fromEngine(db: Db, output: Suggestion): CategorySuggestion {
 	}
 }
 
-function warnUnexpected(message: string, note: EngineNote, lastLogged: Map<string, number>): void {
-	// A provider may echo a field from its input in the error message.
-	const fields = [note.term, note.text, note.context, note.url]
-
-	const echoesNote = fields.some(
-		(field) => field !== null && field !== '' && message.includes(field),
-	)
-
-	const line = echoesNote ? 'Category suggestion failed' : message
+function warnUnexpected(name: string, lastLogged: Map<string, number>): void {
 	const now = Date.now()
 	const cutoff = now - warningIntervalMs
-	const previous = lastLogged.get(line)
+	const previous = lastLogged.get(name)
 
 	if (previous !== undefined && previous > cutoff) {
 		return
@@ -152,13 +146,14 @@ function warnUnexpected(message: string, note: EngineNote, lastLogged: Map<strin
 		}
 	}
 
-	lastLogged.set(line, now)
-	log.warn(line)
+	lastLogged.set(name, now)
+	// Provider messages can contain the note in any encoding.
+	log.warn('Category suggestion failed', { name })
 }
 
 const pending = Symbol('pending')
 
-async function waitForAnswer(call: Call, waitMs: number) {
+async function waitForAnswer<T>(call: Promise<T>, waitMs: number): Promise<T | typeof pending> {
 	const { promise, resolve } = Promise.withResolvers<typeof pending>()
 
 	const timer = setTimeout(() => {
@@ -175,6 +170,7 @@ async function waitForAnswer(call: Call, waitMs: number) {
 export function createSuggester({
 	router,
 	waitMs = suggestionWaitMs,
+	callLimitMs = defaultTimeoutMs.suggest + 1000,
 	cacheSize = 500,
 }: SuggesterOptions): Suggester {
 	const cache = new Map<string, Call>()
@@ -182,16 +178,12 @@ export function createSuggester({
 
 	async function run(input: Input): Call {
 		try {
-			const { output } = await router.suggest(input)
+			const answer = await waitForAnswer(router.suggest(input), callLimitMs)
 
-			return output
+			return answer === pending ? null : answer.output
 		} catch (error) {
 			if (!(error instanceof EngineError)) {
-				warnUnexpected(
-					error instanceof Error ? error.message : 'Category suggestion failed',
-					input.note,
-					lastLogged,
-				)
+				warnUnexpected(error instanceof Error ? error.name : 'UnknownError', lastLogged)
 			}
 
 			return null
@@ -267,7 +259,7 @@ export function createSuggester({
 				return empty(true)
 			}
 
-			return answer === null ? empty() : fromEngine(db, answer)
+			return answer === null ? empty() : fromEngine(db, answer, choices)
 		},
 	}
 }

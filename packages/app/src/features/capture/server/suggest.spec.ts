@@ -187,16 +187,7 @@ describe('createSuggester', () => {
 		expect(calls).not.toHaveBeenCalled()
 	})
 
-	it('drops categories and their sense options deleted during an engine call', async () => {
-		const result = suggest()
-		db.delete(categories).where(eq(categories.id, category.id)).run()
-		expect(await result).toMatchObject({
-			categories: [second.id],
-			senses: [{ sense: otherMeaning, categoryId: second.id }],
-		})
-	})
-
-	describe('when the engine takes longer than the wait', () => {
+	describe('while the engine call is in flight', () => {
 		let gate: PromiseWithResolvers<null>
 		beforeEach(() => {
 			jest.useFakeTimers()
@@ -206,11 +197,28 @@ describe('createSuggester', () => {
 
 				return reply(input)
 			})
-			service = createSuggester({ router, waitMs: 5 })
+			service = createSuggester({ router, waitMs: 5, callLimitMs: 8 })
 		})
 
 		afterEach(() => {
 			jest.useRealTimers()
+		})
+
+		it.each([false, true])('drops deleted categories and senses (reuse=%p)', async (reuse) => {
+			const answer = suggest()
+			db.delete(categories).where(eq(categories.id, second.id)).run()
+
+			if (reuse) {
+				const replacement = await categoryRowFactory.transient({ db }).create()
+				expect(replacement.id).toBe(second.id)
+				expect(replacement.name).not.toBe(second.name)
+			}
+
+			gate.resolve(null)
+			expect(await answer).toMatchObject({
+				categories: [category.id],
+				senses: [{ sense: meaning, categoryId: category.id }],
+			})
 		})
 
 		it('returns pending and serves the completed call on the next request', async () => {
@@ -225,6 +233,17 @@ describe('createSuggester', () => {
 				pending: false,
 			})
 			expect(calls).toHaveBeenCalledTimes(1)
+		})
+
+		it('drops a call that never settles at its deadline and retries the same request', async () => {
+			const first = suggest()
+			jest.advanceTimersByTime(5)
+			expect(await first).toEqual({ ...empty, pending: true })
+			const waiting = suggest()
+			jest.advanceTimersByTime(3)
+			expect(await waiting).toEqual(empty)
+			expect(await suggest()).toMatchObject({ source: 'engine', pending: false })
+			expect(calls).toHaveBeenCalledTimes(2)
 		})
 	})
 
@@ -243,18 +262,11 @@ describe('createSuggester', () => {
 			expect(log.warn).not.toHaveBeenCalled()
 		})
 
-		it('logs just the message once for a shared unexpected failure', async () => {
-			const message = 'Connection closed'
-			calls.mockRejectedValueOnce(new Error(message))
+		it('warns once for a shared unexpected failure', async () => {
+			calls.mockRejectedValueOnce(new Error('Connection closed'))
 			expect(await Promise.all([suggest(), suggest()])).toEqual([empty, empty])
 			expect(log.warn).toHaveBeenCalledTimes(1)
-			expect(log.warn).toHaveBeenCalledWith(message)
-		})
-
-		it('keeps echoed note data out of the log', async () => {
-			calls.mockRejectedValueOnce(new Error(`Provider rejected ${request.url}`))
-			expect(await suggest()).toEqual(empty)
-			expect(log.warn).toHaveBeenCalledWith('Category suggestion failed')
+			expect(log.warn).toHaveBeenCalledWith('Category suggestion failed', { name: 'Error' })
 		})
 
 		it('preserves a newer call for the same key when an evicted call fails', async () => {

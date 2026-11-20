@@ -16,7 +16,7 @@ import { createRouter, type Router } from '#/server/engines/router'
 
 interface ProcessServices {
 	router?: Promise<Router>
-	suggester?: Promise<Suggester>
+	suggester?: Suggester
 }
 
 const thisProcess: ProcessServices = {}
@@ -38,7 +38,15 @@ export async function instanceRouter(): Promise<Router> {
 }
 
 export async function instanceSuggester(): Promise<Suggester> {
-	thisProcess.suggester ??= instanceRouter().then((router) => createSuggester({ router }))
+	thisProcess.suggester ??= createSuggester({
+		router: {
+			async suggest(input, options) {
+				const router = await instanceRouter()
+
+				return router.suggest(input, options)
+			},
+		},
+	})
 
 	return thisProcess.suggester
 }
