@@ -84,6 +84,8 @@ export const notes = sqliteTable(
 		firstShownAt: integer('first_shown_at', { mode: 'timestamp_ms' }),
 		expiresAt: integer('expires_at', { mode: 'timestamp_ms' }),
 		keptAt: integer('kept_at', { mode: 'timestamp_ms' }),
+		// Set by a soft delete, so the Undo toast can bring the note back; deleted notes are never listed.
+		deletedAt: integer('deleted_at', { mode: 'timestamp_ms' }),
 		...timestamps,
 	},
 	(table) => [
