@@ -29,6 +29,8 @@ describe('normalize', () => {
 				'real-time real-time real-time real-time real-time',
 			],
 			['whitespace runs', '  Best\t\n  Practice\u00A0 ', 'best practice'],
+			['lone surrogates', 'lone\uD800 best practices\uDC00', 'lone� best practices�'],
+			['a surrogate pair', 'Plane ✈ 🛩', 'plane ✈ 🛩'],
 			['a plural as written', 'Queries', 'queries'],
 			['empty text', '', null],
 			['whitespace alone', '\t \n', null],
@@ -65,6 +67,12 @@ describe('normalize', () => {
 			['bus', 'buses'],
 			['cache', 'caches'],
 			['box', 'boxes'],
+			['match', 'matches'],
+			['brush', 'brushes'],
+			['buzz', 'buzzes'],
+			['plane', 'planes'],
+			['state', 'states'],
+			['note', 'notes'],
 			['status', 'statuses'],
 			['best practice', 'best practices'],
 		])('shares a lookup form for %s and %s', (first, second) => {
@@ -99,6 +107,11 @@ describe('normalize', () => {
 			['status', 'statu'],
 			['redis', 'redi'],
 			['analysis', 'analysi'],
+			['planes', 'plan'],
+			['states', 'stat'],
+			['codes', 'cod'],
+			['uses', 'us'],
+			['notes', 'not'],
 		])('%s has no lookup variant %s', (first, second) => {
 			expect(termVariants(first)).not.toContain(second)
 		})

@@ -35,6 +35,7 @@ export function normalizeTerm(text: string): string | null {
 	/* NFKC turns an ellipsis into three periods. Keep it distinguishable until the ends have been
 	 * stripped so a leading ellipsis can be removed while a leading period is preserved. */
 	const term = text
+		.toWellFormed()
 		.replaceAll(/[^…]+/gu, (part) => part.normalize('NFKC'))
 		.toLowerCase()
 		.replaceAll(/[‘’ʼ]/gu, "'")
@@ -47,6 +48,8 @@ export function normalizeTerm(text: string): string | null {
 	return term.length > 0 && term.length <= 80 ? term : null
 }
 
+const takesEs = /(?:[sxz]|ch|sh)$/u
+
 function singularForms(word: string): string[] {
 	if (word.length < 4 || /(?:ss|us|is)$/u.test(word)) {
 		return []
@@ -57,7 +60,11 @@ function singularForms(word: string): string[] {
 	}
 
 	if (word.endsWith('es')) {
-		return [word.slice(0, -2), word.slice(0, -1)]
+		const stem = word.slice(0, -2)
+
+		if (stem.length >= 3 && takesEs.test(stem)) {
+			return [stem, word.slice(0, -1)]
+		}
 	}
 
 	if (word.endsWith('s')) {
@@ -68,7 +75,7 @@ function singularForms(word: string): string[] {
 }
 
 function pluralForm(word: string): string {
-	if (/(?:[sxz]|ch|sh)$/u.test(word)) {
+	if (takesEs.test(word)) {
 		return `${word}es`
 	}
 

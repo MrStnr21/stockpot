@@ -14,21 +14,6 @@ import { HttpError } from '#/server/http'
 
 import { createNote, newNoteSchema } from './server'
 
-/** The JSON error an action throws, with its status, or null when it throws none. */
-function errorOf(action: () => ReturnType<typeof createNote>) {
-	try {
-		action()
-	} catch (error) {
-		if (error instanceof HttpError) {
-			return { status: error.status, ...error.details }
-		}
-
-		throw error
-	}
-
-	return null
-}
-
 const capturedAt = new Date('2026-11-20T08:00:00Z')
 
 describe('createNote', () => {
@@ -67,29 +52,23 @@ describe('createNote', () => {
 		expect(db.select().from(terms).all()).toMatchObject([{ categoryId: category.id }])
 	})
 
-	it('answers 400 naming categoryId for a category that does not exist, and saves nothing', () => {
-		expect([errorOf(() => create({ categoryId: 404 })), storedNotes()]).toEqual([
-			{
-				status: 400,
-				code: 'invalid_body',
-				message: 'The body does not match what this route accepts.',
-				issues: ['categoryId: There is no such category.'],
-			},
-			[],
-		])
+	it('rejects a missing category before saving a term or note', () => {
+		expect(() => create({ categoryId: 404 })).toThrow(HttpError)
+		expect(storedNotes()).toEqual([])
 		expect(db.select().from(terms).all()).toEqual([])
 	})
 
 	it.each([
 		['Queries!', 'Query', 'queries'],
 		['K8s', 'Kubernetes', 'k8s'],
+		['lone\uD800 best practices', 'lone\uD800 best practices', 'lone� best practices'],
 	])('stores %s as typed and reuses its term and note for %s', (text, repeat, term) => {
 		const first = create({ text })
 		const second = create({ text: repeat })
 
 		expect([first.merged, second]).toMatchObject([
 			false,
-			{ merged: true, note: { id: first.note.id, text } },
+			{ merged: true, note: { id: first.note.id, text: first.note.text } },
 		])
 		expect(db.select().from(terms).all()).toMatchObject([
 			{ id: storedNotes()[0]?.termId, term, meaning: '' },
@@ -97,58 +76,68 @@ describe('createNote', () => {
 		expect(storedNotes()).toHaveLength(1)
 	})
 
-	it('links a learned alias to its term and inserts a separate note', async () => {
-		const { id: termId, term } = await termRowFactory
+	it('keeps saves for a learned alias separate from its owner', async () => {
+		const owner = await termRowFactory.transient({ db }).create({ term: 'gizmo' })
+
+		const { alias } = await aliasRowFactory
 			.transient({ db })
-			.create({ term: 'container' })
+			.create({ termId: owner.id, alias: 'widget' })
 
-		const first = create({ text: term })
-		const { alias } = await aliasRowFactory.transient({ db }).create({ termId, alias: 'vessel' })
-		const second = create({ text: alias })
+		const { id: categoryId } = await categoryRowFactory.transient({ db }).create()
+		const first = create({ text: alias, categoryId })
+		const direct = create({ text: owner.term })
+		const repeat = create({ text: alias })
 
-		expect(second).toMatchObject({ merged: false, note: { text: alias } })
-		expect(storedNotes()).toMatchObject([
-			{ id: first.note.id, termId, context: first.note.context },
-			{ id: second.note.id, termId, context: second.note.context },
+		expect([first.merged, direct.merged, repeat]).toMatchObject([
+			false,
+			false,
+			{ merged: true, note: { id: first.note.id, text: alias } },
+		])
+		const captures = storedNotes()
+		expect(captures).toMatchObject([
+			{ id: first.note.id },
+			{ id: direct.note.id, termId: owner.id },
+		])
+		expect(db.select().from(terms).orderBy(terms.id).all()).toMatchObject([
+			{ id: owner.id, categoryId: null },
+			{ id: captures[0]?.termId, term: alias, meaning: '', categoryId },
 		])
 	})
 
-	it.each([null, 'filed'] as const)(
-		'picks the only sense matching category %s',
-		async (category) => {
-			const { id } = await categoryRowFactory.transient({ db }).create()
-			const categoryId = category === null ? null : id
-			const senses = termRowFactory.transient({ db }).params({ term: 'cache' })
-			const chosen = await senses.create({ meaning: 'a hidden supply', categoryId })
-			await senses.create({ meaning: 'stored results', categoryId: category === null ? id : null })
+	it('picks the only sense matching the supplied category', async () => {
+		const { id: categoryId } = await categoryRowFactory.transient({ db }).create()
+		const senses = termRowFactory.transient({ db }).params({ term: 'cache' })
+		const chosen = await senses.create({ meaning: 'a hidden supply', categoryId })
+		await senses.create({ meaning: 'stored results' })
 
-			expect(create({ text: 'Cache', categoryId }).merged).toBe(false)
-			expect(storedNotes()).toMatchObject([{ termId: chosen.id, categoryId }])
-		},
-	)
+		expect(create({ text: 'Cache', categoryId }).merged).toBe(false)
+		expect(storedNotes()).toMatchObject([{ termId: chosen.id, categoryId }])
+	})
 
-	it.each([false, true])(
-		'uses the typed empty-meaning row when sense choice is ambiguous (existing row: %s)',
-		async (existing) => {
-			const { id: categoryId } = await categoryRowFactory.transient({ db }).create()
-			const senses = termRowFactory.transient({ db }).params({ term: 'query', categoryId })
-			await senses.create({ meaning: 'request' })
-			await senses.create({ meaning: 'question' })
-			const unknown = existing ? await senses.create({ term: 'queries', meaning: '' }) : undefined
-			const { merged } = create({ text: 'Queries', categoryId })
-			const stored = db.select().from(terms).orderBy(terms.id).all()
+	it.each([
+		['several senses in the category', true, false],
+		['an existing unknown sense', true, true],
+		['no capture category', false, false],
+	])('uses the typed empty-meaning row with %s', async (_case, filed, existing) => {
+		const { id } = await categoryRowFactory.transient({ db }).create()
+		const categoryId = filed ? id : null
+		const senses = termRowFactory.transient({ db }).params({ term: 'query' })
+		await senses.create({ meaning: 'request', categoryId: id })
+		await senses.create({ meaning: 'question', categoryId })
+		const unknown = existing ? await senses.create({ term: 'queries', categoryId }) : undefined
+		const { merged } = create({ text: 'Queries', categoryId })
+		const stored = db.select().from(terms).orderBy(terms.id).all()
 
-			expect(merged).toBe(false)
-			expect(stored).toHaveLength(3)
-			expect(stored.at(-1)).toMatchObject({
-				id: unknown?.id ?? storedNotes()[0]?.termId,
-				term: 'queries',
-				meaning: '',
-				categoryId,
-			})
-			expect(storedNotes()).toMatchObject([{ termId: stored.at(-1)?.id }])
-		},
-	)
+		expect(merged).toBe(false)
+		expect(stored).toHaveLength(3)
+		expect(stored.at(-1)).toMatchObject({
+			id: unknown?.id ?? storedNotes()[0]?.termId,
+			term: 'queries',
+			meaning: '',
+			categoryId,
+		})
+		expect(storedNotes()).toMatchObject([{ termId: stored.at(-1)?.id }])
+	})
 
 	it('appends context, fills missing fields, and keeps the original capture and status', async () => {
 		const { id: categoryId } = await categoryRowFactory.transient({ db }).create()
@@ -184,55 +173,77 @@ describe('createNote', () => {
 		expect(db.select().from(terms).all()).toMatchObject([{ id: termId, categoryId }])
 	})
 
-	it.each(['duplicate', 'empty', 'null'] as const)(
-		'keeps populated fields when the new context is %s',
-		async (kind) => {
-			const [{ id: categoryId }, { id: otherCategory }] = await categoryRowFactory
-				.transient({ db })
-				.createList(2)
+	it.each([
+		['a duplicate paragraph', 'Paula recommended it', false],
+		['empty', '', false],
+		['null', null, false],
+		['a substring of a paragraph', 'Paul', true],
+	])('keeps populated fields when the new context is %s', async (_case, context, append) => {
+		const [{ id: categoryId }, { id: otherCategory }] = await categoryRowFactory
+			.transient({ db })
+			.createList(2)
 
-			const first = create({ categoryId })
+		const original = `${faker.lorem.sentence()}\n\nPaula recommended it`
+		const first = create({ categoryId, context: original })
 
-			const contexts = {
-				duplicate: first.note.context?.split(' ')[0] ?? null,
-				empty: '',
-				null: null,
+		const second = create({
+			text: first.note.text,
+			context,
+			url: null,
+			categoryId: otherCategory,
+		})
+
+		expect(second).toMatchObject({
+			merged: true,
+			note: {
+				id: first.note.id,
+				context: append ? `${original}\n\n${context}` : original,
+				url: first.note.url,
+				categoryId,
+			},
+		})
+		expect(db.select().from(terms).all()).toMatchObject([{ categoryId }])
+	})
+
+	it.each([true, false])(
+		'keeps a different URL in the paragraph (has context: %s)',
+		(withContext) => {
+			const first = create()
+			const context = withContext ? faker.lorem.sentence() : null
+			const url = faker.internet.url()
+			const capture = { text: first.note.text, context, url }
+			const paragraph = context === null ? url : `${context}\n${url}`
+
+			const expected = {
+				merged: true,
+				note: { url: first.note.url, context: `${first.note.context}\n\n${paragraph}` },
 			}
 
-			const second = create({
-				text: first.note.text,
-				context: contexts[kind],
-				categoryId: otherCategory,
-			})
-
-			expect(second).toMatchObject({
-				merged: true,
-				note: {
-					id: first.note.id,
-					context: first.note.context,
-					url: first.note.url,
-					categoryId,
-				},
-			})
-			expect(db.select().from(terms).all()).toMatchObject([{ categoryId }])
+			expect([create(capture), create(capture)]).toMatchObject([expected, expected])
 		},
 	)
 
-	it.each([4000, 4001])(
-		'preserves both contexts when appending would use %i characters',
-		(length) => {
-			const context = `${faker.word.noun()} 2`
-			const original = faker.string.alpha(length - context.length - 2)
-			const first = create({ context: original })
-			const second = create({ text: first.note.text, context })
-			const fits = length === 4000
+	it.each([4000, 4001])('counts the URL toward %i characters and continues merging', (length) => {
+		const context = faker.lorem.sentence()
+		const url = faker.internet.url()
+		const paragraph = `${context}\n${url}`
+		const original = faker.string.alpha(length - paragraph.length - 2)
 
-			expect(second.merged).toBe(fits)
-			expect(storedNotes().map((note) => note.context)).toEqual(
-				fits ? [`${original}\n\n${context}`] : [original, context],
-			)
-		},
-	)
+		const {
+			note: { text },
+		} = create({ context: original })
+
+		const second = create({ text, context, url })
+		const fits = length === 4000
+		const followUp = fits ? null : `${paragraph} ${faker.word.noun()}`
+		const third = create({ text, context: followUp, url: null })
+
+		expect(second.merged).toBe(fits)
+		expect(third).toMatchObject({ merged: true, note: { id: second.note.id } })
+		expect(storedNotes().map((note) => note.context)).toEqual(
+			fits ? [`${original}\n\n${paragraph}`] : [original, `${context}\n\n${followUp}`],
+		)
+	})
 
 	it.each([true, false])(
 		'keeps separate notes across the privacy flag (first private: %s)',

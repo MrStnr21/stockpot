@@ -10,10 +10,10 @@ import { aliases, notes, terms, type NoteStatus } from '#/server/db/schema/notes
 
 /*
  * A note is shown once `first_shown_at` is set or its status is `read`. The merge target is the
- * oldest unshown note in `new`, `queued`, `researching`, `ready` or `failed`. History is `saved`
- * when it can offer a merge target, `seen` when it can offer a shown note, and `known` otherwise.
- * Deleted notes and their cards never count. A learned alias may link distinct concepts, so an
- * alias-only match can surface history but cannot merge captures.
+ * newest unshown note in `new`, `queued`, `researching`, `ready` or `failed` with the capture's
+ * privacy when specified. History is `saved` with a merge target, `seen` with a shown note, and
+ * `known` otherwise. Terms need a live note or card to appear. A learned alias may link distinct
+ * concepts, so it can surface history while captures use direct matches only.
  */
 
 export interface HistoryNote {
@@ -57,9 +57,18 @@ interface TermMatch {
 }
 
 /** Capture and history share the same indexed lookup for normalized terms and their aliases. */
-export function findTermRows(db: Queries, term: string): TermMatch[] {
+export function findTermRows(
+	db: Queries,
+	term: string,
+	scope: 'all' | 'direct' = 'all',
+): TermMatch[] {
 	const variants = termVariants(term)
-	const direct = db.select().from(terms).where(inArray(terms.term, variants)).all()
+	const rows = db.select().from(terms).where(inArray(terms.term, variants)).all()
+	const direct = rows.map((row) => ({ row, learned: false }))
+
+	if (scope === 'direct') {
+		return direct
+	}
 
 	const aliased = db
 		.select({ term: terms })
@@ -68,7 +77,7 @@ export function findTermRows(db: Queries, term: string): TermMatch[] {
 		.where(inArray(aliases.alias, variants))
 		.all()
 
-	const byId = new Map<number, TermMatch>(direct.map((row) => [row.id, { row, learned: false }]))
+	const byId = new Map<number, TermMatch>(direct.map((match) => [match.row.id, match]))
 
 	for (const { term: row } of aliased) {
 		if (!byId.has(row.id)) {
@@ -99,7 +108,7 @@ export function findMergeTarget(
 				isPrivate === undefined ? undefined : eq(notes.isPrivate, isPrivate),
 			),
 		)
-		.orderBy(notes.createdAt, notes.id)
+		.orderBy(desc(notes.createdAt), desc(notes.id))
 		.limit(1)
 		.get()
 }
@@ -143,8 +152,9 @@ function toHistoryNote(row: NoteRow): HistoryNote {
 	}
 }
 
-function historyForTerm(db: Queries, { row: term, learned }: TermMatch): HistoryMatch {
-	const mergeTarget = learned ? undefined : findMergeTarget(db, term.id)
+function historyForTerm(db: Queries, match: TermMatch, isPrivate?: boolean): HistoryMatch {
+	const { row: term, learned } = match
+	const mergeTarget = learned ? undefined : findMergeTarget(db, term.id, isPrivate)
 	const shown = or(isNotNull(notes.firstShownAt), eq(notes.status, 'read'))
 
 	const note =
@@ -170,8 +180,20 @@ function historyForTerm(db: Queries, { row: term, learned }: TermMatch): History
 	}
 }
 
+function hasTermCard(db: Queries, termId: number): boolean {
+	const card = db
+		.select({ id: explanations.id })
+		.from(explanations)
+		.leftJoin(notes, eq(explanations.noteId, notes.id))
+		.where(and(eq(explanations.termId, termId), isNull(notes.deletedAt)))
+		.limit(1)
+		.get()
+
+	return card !== undefined
+}
+
 /** A read transaction keeps the notes, cards and ordering on the same snapshot. */
-export function matchHistory(db: Db, text: string): HistoryMatch[] {
+export function matchHistory(db: Db, text: string, isPrivate?: boolean): HistoryMatch[] {
 	const term = normalizeTerm(text)
 
 	if (term === null) {
@@ -202,11 +224,21 @@ export function matchHistory(db: Db, text: string): HistoryMatch[] {
 					left.row.id - right.row.id
 				)
 			})
-			.map((match) => historyForTerm(tx, match))
+			.flatMap((match) => {
+				const history = historyForTerm(tx, match, isPrivate)
+
+				return match.newest !== undefined ||
+					history.lastCard !== null ||
+					hasTermCard(tx, match.row.id)
+					? [history]
+					: []
+			})
 	})
 }
 
 const aliasLimit = 10
+
+const seededSpellings = seededAliases.flat()
 
 /** Take the write lock before checking ownership, so competing writes cannot claim the same alias. */
 export function learnAliases(db: Db, termId: number, texts: readonly string[]): string[] {
@@ -225,7 +257,7 @@ export function learnAliases(db: Db, termId: number, texts: readonly string[]): 
 				.get()
 
 			const remaining = aliasLimit - (existing?.count ?? 0)
-			const ownVariants = new Set(termVariants(row.term))
+			const reserved = new Set([...seededSpellings, ...termVariants(row.term)])
 			const termWords = row.term.split(' ')
 			const stored: string[] = []
 
@@ -236,16 +268,11 @@ export function learnAliases(db: Db, termId: number, texts: readonly string[]): 
 
 				const alias = normalizeTerm(text)
 
-				if (
-					alias === null ||
-					alias.length < 3 ||
-					termWords.includes(alias) ||
-					seededAliases.some(([short, full]) => alias === short || alias === full)
-				) {
+				if (alias === null || alias.length < 3 || termWords.includes(alias)) {
 					continue
 				}
 
-				if (termVariants(alias).some((variant) => ownVariants.has(variant))) {
+				if (termVariants(alias).some((variant) => reserved.has(variant))) {
 					continue
 				}
 

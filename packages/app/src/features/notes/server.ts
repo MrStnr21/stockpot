@@ -2,7 +2,8 @@
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
 /*
- * Indexed term matching lets the save path link or merge a capture within its 50 ms p95 budget.
+ * Indexed direct term matching keeps capture within its 50 ms p95 budget. Learned aliases are for
+ * history because linking through one could combine context about distinct concepts.
  * Research happens later in a job. A delete sets `deleted_at` so the Undo toast can restore the
  * note. Deleted notes stay out of the list and answer 404 by id except when restoring them.
  */
@@ -89,11 +90,13 @@ function requireCategory(db: Queries, categoryId: number) {
 	}
 }
 
-function captureTerm(db: Queries, term: string, categoryId: number | null) {
-	const matches = findTermRows(db, term)
+function captureTerm(db: Queries, term: string, categoryId: number | null): number {
+	const matches = findTermRows(db, term, 'direct')
 
 	const preferred =
-		matches.length === 1 ? matches : matches.filter(({ row }) => row.categoryId === categoryId)
+		matches.length === 1 || categoryId === null
+			? matches
+			: matches.filter(({ row }) => row.categoryId === categoryId)
 
 	const match =
 		preferred.length === 1
@@ -101,13 +104,13 @@ function captureTerm(db: Queries, term: string, categoryId: number | null) {
 			: matches.find(({ row }) => row.term === term && row.meaning === '')
 
 	if (match !== undefined) {
-		const { row, learned } = match
+		const { row } = match
 
 		if (row.categoryId === null && categoryId !== null) {
 			db.update(terms).set({ categoryId }).where(eq(terms.id, row.id)).run()
 		}
 
-		return { id: row.id, learned }
+		return row.id
 	}
 
 	db.insert(terms).values({ term, meaning: '', categoryId }).onConflictDoNothing().run()
@@ -119,14 +122,16 @@ function captureTerm(db: Queries, term: string, categoryId: number | null) {
 		throw new Error('The term could not be saved.')
 	}
 
-	return { id: stored.id, learned: false }
+	return stored.id
 }
 
 function mergeCapture(db: Queries, target: NoteRow, note: NewNote): NoteRow | undefined {
 	let { context } = target
+	const extraUrl = target.url !== null && target.url !== note.url ? note.url : null
+	const paragraph = [note.context, extraUrl].filter(Boolean).join('\n')
 
-	if (note.context !== null && note.context !== '' && context?.includes(note.context) !== true) {
-		context = context === null || context === '' ? note.context : `${context}\n\n${note.context}`
+	if (paragraph !== '' && context?.split(/\r?\n[ \t]*\r?\n/u).includes(paragraph) !== true) {
+		context = context === null || context === '' ? paragraph : `${context}\n\n${paragraph}`
 	}
 
 	if (context !== null && context.length > maxNoteContextLength) {
@@ -150,11 +155,8 @@ export function createNote(db: Db, note: NewNote): { note: PublicNote; merged: b
 			}
 
 			const normalized = normalizeTerm(note.text)
-			const term = normalized === null ? null : captureTerm(tx, normalized, note.categoryId)
-
-			const target =
-				term?.learned === false ? findMergeTarget(tx, term.id, note.private) : undefined
-
+			const termId = normalized === null ? null : captureTerm(tx, normalized, note.categoryId)
+			const target = termId === null ? undefined : findMergeTarget(tx, termId, note.private)
 			const merged = target === undefined ? undefined : mergeCapture(tx, target, note)
 
 			if (merged !== undefined) {
@@ -170,7 +172,7 @@ export function createNote(db: Db, note: NewNote): { note: PublicNote; merged: b
 					source: note.source,
 					categoryId: note.categoryId,
 					isPrivate: note.private,
-					termId: term?.id ?? null,
+					termId,
 				})
 				.returning()
 				.get()

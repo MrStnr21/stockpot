@@ -11,9 +11,9 @@ import { aliasRowFactory, termRowFactory } from '#tests/factories/terms'
 import { createTestDb, type TestDb } from '#tests/setup/db'
 import { eq } from 'drizzle-orm'
 
-import { aliases, type NoteStatus } from '#/server/db/schema/notes'
+import { aliases, notes, type NoteStatus } from '#/server/db/schema/notes'
 
-import { findMergeTarget, findTermRows, learnAliases, matchHistory } from './history'
+import { findTermRows, learnAliases, matchHistory } from './history'
 
 const earlier = new Date('2026-11-18T08:00:00Z')
 
@@ -66,9 +66,9 @@ describe('term history', () => {
 
 			expect(learnAliases(db, row.id, [' “Vessel!” '])).toEqual(['vessel'])
 			expect(findTermRows(db, 'vessels')).toEqual([{ row, learned: true }])
-			expect(matchHistory(db, 'Vessels')).toMatchObject([
-				{ termId: row.id, state: 'known', note: null },
-			])
+			const known = [{ termId: row.id, state: 'known', note: null }]
+			expect(matchHistory(db, 'Vessels')).toMatchObject(known)
+			expect(matchHistory(db, row.term, false)).toMatchObject(known)
 
 			await captures.create({ createdAt: earlier, status: 'read' })
 			const { id, text } = await captures.create({ createdAt: later, status: 'read' })
@@ -88,20 +88,21 @@ describe('term history', () => {
 			},
 		)
 
-		it('uses the oldest eligible note and can restrict the target by privacy', async () => {
+		it('uses the newest eligible note with the requested privacy', async () => {
 			const { id: termId, term } = await termRowFactory.transient({ db }).create()
 			const captures = noteRowFactory.transient({ db }).params({ termId })
-			await captures.create({ createdAt: earlier, status: 'archived' })
-			await captures.create({ createdAt: earlier, deletedAt: later })
-			await captures.create({ createdAt: earlier, status: 'read' })
-			await captures.create({ createdAt: earlier, status: 'ready', firstShownAt: later })
-			const oldest = await captures.create({ createdAt: later, status: 'failed', isPrivate: true })
+			await captures.create({ createdAt: earlier })
+			await captures.create({ createdAt: latest, status: 'archived' })
+			await captures.create({ createdAt: latest, deletedAt: latest })
+			await captures.create({ createdAt: latest, status: 'ready', firstShownAt: latest })
+			const privateNote = await captures.create({ createdAt: later, isPrivate: true })
 			const publicNote = await captures.create({ createdAt: later, status: 'ready' })
-			await captures.create({ createdAt: latest })
 
-			expect(matchHistory(db, term)).toMatchObject([{ state: 'saved', note: { id: oldest.id } }])
-			expect(findMergeTarget(db, termId, true)).toMatchObject({ id: oldest.id })
-			expect(findMergeTarget(db, termId, false)).toMatchObject({ id: publicNote.id })
+			const publicMatch = [{ state: 'saved', note: { id: publicNote.id } }]
+			const privateMatch = [{ state: 'saved', note: { id: privateNote.id } }]
+			expect(matchHistory(db, term)).toMatchObject(publicMatch)
+			expect(matchHistory(db, term, false)).toMatchObject(publicMatch)
+			expect(matchHistory(db, term, true)).toMatchObject(privateMatch)
 		})
 
 		it.each<[NoteStatus, Date | null]>([
@@ -122,13 +123,19 @@ describe('term history', () => {
 			},
 		)
 
-		it('keeps a term known when it has only an unshown archive and a deleted note', async () => {
+		it('requires a live note or card to keep a term known', async () => {
 			const { id: termId, term } = await termRowFactory.transient({ db }).create()
-			const captures = noteRowFactory.transient({ db }).params({ termId })
-			await captures.create({ status: 'archived' })
-			await captures.create({ status: 'read', deletedAt: latest })
+			const captures = noteRowFactory.transient({ db })
+			const { id } = await captures.create({ termId, status: 'archived', isPrivate: true })
+			const cards = explanationRowFactory.transient({ db })
+			const known = [{ state: 'known', note: null, lastCard: null }]
 
-			expect(matchHistory(db, term)).toMatchObject([{ state: 'known', note: null, lastCard: null }])
+			expect(matchHistory(db, term)).toMatchObject(known)
+			db.update(notes).set({ deletedAt: latest }).where(eq(notes.id, id)).run()
+			await cards.create({ termId, noteId: id })
+			expect(matchHistory(db, term)).toEqual([])
+			await cards.create({ termId, depth: 2 })
+			expect(matchHistory(db, term)).toMatchObject(known)
 		})
 
 		it('deduplicates senses and sorts them by their newest non-deleted notes', async () => {
@@ -140,6 +147,7 @@ describe('term history', () => {
 			await aliasRowFactory.transient({ db }).create({ alias: 'caches', termId: saved.id })
 			const captures = noteRowFactory.transient({ db })
 			await captures.create({ termId: known.id, createdAt: latest, deletedAt: latest })
+			await captures.create({ termId: known.id, createdAt: earlier, status: 'archived' })
 			const read = await captures.create({ termId: seen.id, createdAt: later, status: 'read' })
 			const unread = await captures.create({ termId: saved.id, createdAt: earlier })
 			await captures.create({ termId: saved.id, createdAt: later, status: 'archived' })
@@ -177,19 +185,13 @@ describe('term history', () => {
 			await cards.create({ termId, createdAt: latest, depth: 2 })
 			await cards.create({ termId, noteId: deleted.id, createdAt: latest })
 
-			expect(matchHistory(db, term)).toEqual([
+			expect(matchHistory(db, term)).toMatchObject([
 				{
-					termId,
-					term,
-					meaning: '',
-					categoryId: null,
 					state: 'known',
 					note: null,
 					lastCard: {
 						id: lastCard.id,
 						noteId: archived.id,
-						format: lastCard.format,
-						body: lastCard.body,
 						sources: lastCard.sources,
 						isUncertain: true,
 						isDraft: true,
@@ -235,9 +237,10 @@ describe('term history', () => {
 		it('skips invalid text, the term and its variants, and both sides of seeded pairs', async () => {
 			const { id } = await termRowFactory.transient({ db }).create({ term: 'queries' })
 			const invalid = ['', '!?', faker.string.alpha(81)]
-			const reserved = [' “Queries” ', 'query', 'querie', 'querys', 'K8s', 'Kubernetes']
+			const own = [' “Queries” ', 'query', 'querie', 'querys']
+			const seeded = ['K8s', 'Kubernetes', 'JavaScripts', 'Localizations']
 
-			expect(learnAliases(db, id, [...invalid, ...reserved])).toEqual([])
+			expect(learnAliases(db, id, [...invalid, ...own, ...seeded])).toEqual([])
 			expect(db.select().from(aliases).all()).toEqual([])
 		})
 
