@@ -61,7 +61,7 @@ does not guard against this; passing the signal on is what prevents it.
 ## Daily schedules
 
 A schedule runs a job once a day at a local time (`'HH:MM'`) in the time zone that the `timeZone`
-getter returns. The getter defaults to the system's time zone; SRV-2 passes the setting, and
+getter returns. The getter defaults to the system's time zone; `src/boot.ts` passes the setting, and
 `refreshSchedules()` plans again when the setting changes. The handler's payload is the local date
 its run belongs to, such as `{ day: '2026-11-18' }`.
 

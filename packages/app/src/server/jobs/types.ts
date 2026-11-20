@@ -60,7 +60,7 @@ export interface RunnerOptions {
 	schedules?: readonly DailySchedule[]
 	/**
 	 * The IANA time zone schedules run in, read whenever a run is planned. Default: the system's.
-	 * SRV-2 passes the time zone setting.
+	 * src/boot.ts passes the time zone setting.
 	 */
 	timeZone?: () => string
 }

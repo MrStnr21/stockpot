@@ -108,6 +108,22 @@ describe('save', () => {
 		)
 	})
 
+	it.each([false, true])(
+		'discards the result when a concurrent run already saved a card (draft: %p)',
+		async (isDraft) => {
+			const finished = await explanationRowFactory
+				.transient({ db })
+				.create({ noteId: task.noteId, isDraft: false })
+
+			const result = isDraft
+				? { ...answer(), draft: true as const, redoAt: faker.date.future() }
+				: answer()
+
+			expect(save(db, task, result)).toBeNull()
+			expect(savedCards()).toEqual([finished])
+		},
+	)
+
 	it.each(['archived', 'read'] as const)(
 		'keeps the owner’s %s status and category',
 		async (status) => {

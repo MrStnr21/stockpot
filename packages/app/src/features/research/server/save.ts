@@ -32,15 +32,23 @@ export function save(
 				return null
 			}
 
+			const firstCards = and(eq(explanations.noteId, noteId), eq(explanations.depth, 1))
+
+			const finished = tx
+				.select({ id: explanations.id })
+				.from(explanations)
+				.where(and(firstCards, eq(explanations.isDraft, false)))
+				.get()
+
+			/* Another run of the same job may have finished first: a handler that outlived its timeout
+			 * keeps going while the runner retries the row (src/server/jobs/README.md). Keep its card. */
+			if (finished !== undefined) {
+				return null
+			}
+
 			const { sources, uncertain, ...body } = result.output
 			tx.delete(explanations)
-				.where(
-					and(
-						eq(explanations.noteId, noteId),
-						eq(explanations.depth, 1),
-						eq(explanations.isDraft, true),
-					),
-				)
+				.where(and(firstCards, eq(explanations.isDraft, true)))
 				.run()
 			tx.insert(explanations)
 				.values({
