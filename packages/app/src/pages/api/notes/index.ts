@@ -1,0 +1,38 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 The stockpot authors
+
+import * as v from 'valibot'
+
+import { createNote, listNotes, newNoteSchema, notesQuerySchema } from '#/features/notes/server'
+import { instanceDb } from '#/server/db/instance'
+import { HttpError, readJson, route, type RouteContext } from '#/server/http'
+
+/* Every notes route takes the owner's session or a device token: the Shortcut saves notes with a
+ * token (CAP-5), and the native app will use the same API (D4). */
+
+function describeIssue(issue: v.BaseIssue<unknown>) {
+	return `${v.getDotPath(issue) ?? 'query'}: ${issue.message}`
+}
+
+/** One page of notes, newest first: `?status=`, `?categoryId=`, `?cursor=` and `?limit=`. */
+export const GET = route.authorized<RouteContext>(async ({ request }) => {
+	const { searchParams } = new URL(request.url)
+	const query = v.safeParse(notesQuerySchema, Object.fromEntries(searchParams))
+
+	if (!query.success) {
+		throw new HttpError(400, {
+			code: 'invalid_query',
+			message: 'The query string does not match what this route accepts.',
+			issues: query.issues.map(describeIssue),
+		})
+	}
+
+	return Response.json(listNotes(await instanceDb(), query.output))
+})
+
+/** Saves a note and answers with it at once; research happens later, in a job. */
+export const POST = route.authorized<RouteContext>(async ({ request }) => {
+	const note = await readJson(request, newNoteSchema)
+
+	return Response.json(createNote(await instanceDb(), note), { status: 201 })
+})
