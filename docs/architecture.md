@@ -162,8 +162,11 @@ in `src/server/engines/`:
   (`gemini.ts`, with its `gemini-*.ts` helpers) and any OpenAI-compatible endpoint
   (`openai-compatible.ts`). Provider SDKs and command-line details stay inside these files.
 - **The router** (`router.ts`, ENG-6) picks an engine for each task and category from a routing
-  table, falls back to the next engine on `rate_limited` or `auth`, marks a card from a fallback
-  engine as a draft and queues it to be redone by the primary engine once the limit resets.
+  table, falls back to the next engine on `rate_limited` or `auth`, and remembers a limited engine
+  until its reset. It never stores a card or queues a job: a card from a fallback engine comes back
+  as a draft with `redoAt`, and the research feature queues its redo for then. The feature that first
+  needs the router (RES-1 or CAP-3) builds one per process and shares it, so each engine exists
+  once ([Routing](engines.md#routing)).
 
 Everything outside `src/server/engines/` calls the router with contract types and never imports a
 concrete engine or a provider SDK. The research feature owns the card formats and passes the format's
