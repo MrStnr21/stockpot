@@ -155,8 +155,9 @@ Each run writes four files to its folder:
 - `report.json`: the same, with every answer;
 - `score-sheet.md`: a row per card to score by hand, as the rubric says.
 
-The `links` check opens every link a card cites, from your machine. It refuses private and loopback
-addresses but cannot catch DNS rebinding, as the [rubric](rubric.md#automatic-checks) explains.
+The `links` check opens every link a card cites, from your machine. At each hop, it checks that all
+resolved addresses are public and connects directly to a checked IP. See the
+[rubric](rubric.md#automatic-checks) for the accepted statuses and deadline.
 
 Reports hold the engine's answers and the local notes, so they stay in `local/`. Compare a report
 with the thresholds in the rubric; an engine story quotes its report's numbers in the pull request.
