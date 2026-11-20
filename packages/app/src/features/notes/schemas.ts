@@ -32,10 +32,12 @@ const noteText = v.pipe(
 	v.maxLength(1000, 'Use at most 1000 characters.'),
 )
 
+export const maxNoteContextLength = 4000
+
 const contextText = v.pipe(
 	v.string(),
 	v.trim(),
-	v.maxLength(4000, 'Use at most 4000 characters.'),
+	v.maxLength(maxNoteContextLength, `Use at most ${maxNoteContextLength} characters.`),
 	// Blank context is no context.
 	v.transform((value) => (value === '' ? null : value)),
 )

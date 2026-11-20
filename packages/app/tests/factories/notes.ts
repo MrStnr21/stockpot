@@ -12,7 +12,7 @@ export const noteRowFactory = Factory.define<
 	typeof notes.$inferInsert,
 	DbTransientParams,
 	typeof notes.$inferSelect
->(({ onCreate, transientParams }) => {
+>(({ onCreate, sequence, transientParams }) => {
 	onCreate((note) => {
 		if (transientParams.db === undefined) {
 			throw new Error('Pass the database: noteRowFactory.transient({ db }).create()')
@@ -22,7 +22,7 @@ export const noteRowFactory = Factory.define<
 	})
 
 	return {
-		text: faker.word.noun(),
+		text: `${faker.word.noun()} ${sequence}`,
 		context: faker.lorem.sentence(),
 	}
 })
@@ -35,8 +35,8 @@ export const newNoteFactory = Factory.define<{
 	source?: string
 	categoryId?: number | null
 	private?: boolean
-}>(() => ({
-	text: faker.word.noun(),
+}>(({ sequence }) => ({
+	text: `${faker.word.noun()} ${sequence}`,
 	context: faker.lorem.sentence(),
 	url: faker.internet.url(),
 }))

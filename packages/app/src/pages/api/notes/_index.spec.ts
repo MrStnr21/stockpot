@@ -96,6 +96,21 @@ describe('/api/notes', () => {
 			])
 		})
 
+		it('answers 201 for the first capture and 200 with the same note for a merge', async () => {
+			const capture = newNoteFactory.build()
+			const context = faker.lorem.sentence()
+			const firstResponse = await fromWebApp(POST, postBody(capture))
+			const first = v.parse(answeredNote, await firstResponse.json())
+			const secondResponse = await fromWebApp(POST, postBody({ ...capture, context }))
+			const second = v.parse(answeredNote, await secondResponse.json())
+
+			expect([firstResponse.status, secondResponse.status, second]).toMatchObject([
+				201,
+				200,
+				{ id: first.id, text: first.text, context: `${first.context}\n\n${context}` },
+			])
+		})
+
 		it('saves a note sent with a device token', async () => {
 			const response = await fromShortcut(
 				POST,

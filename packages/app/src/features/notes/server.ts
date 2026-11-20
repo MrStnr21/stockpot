@@ -2,24 +2,26 @@
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
 /*
- * Notes as capture stores them and the list serves them. Saving writes one row with status `new` and
- * returns: term matching (CAP-2) and research (RES-1) never run on the save path, which has a 50 ms
- * p95 budget. A delete only sets `deleted_at`, so the Undo toast can restore the note; deleted notes
- * are never listed, and by id they answer 404 to everything but the restore.
+ * Indexed term matching lets the save path link or merge a capture within its 50 ms p95 budget.
+ * Research happens later in a job. A delete sets `deleted_at` so the Undo toast can restore the
+ * note. Deleted notes stay out of the list and answer 404 by id except when restoring them.
  */
 import { and, desc, eq, isNull, sql } from 'drizzle-orm'
 
+import { normalizeTerm } from '#/lib/normalize'
 import type { Db } from '#/server/db/client'
-import { categories, notes, type NoteStatus } from '#/server/db/schema/notes'
+import { categories, notes, terms, type NoteStatus } from '#/server/db/schema/notes'
 import { HttpError } from '#/server/http'
 
 import {
 	defaultPageSize,
 	encodeCursor,
+	maxNoteContextLength,
 	type NewNote,
 	type NoteChange,
 	type NotesQuery,
 } from './schemas'
+import { findMergeTarget, findTermRows } from './server/history'
 
 export {
 	newNoteSchema,
@@ -87,28 +89,96 @@ function requireCategory(db: Queries, categoryId: number) {
 	}
 }
 
-/** Saves a note as captured, with status `new`, and returns it. */
-export function createNote(db: Db, note: NewNote): PublicNote {
-	return db.transaction((tx) => {
-		if (note.categoryId !== null) {
-			requireCategory(tx, note.categoryId)
+function captureTerm(db: Queries, term: string, categoryId: number | null) {
+	const matches = findTermRows(db, term)
+
+	const preferred =
+		matches.length === 1 ? matches : matches.filter(({ row }) => row.categoryId === categoryId)
+
+	const match =
+		preferred.length === 1
+			? preferred[0]
+			: matches.find(({ row }) => row.term === term && row.meaning === '')
+
+	if (match !== undefined) {
+		const { row, learned } = match
+
+		if (row.categoryId === null && categoryId !== null) {
+			db.update(terms).set({ categoryId }).where(eq(terms.id, row.id)).run()
 		}
 
-		const row = tx
-			.insert(notes)
-			.values({
-				text: note.text,
-				context: note.context,
-				url: note.url,
-				source: note.source,
-				categoryId: note.categoryId,
-				isPrivate: note.private,
-			})
-			.returning()
-			.get()
+		return { id: row.id, learned }
+	}
 
-		return toPublicNote(row)
-	})
+	db.insert(terms).values({ term, meaning: '', categoryId }).onConflictDoNothing().run()
+
+	const key = and(eq(terms.term, term), eq(terms.meaning, ''))
+	const stored = db.select({ id: terms.id }).from(terms).where(key).get()
+
+	if (stored === undefined) {
+		throw new Error('The term could not be saved.')
+	}
+
+	return { id: stored.id, learned: false }
+}
+
+function mergeCapture(db: Queries, target: NoteRow, note: NewNote): NoteRow | undefined {
+	let { context } = target
+
+	if (note.context !== null && note.context !== '' && context?.includes(note.context) !== true) {
+		context = context === null || context === '' ? note.context : `${context}\n\n${note.context}`
+	}
+
+	if (context !== null && context.length > maxNoteContextLength) {
+		return undefined
+	}
+
+	const updatedAt = new Date(Math.max(Date.now(), target.updatedAt.getTime() + 1))
+	const url = target.url ?? note.url
+	const categoryId = target.categoryId ?? note.categoryId
+	const fields = { context, url, categoryId, updatedAt }
+
+	return db.update(notes).set(fields).where(eq(notes.id, target.id)).returning().get()
+}
+
+/** A write lock keeps term selection and the merge target stable until the capture commits. */
+export function createNote(db: Db, note: NewNote): { note: PublicNote; merged: boolean } {
+	return db.transaction(
+		(tx) => {
+			if (note.categoryId !== null) {
+				requireCategory(tx, note.categoryId)
+			}
+
+			const normalized = normalizeTerm(note.text)
+			const term = normalized === null ? null : captureTerm(tx, normalized, note.categoryId)
+
+			const target =
+				term?.learned === false ? findMergeTarget(tx, term.id, note.private) : undefined
+
+			const merged = target === undefined ? undefined : mergeCapture(tx, target, note)
+
+			if (merged !== undefined) {
+				return { note: toPublicNote(merged), merged: true }
+			}
+
+			const row = tx
+				.insert(notes)
+				.values({
+					text: note.text,
+					context: note.context,
+					url: note.url,
+					source: note.source,
+					categoryId: note.categoryId,
+					isPrivate: note.private,
+					termId: term?.id ?? null,
+				})
+				.returning()
+				.get()
+
+			return { note: toPublicNote(row), merged: false }
+		},
+		{ behavior: 'immediate' },
+	)
 }
 
 /**
