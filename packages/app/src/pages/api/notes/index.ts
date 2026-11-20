@@ -32,7 +32,8 @@ export const GET = route.authorized<RouteContext>(async ({ request }) => {
 
 /** Saves a note and answers with it at once; research happens later, in a job. */
 export const POST = route.authorized<RouteContext>(async ({ request }) => {
-	const note = await readJson(request, newNoteSchema)
+	const capture = await readJson(request, newNoteSchema)
+	const { note, merged } = createNote(await instanceDb(), capture)
 
-	return Response.json(createNote(await instanceDb(), note), { status: 201 })
+	return Response.json(note, { status: merged ? 200 : 201 })
 })

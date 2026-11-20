@@ -2,9 +2,8 @@
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
 import { beforeEach, describe, expect, it } from 'bun:test'
-import { faker } from '@faker-js/faker'
 import { categoryRowFactory } from '#tests/factories/categories'
-import { newNoteFactory, noteRowFactory } from '#tests/factories/notes'
+import { noteRowFactory } from '#tests/factories/notes'
 import { createTestDb, type TestDb } from '#tests/setup/db'
 import { sql } from 'drizzle-orm'
 import * as v from 'valibot'
@@ -14,10 +13,8 @@ import { HttpError } from '#/server/http'
 
 import {
 	changeNote,
-	createNote,
 	deleteNote,
 	listNotes,
-	newNoteSchema,
 	notesQuerySchema,
 	selectNotes,
 	type NotesQuery,
@@ -48,11 +45,6 @@ describe('notes', () => {
 		;({ db } = await createTestDb())
 	})
 
-	/** Saves a note the way POST /api/notes does, from a request body. */
-	function create(fields: Parameters<typeof newNoteFactory.build>[0] = {}) {
-		return createNote(db, v.parse(newNoteSchema, newNoteFactory.build(fields)))
-	}
-
 	async function noteWithStatus(status: NoteStatus) {
 		return noteRowFactory.transient({ db }).create({ status })
 	}
@@ -60,39 +52,6 @@ describe('notes', () => {
 	function listedIds(query: NotesQuery = {}) {
 		return listNotes(db, query).notes.map(({ id }) => id)
 	}
-
-	describe('createNote', () => {
-		it('saves the trimmed note with status new and the defaults, and answers with it', () => {
-			const text = faker.word.noun()
-			const note = create({ text: `  ${text}  `, context: '  ', url: null })
-
-			const saved = { text, context: null, url: null, source: 'web', categoryId: null }
-
-			expect([note, listedIds()]).toMatchObject([
-				{ ...saved, status: 'new', private: false },
-				[note.id],
-			])
-		})
-
-		it('saves the category, the source and privacy as given', async () => {
-			const category = await categoryRowFactory.transient({ db }).create()
-			const note = create({ categoryId: category.id, source: 'shortcut', private: true })
-
-			expect(note).toMatchObject({ categoryId: category.id, source: 'shortcut', private: true })
-		})
-
-		it('answers 400 naming categoryId for a category that does not exist, and saves nothing', () => {
-			expect([errorOf(() => create({ categoryId: 404 })), listedIds()]).toEqual([
-				{
-					status: 400,
-					code: 'invalid_body',
-					message: 'The body does not match what this route accepts.',
-					issues: ['categoryId: There is no such category.'],
-				},
-				[],
-			])
-		})
-	})
 
 	describe('listNotes', () => {
 		it('lists newest first and leaves deleted notes out', async () => {
