@@ -241,12 +241,15 @@ prompt changes.
 - A card links only to pages the engine opened or saw in search results during that call, never to
   an address from memory or one it built.
 - Only `http` and `https` addresses; the schema rejects any other scheme.
-- Before a card is saved, the server opens every link (RES-2): it refuses loopback, private and
-  link-local addresses after resolving DNS, limits time and size, and drops dead links. A card left
-  without sources is flagged `uncertain`.
+- Before saving a card, the server checks its sources (RES-2). It keeps the first source for each
+  URL and connects to a checked public IP address for each request and redirect, preserving the
+  original hostname for HTTP and TLS. It reads no response body and gives each link 10 seconds for
+  DNS and all requests. It keeps links that answer with 2xx, 401, 403 or 429 and drops dead or
+  refused links. A card left without sources is flagged `uncertain`.
 - Links the app can build itself, such as a word's pronunciation page, are not asked of the engine.
 - Gemini's search sources are Google redirect URLs (`https://vertexaisearch.cloud.google.com/grounding-api-redirect/…`).
-  A card keeps them as given until the owner decides whether the link check may resolve them (see
+  A card keeps them as given and the server leaves them unchecked until the owner decides whether
+  the link check may resolve them (see
   [Search grounding terms](#search-grounding-terms)).
 
 ## Privacy
