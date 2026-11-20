@@ -209,7 +209,13 @@ feature builds it.
 | `language`   | two lowercase letters     | The ISO 639-1 code of the language the note is written in                                                           |
 
 A suggestion never searches: it uses the fastest engine and answers from what the model knows.
-Capture checks the owner's history first and calls the engine only when the term is new (CAP-3).
+Capture checks the owner's history first. A match with a current category supplies the suggestion
+without an engine call. When capture needs the engine, the cache key combines the note the engine
+receives, the card language and the ordered category ids, names and format hints. Requests with
+the same key share one call. For a private note, only its normalized term is sent and used as
+note content in the cache key. Capture waits up to 1.2 seconds. If the call is still running,
+capture returns `pending: true` and lets the call continue so a later request with the same key
+can use its answer.
 
 ## Prompts
 
@@ -291,8 +297,8 @@ single category, and set the fallback order.
   call goes to the primary engine again. A card written after the primary engine rejected its key
   is not a draft: there is no reset to wait for. Drafts apply to cards only: a suggestion is not
   stored, so one from a fallback engine is simply shown.
-- **One router per process**, built and shared by the feature that first needs it (RES-1 or
-  CAP-3), so each engine and Gemini's usage counters exist once. Settings are read at every call.
+- **One router per process.** [`src/instance.ts`](../packages/app/src/instance.ts) builds and shares
+  the router so each engine and Gemini's usage counters exist once. Settings are read at every call.
 
 ## The Gemini engine
 

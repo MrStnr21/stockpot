@@ -18,6 +18,15 @@ export const formatIds = [
 
 export type FormatId = (typeof formatIds)[number]
 
+export const formatHints: Record<FormatId, string> = {
+	vocabulary: 'a word or phrase to learn, with its meaning and usage',
+	technology: 'a tool, library, protocol or standard',
+	comparison: 'something best understood against its alternatives',
+	concept: 'an existing idea or term from a field, explained',
+	report: "the owner's own idea, researched and planned",
+	brief: 'a short brief',
+}
+
 export function isFormatId(value: string): value is FormatId {
 	return formatIds.some((id) => id === value)
 }

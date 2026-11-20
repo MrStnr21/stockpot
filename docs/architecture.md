@@ -74,6 +74,7 @@ src/
 │   └── metrics.ts      Prometheus metrics, next to health and logs
 ├── lib/            Isomorphic utilities: term normalization, dates and time zones, format ids,
 │                   JSON Schema helpers
+├── instance.ts     Shares the engine router and capture suggester across requests
 ├── middleware.ts   Resolves the owner or device for every request
 └── sw.ts           The service worker: offline shell and push handling, browser code only
 ```
@@ -95,21 +96,21 @@ a single file or a folder of these parts:
 `#/` imports are checked alike. The first row that matches a file decides its layer. Paths are
 relative to `packages/app/src/`, except `tests/` and `evals/`, which sit next to `src/`.
 
-| Layer                          | Files                                                                | May import                                                                      |
-| ------------------------------ | -------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| Server                         | `server/**`                                                          | `server/`, `lib/`                                                               |
-| Lib                            | `lib/**`                                                             | `lib/`                                                                          |
-| Astro components               | `components/**/*.astro`                                              | `server/`, `lib/`, `components/`                                                |
-| Other components               | the rest of `components/**` (`.svelte`, `.ts`)                       | `lib/`, `components/`                                                           |
-| Feature server                 | `features/X/server/**`, `features/X/server.*`                        | `server/`, `lib/`; own feature's server, shared and root files                  |
-| Feature shared                 | `features/X/shared/**`                                               | `lib/`, own feature's shared; `server/` for types only (`import type`)          |
-| Feature server-rendered markup | `features/X/client/**/*.astro`, `features/X/*.astro`                 | `server/`, `lib/`, `components/`; own feature's server, shared, root and client |
-| Feature client                 | `features/X/client/**`, `features/X/client.*`, `features/X/*.svelte` | `lib/`, `components/`; own feature's shared and client, not its root            |
-| Feature root                   | any other file in `features/X/`                                      | same as feature server                                                          |
-| Service worker                 | `sw.ts`                                                              | `lib/`, any feature's shared                                                    |
-| Entry                          | everything else in `src/`: `pages/`, `layouts/`, `middleware.ts`     | every layer above, including any feature                                        |
-| Test support                   | `tests/**`: setup, factories and end-to-end specs                    | every layer above, `evals/` and `tests/`                                        |
-| Evals                          | `evals/**`: the eval set and its runner                              | `server/`, `lib/`, any feature's shared, and `evals/`                           |
+| Layer                          | Files                                                                           | May import                                                                      |
+| ------------------------------ | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Server                         | `server/**`                                                                     | `server/`, `lib/`                                                               |
+| Lib                            | `lib/**`                                                                        | `lib/`                                                                          |
+| Astro components               | `components/**/*.astro`                                                         | `server/`, `lib/`, `components/`                                                |
+| Other components               | the rest of `components/**` (`.svelte`, `.ts`)                                  | `lib/`, `components/`                                                           |
+| Feature server                 | `features/X/server/**`, `features/X/server.*`                                   | `server/`, `lib/`; own feature's server, shared and root files                  |
+| Feature shared                 | `features/X/shared/**`                                                          | `lib/`, own feature's shared; `server/` for types only (`import type`)          |
+| Feature server-rendered markup | `features/X/client/**/*.astro`, `features/X/*.astro`                            | `server/`, `lib/`, `components/`; own feature's server, shared, root and client |
+| Feature client                 | `features/X/client/**`, `features/X/client.*`, `features/X/*.svelte`            | `lib/`, `components/`; own feature's shared and client, not its root            |
+| Feature root                   | any other file in `features/X/`                                                 | same as feature server                                                          |
+| Service worker                 | `sw.ts`                                                                         | `lib/`, any feature's shared                                                    |
+| Entry                          | everything else in `src/`: `pages/`, `layouts/`, `instance.ts`, `middleware.ts` | every layer above, including any feature                                        |
+| Test support                   | `tests/**`: setup, factories and end-to-end specs                               | every layer above, `evals/` and `tests/`                                        |
+| Evals                          | `evals/**`: the eval set and its runner                                         | `server/`, `lib/`, any feature's shared, and `evals/`                           |
 
 Four rules apply across the table:
 
