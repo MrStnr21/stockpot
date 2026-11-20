@@ -8,6 +8,9 @@
  */
 import type { CardInput, EngineInput, EngineNote, Redacted, SuggestInput } from './contract'
 
+// Bump this when buildPrompt's sections or a format's instructions or schema change.
+export const promptVersion = '1'
+
 export interface PromptOptions {
 	/** Whether the engine can search and open pages. One that cannot may not cite any. */
 	readonly canSearch: boolean
