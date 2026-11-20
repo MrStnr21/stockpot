@@ -205,37 +205,50 @@ describe('createNote', () => {
 		expect(db.select().from(terms).all()).toMatchObject([{ categoryId }])
 	})
 
-	it.each([true, false])(
-		'keeps a different URL in the paragraph (has context: %s)',
-		(withContext) => {
-			const first = create()
-			const context = withContext ? faker.lorem.sentence() : null
-			const url = faker.internet.url()
-			const capture = { text: first.note.text, context, url }
-			const paragraph = context === null ? url : `${context}\n${url}`
+	const firstUrl = faker.internet.url()
+	const extraUrl = `${firstUrl}#follow-up`
+	const multiline = 'line one\n\nline two'
+	const linkedContext = `other\n${extraUrl}\nlast`
 
-			const expected = {
-				merged: true,
-				note: { url: first.note.url, context: `${first.note.context}\n\n${paragraph}` },
-			}
+	it.each<[string, [boolean, ...(string | null)[]], string[]]>([
+		['a new URL and a URL-only retry', [true, 'ctx', 'ctx', null], ['ctx', extraUrl]],
+		['a repeated new context and URL', [true, 'ctx', 'other', 'other'], ['ctx', 'other', extraUrl]],
+		[
+			'repeated paragraphs without a URL',
+			[false, multiline, multiline, multiline, multiline, multiline],
+			[multiline],
+		],
+		[
+			'a URL already in the appended lines',
+			[true, 'ctx', `ctx\n\n${linkedContext}`, null],
+			['ctx', linkedContext],
+		],
+	])('merges %s once', (_case, [hasUrl, original, next, ...repeats], paragraphs) => {
+		const url = hasUrl ? extraUrl : null
+		const first = create({ context: original, url: hasUrl ? firstUrl : null }).note
+		const merged = create({ text: first.text, context: next, url })
 
-			expect([create(capture), create(capture)]).toMatchObject([expected, expected])
-		},
-	)
+		expect(merged).toMatchObject({
+			merged: true,
+			note: { id: first.id, url: first.url, context: paragraphs.join('\n\n') },
+		})
+
+		for (const context of repeats) {
+			expect(create({ text: first.text, context, url })).toEqual(merged)
+		}
+	})
 
 	it.each([4000, 4001])('counts the URL toward %i characters and continues merging', (length) => {
 		const context = faker.lorem.sentence()
 		const url = faker.internet.url()
-		const paragraph = `${context}\n${url}`
+		const paragraph = `${context}\n\n${url}`
 		const original = faker.string.alpha(length - paragraph.length - 2)
-
-		const {
-			note: { text },
-		} = create({ context: original })
+		const text = faker.word.noun()
+		create({ text, context: original })
 
 		const second = create({ text, context, url })
 		const fits = length === 4000
-		const followUp = fits ? null : `${paragraph} ${faker.word.noun()}`
+		const followUp = fits ? null : faker.string.numeric(paragraph.length + 1)
 		const third = create({ text, context: followUp, url: null })
 
 		expect(second.merged).toBe(fits)

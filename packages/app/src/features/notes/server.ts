@@ -23,6 +23,7 @@ import {
 	type NotesQuery,
 } from './schemas'
 import { findMergeTarget, findTermRows } from './server/history'
+import { mergeContext } from './server/merge-context'
 
 export {
 	newNoteSchema,
@@ -126,21 +127,20 @@ function captureTerm(db: Queries, term: string, categoryId: number | null): numb
 }
 
 function mergeCapture(db: Queries, target: NoteRow, note: NewNote): NoteRow | undefined {
-	let { context } = target
-	const extraUrl = target.url !== null && target.url !== note.url ? note.url : null
-	const paragraph = [note.context, extraUrl].filter(Boolean).join('\n')
-
-	if (paragraph !== '' && context?.split(/\r?\n[ \t]*\r?\n/u).includes(paragraph) !== true) {
-		context = context === null || context === '' ? paragraph : `${context}\n\n${paragraph}`
-	}
+	const context = mergeContext(target, note)
 
 	if (context !== null && context.length > maxNoteContextLength) {
 		return undefined
 	}
 
-	const updatedAt = new Date(Math.max(Date.now(), target.updatedAt.getTime() + 1))
 	const url = target.url ?? note.url
 	const categoryId = target.categoryId ?? note.categoryId
+
+	if (context === target.context && url === target.url && categoryId === target.categoryId) {
+		return target
+	}
+
+	const updatedAt = new Date(Math.max(Date.now(), target.updatedAt.getTime() + 1))
 	const fields = { context, url, categoryId, updatedAt }
 
 	return db.update(notes).set(fields).where(eq(notes.id, target.id)).returning().get()
