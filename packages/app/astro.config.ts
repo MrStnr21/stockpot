@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
-import { $ } from 'bun'
+import { $, build, CryptoHasher, file, Glob, write } from 'bun'
 import { dirname, join } from 'node:path'
 import node from '@astrojs/node'
 import svelte from '@astrojs/svelte'
@@ -121,6 +121,54 @@ function migrations(): AstroIntegration {
 	}
 }
 
+/*
+ * Writes dist/client/sw.js: src/sw.ts bundled for the browser, with PRECACHE (every file of the
+ * build, plus the offline page) and VERSION (a hash of the files' names and contents) defined in.
+ * A build with changed assets therefore changes sw.js, which is what makes browsers update the
+ * worker. The icon's SVG source is left out, as nothing loads it. A failed bundle fails the build.
+ */
+function serviceWorker(): AstroIntegration {
+	return {
+		name: 'stockpot:service-worker',
+		hooks: {
+			'astro:build:done': async ({ dir }) => {
+				const root = dir.pathname
+				const unused = new Set(['sw.js', 'icons/icon.svg'])
+
+				const files = await Array.fromAsync(new Glob('**/*').scan({ cwd: root }))
+				const paths = files.filter((path) => !unused.has(path)).toSorted()
+
+				const hasher = new CryptoHasher('sha256')
+
+				for (const path of paths) {
+					// oxlint-disable-next-line eslint/no-await-in-loop -- A few dozen files, hashed in a stable order.
+					hasher.update(`${path}\0`).update(await file(join(root, path)).bytes())
+				}
+
+				const result = await build({
+					entrypoints: [join(import.meta.dirname, 'src/sw.ts')],
+					target: 'browser',
+					minify: true,
+					define: {
+						PRECACHE: JSON.stringify([...paths.map((path) => `/${path}`), '/offline']),
+						VERSION: JSON.stringify(hasher.digest('hex').slice(0, 16)),
+					},
+				})
+
+				const output = result.outputs.at(0)
+
+				if (!result.success || output === undefined) {
+					const logs = result.logs.map((log) => log.message).join('\n')
+
+					throw new Error(`stockpot:service-worker could not bundle src/sw.ts:\n${logs}`)
+				}
+
+				await write(join(root, 'sw.js'), output)
+			},
+		},
+	}
+}
+
 export default defineConfig({
 	output: 'server',
 	// The backstop for every body; API routes read theirs through readJson with a tighter limit.
@@ -133,7 +181,7 @@ export default defineConfig({
 		 * own form posts. The middleware compares with STOCKPOT_PUBLIC_ORIGIN, read at runtime. */
 		checkOrigin: false,
 	},
-	integrations: [svelte(), boot(), migrations()],
+	integrations: [svelte(), boot(), migrations(), serviceWorker()],
 	vite: {
 		plugins: [tailwindcss()],
 		// The UI package ships Svelte and TypeScript source, so the server build compiles it instead of externalizing it.

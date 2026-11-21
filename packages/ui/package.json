@@ -6,6 +6,7 @@
 	"license": "AGPL-3.0-or-later",
 	"exports": {
 		"./fonts.css": "./src/fonts/fonts.css",
+		"./fonts/*": "./src/fonts/*",
 		"./theme.css": "./src/theme.css",
 		"./*": "./src/components/*/index.ts"
 	},

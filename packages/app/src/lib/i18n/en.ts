@@ -18,6 +18,10 @@ export const en = {
 		title: 'Server out of reach.',
 		body: 'Reading works; the actions wait until it is back.',
 	},
+	offlinePage: {
+		emptyTitle: 'Nothing saved for offline reading yet',
+		empty: 'Open Today while the server is reachable, and its latest copy is kept on this device.',
+	},
 	today: {
 		emptyTitle: 'Nothing to read today',
 		empty:
