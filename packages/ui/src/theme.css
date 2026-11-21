@@ -32,6 +32,12 @@
 	--text-label: 14px;
 	--text-label--line-height: 18px;
 	--text-label--font-weight: 600;
+	--text-category-label: 13px;
+	--text-category-label--line-height: 16px;
+	--text-category-label--font-weight: 600;
+	--text-detail: 13px;
+	--text-detail--line-height: 18px;
+	--text-detail--font-weight: 400;
 	--text-caption: 12px;
 	--text-caption--line-height: 16px;
 	--text-caption--font-weight: 500;
@@ -58,7 +64,16 @@
 	--text-read-quote--font-weight: 400;
 
 	--spacing-spinner: 18px;
+	--spacing-switch-width: 51px;
+	--spacing-switch-height: 31px;
+	--spacing-switch-knob: 27px;
+	--spacing-switch-knob-pressed: 33px;
 	--border-width-spinner-sm: 1.5px;
+	--stroke-width-status-icon: 2.25;
+	--inset-shadow-status-queued: inset 0 0 0 1.5px currentColor;
+	--scale-button-pressed: 0.97;
+	--opacity-switch-disabled: 0.4;
+	--category-pressed-mix: 18%;
 
 	--radius-xs: 6px;
 	--radius-sm: 10px;
@@ -110,6 +125,7 @@
 	--color-skeleton: oklch(0.935 0.012 350);
 	--color-skeleton-shine: oklch(0.965 0.008 350);
 	--color-scrim: oklch(0.255 0.03 350 / 0.36);
+	--color-switch-knob: oklch(1 0 0);
 
 	--color-cat-english: oklch(0.56 0.15 255);
 	--color-cat-english-soft: oklch(0.945 0.027 255);
@@ -133,6 +149,7 @@
 	--shadow-card: 0 1px 2px oklch(0.255 0.03 350 / 0.06), 0 2px 8px oklch(0.255 0.03 350 / 0.05);
 	--shadow-sheet: 0 -8px 32px oklch(0.255 0.03 350 / 0.12);
 	--shadow-toast: 0 8px 24px oklch(0.255 0.03 350 / 0.2);
+	--shadow-switch-knob: 0 1px 3px oklch(0 0 0 / 0.2), 0 0 0 0.5px oklch(0 0 0 / 0.06);
 }
 
 @layer theme {
