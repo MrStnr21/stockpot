@@ -24,7 +24,7 @@ passes every feature's definitions to the runner:
 const runner = await startRunner({
 	db,
 	jobs: [researchJob],
-	schedules: [{ job: digestJob, at: '07:00' }],
+	schedules: [{ job: digestJob, at: () => readDigestTime(db) }],
 })
 
 runner.enqueue(researchJob, { noteId }, { priority: 'now' })
@@ -60,14 +60,15 @@ does not guard against this; passing the signal on is what prevents it.
 
 ## Daily schedules
 
-A schedule runs a job once a day at a local time (`'HH:MM'`) in the time zone that the `timeZone`
-getter returns. The getter defaults to the system's time zone; `src/boot.ts` passes the setting, and
-`refreshSchedules()` plans again when the setting changes. The handler's payload is the local date
-its run belongs to, such as `{ day: '2026-11-18' }`.
+A schedule runs a job once a day at a local time (`'HH:MM'`). `at` can be a fixed time or a getter
+that the runner reads each time it plans a run. The `timeZone` getter defaults to the system's time
+zone, and `src/boot.ts` passes the setting. Call `refreshSchedules()` to plan again when the time or
+time zone changes. The handler's payload is the local date its run belongs to, such as
+`{ day: '2026-11-18' }`.
 
 - **One planned run.** Each schedule keeps exactly one queued row for its next run, and only the
   schedule queues its kind. A run is claimed and the next day's run planned in one transaction, so a
-  crash or an invalid time zone neither leaves the row running nor loses the plan.
+  crash or an invalid time or time zone neither leaves the row running nor loses the plan.
 - **Changes keep the day.** When the time zone or the time of day changes, the planned run keeps its
   day and moves to that day's time in the new zone or at the new time. If that time has passed, it
   fires at once, so a change never runs a day twice or skips one.
