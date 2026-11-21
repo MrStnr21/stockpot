@@ -11,9 +11,9 @@ import { log } from '#/server/log'
 
 import {
 	defaultSettings,
+	readBatchTime,
 	readSettings,
 	readTimeZone,
-	removeCategoryRouting,
 	settingsPatchSchema,
 	toPublicSettings,
 	updateSettings,
@@ -41,6 +41,7 @@ describe('settings', () => {
 	describe('on a new instance', () => {
 		it('reads the defaults', () => {
 			expect(readSettings(db)).toEqual(defaultSettings())
+			expect(readBatchTime(db)).toBe('06:30')
 		})
 
 		it('defaults the time zone to the server', () => {
@@ -118,29 +119,23 @@ describe('settings', () => {
 		})
 	})
 
-	describe('removeCategoryRouting', () => {
-		it('removes just the requested override', () => {
-			const configured = configuredSettingsFactory.build()
-			updateSettings(db, configured)
-			updateSettings(db, {
-				routing: {
-					categories: { ...configured.routing.categories, '7': { engine: 'gemini', tier: 'fast' } },
-				},
-			})
+	describe('the nightly batch time', () => {
+		it('defaults the batch time in an older stored digest', () => {
+			const { time, timeZone } = configuredSettingsFactory.build().digest
+			db.insert(settingsTable).values({ key: 'digest', value: { time, timeZone } }).run()
 
-			db.transaction((tx) => {
-				removeCategoryRouting(tx, 7)
-			})
-
-			expect(readSettings(db)).toEqual(configured)
+			expect(readSettings(db).digest).toMatchObject({ time, timeZone, batchTime: '06:30' })
+			expect(readBatchTime(db)).toBe('06:30')
 		})
 
-		it('leaves routing at its defaults when nothing was stored', () => {
-			db.transaction((tx) => {
-				removeCategoryRouting(tx, 7)
-			})
+		it('reads a patched batch time without changing the digest time', () => {
+			const { digest } = updateSettings(db, configuredSettingsFactory.build())
+			const patch = v.parse(settingsPatchSchema, { digest: { batchTime: '23:59' } })
 
-			expect(db.select().from(settingsTable).all()).toEqual([])
+			updateSettings(db, patch)
+
+			expect(readSettings(db).digest).toEqual({ ...digest, batchTime: '23:59' })
+			expect(readBatchTime(db)).toBe('23:59')
 		})
 	})
 
@@ -191,43 +186,47 @@ describe('settings', () => {
 				['digest.timeZone', 'Use an IANA time zone, such as Europe/Berlin'],
 			])
 		})
+	})
 
-		describe('when a stored section is invalid', () => {
-			let warn: ReturnType<typeof spyOn<typeof log, 'warn'>>
+	describe('schedule settings when a stored section is invalid', () => {
+		let warn: ReturnType<typeof spyOn<typeof log, 'warn'>>
 
-			beforeEach(() => {
-				warn = spyOn(log, 'warn').mockImplementation(() => {
-					// The warning is asserted in place of writing to stderr.
-				})
+		beforeEach(() => {
+			warn = spyOn(log, 'warn').mockImplementation(() => {
+				// The warning is asserted in place of writing to stderr.
 			})
+		})
 
-			afterEach(() => {
-				warn.mockRestore()
-			})
+		afterEach(() => {
+			warn.mockRestore()
+		})
 
-			it.each([
-				[{ timeZone: '+05:00' }, 'digest.timeZone'],
-				[{ timeZone: 'America/New_York', limit: 0 }, 'digest.limit'],
-			] as const)('defaults the digest and warns about %j', (value, path) => {
-				db.insert(settingsTable).values({ key: 'digest', value }).run()
+		it.each([
+			[{ timeZone: '+05:00' }, 'digest.timeZone'],
+			[{ timeZone: 'America/New_York', batchTime: '05:45', limit: 0 }, 'digest.limit'],
+			[{ batchTime: '24:00' }, 'digest.batchTime'],
+		] as const)('defaults the digest and warns about %j', (value, path) => {
+			db.insert(settingsTable).values({ key: 'digest', value }).run()
 
-				expect(readTimeZone(db)).toBe(defaultSettings().digest.timeZone)
-				expect(warn.mock.calls).toEqual([['Invalid stored settings', { paths: [path] }]])
-			})
+			expect(readTimeZone(db)).toBe(defaultSettings().digest.timeZone)
+			expect(readBatchTime(db)).toBe('06:30')
+			const warning: Parameters<typeof log.warn> = ['Invalid stored settings', { paths: [path] }]
+			expect(warn.mock.calls).toEqual([warning, warning])
+		})
 
-			it('keeps the stored zone when another section is invalid', () => {
-				updateSettings(db, { digest: { timeZone: 'Europe/Berlin' } })
-				db.insert(settingsTable).values({ key: 'cardLanguage', value: 'English' }).run()
+		it('keeps the stored zone when another section is invalid', () => {
+			updateSettings(db, { digest: { timeZone: 'Europe/Berlin' } })
+			db.insert(settingsTable).values({ key: 'cardLanguage', value: 'English' }).run()
 
-				expect(readTimeZone(db)).toBe('Europe/Berlin')
-				expect(warn.mock.calls).toEqual([['Invalid stored settings', { paths: ['cardLanguage'] }]])
-			})
+			expect(readTimeZone(db)).toBe('Europe/Berlin')
+			expect(warn.mock.calls).toEqual([['Invalid stored settings', { paths: ['cardLanguage'] }]])
 		})
 	})
 
 	describe('settingsPatchSchema', () => {
 		it.each([
 			['a time past midnight', { digest: { time: '24:00' } }],
+			['a batch time without a leading zero', { digest: { batchTime: '6:30' } }],
 			['an empty digest', { digest: { limit: 0 } }],
 			['an unknown time zone', { digest: { timeZone: 'Mars/Olympus' } }],
 			['a language name', { cardLanguage: 'English' }],

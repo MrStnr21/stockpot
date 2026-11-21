@@ -41,8 +41,8 @@ export interface ScheduledRun {
 export interface DailySchedule {
 	/** Only the schedule queues this kind, so it has exactly one planned run. */
 	job: JobDefinition<ScheduledRun>
-	/** 'HH:MM', such as '07:00'. */
-	at: string
+	/** 'HH:MM', such as '07:00', or a getter read whenever a run is planned. */
+	at: string | (() => string)
 	/** Default "batch". */
 	priority?: Priority
 }
@@ -82,7 +82,7 @@ export interface Runner {
 	stop: () => Promise<void>
 	/** Resolves when the worker has finished what it is doing; specs await it after moving the clock. */
 	idle: () => Promise<void>
-	/** Plans each schedule's next run again; call it after the time zone setting changes. */
+	/** Plans each schedule's next run again after its time or time zone changes. */
 	refreshSchedules: () => void
 	/** The runner's own state, for the health check; a handler's errors stay on its job. */
 	health: () => RunnerHealth

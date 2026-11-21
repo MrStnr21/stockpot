@@ -24,7 +24,8 @@ passes every feature's definitions to the runner:
 const runner = await startRunner({
 	db,
 	jobs: [researchJob],
-	schedules: [{ job: digestJob, at: '07:00' }],
+	schedules: [{ job: batchJob, at: () => readBatchTime(db) }],
+	timeZone: () => readTimeZone(db),
 })
 
 runner.enqueue(researchJob, { noteId }, { priority: 'now' })
@@ -60,14 +61,21 @@ does not guard against this; passing the signal on is what prevents it.
 
 ## Daily schedules
 
-A schedule runs a job once a day at a local time (`'HH:MM'`) in the time zone that the `timeZone`
-getter returns. The getter defaults to the system's time zone; `src/boot.ts` passes the setting, and
-`refreshSchedules()` plans again when the setting changes. The handler's payload is the local date
-its run belongs to, such as `{ day: '2026-11-18' }`.
+A schedule runs a job once a day at a local time (`'HH:MM'`). `at` can be a fixed time or a getter
+that the runner reads each time it plans a run. The `timeZone` getter defaults to the system's time
+zone, and `src/boot.ts` passes the setting. Call `refreshSchedules()` to plan again when the time or
+time zone changes. The handler's payload is the local date its run belongs to, such as
+`{ day: '2026-11-18' }`.
+
+The nightly batch is the first daily schedule. At `digest.batchTime` (06:30 by default) in
+`digest.timeZone`, it queues research jobs in note creation order. It skips deleted or archived
+notes, notes with a finished first card, and notes that already have a queued or running research
+job. The worker runs the research jobs one at a time, and a `now` job can run ahead of the remaining
+batch jobs.
 
 - **One planned run.** Each schedule keeps exactly one queued row for its next run, and only the
   schedule queues its kind. A run is claimed and the next day's run planned in one transaction, so a
-  crash or an invalid time zone neither leaves the row running nor loses the plan.
+  crash or an invalid time or time zone neither leaves the row running nor loses the plan.
 - **Changes keep the day.** When the time zone or the time of day changes, the planned run keeps its
   day and moves to that day's time in the new zone or at the new time. If that time has passed, it
   fires at once, so a change never runs a day twice or skips one.
@@ -104,5 +112,5 @@ and `boot.ts` share its module instance. `/healthz` reads `health()` this way, a
 that enqueues will call `enqueue` on it.
 
 `boot.ts` is an entry module, so unlike `server/` it may import features: it passes the runner every
-feature's job definitions, built once in [`src/instance.ts`](../../instance.ts), and the `timeZone`
-setting. The research job is the first.
+feature's job definitions, built once in [`src/instance.ts`](../../instance.ts), and reads the nightly
+batch time and time zone from settings each time it plans a run.
