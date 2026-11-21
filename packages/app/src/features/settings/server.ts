@@ -84,6 +84,8 @@ const languageCode = v.pipe(
 const digestSchema = v.object({
 	/** When the morning digest arrives, as HH:MM in `timeZone`. */
 	time: clockTime,
+	/** When the nightly batch starts, as HH:MM in `timeZone`. */
+	batchTime: clockTime,
 	/** How many cards one digest holds at most. */
 	limit: digestLimit,
 	/** The IANA time zone the daily schedules fire in. */
@@ -123,6 +125,7 @@ export function defaultSettings(): Settings {
 	return {
 		digest: {
 			time: '08:30',
+			batchTime: '06:30',
 			limit: 5,
 			timeZone: serverTimeZone(),
 		},
@@ -225,17 +228,25 @@ export function removeCategoryRouting(tx: Queries, categoryId: number): void {
 }
 
 /**
- * The time zone for the job runner started by `src/boot.ts`. Invalid stored sections use their
- * defaults so the server can start and the owner can repair them.
+ * Schedule settings fall back to defaults for invalid sections so the server can start and the
+ * owner can repair them.
  */
-export function readTimeZone(db: Db): string {
+function readScheduleSetting(db: Db, key: 'batchTime' | 'timeZone'): string {
 	const { sections, issues } = readStored(db)
 
 	if (issues.length > 0) {
 		log.warn('Invalid stored settings', { paths: issues.map((issue) => issuePath(issue)) })
 	}
 
-	return sections.digest?.timeZone ?? defaultSettings().digest.timeZone
+	return sections.digest?.[key] ?? defaultSettings().digest[key]
+}
+
+export function readTimeZone(db: Db): string {
+	return readScheduleSetting(db, 'timeZone')
+}
+
+export function readBatchTime(db: Db): string {
+	return readScheduleSetting(db, 'batchTime')
 }
 
 /** Settings as they may leave the server: every key and the agent command reduced to its state. */
