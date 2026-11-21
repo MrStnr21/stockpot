@@ -150,6 +150,35 @@
 	--shadow-sheet: 0 -8px 32px oklch(0.255 0.03 350 / 0.12);
 	--shadow-toast: 0 8px 24px oklch(0.255 0.03 350 / 0.2);
 	--shadow-switch-knob: 0 1px 3px oklch(0 0 0 / 0.2), 0 0 0 0.5px oklch(0 0 0 / 0.06);
+
+	--spacing-kit-example: 358px;
+	--text-read-summary: 16px;
+	--text-read-summary--line-height: 24px;
+	--text-read-summary--font-weight: 400;
+	--scale-card-pressed: 0.985;
+	--card-pressed-mix: 4%;
+	--opacity-card-disabled: 0.5;
+	--width-card-loading-line: 82%;
+	--text-list-title: 16px;
+	--text-list-title--line-height: 22px;
+	--text-list-title--font-weight: 600;
+	--border-width-list-check: 1.5px;
+	--stroke-width-list-check: 2.5;
+	--width-list-loading-title: 46%;
+	--width-list-loading-subtitle: 78%;
+	--width-skeleton-title: 52%;
+	--width-skeleton-body: 94%;
+	--width-skeleton-body-short: 68%;
+	--animate-shimmer: shimmer var(--duration-shimmer) var(--ease-standard) infinite;
+
+	@keyframes shimmer {
+		from {
+			transform: translateX(-100%);
+		}
+		to {
+			transform: translateX(100%);
+		}
+	}
 }
 
 @layer theme {
