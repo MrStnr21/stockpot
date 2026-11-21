@@ -132,7 +132,7 @@
 {:else}
 	<button
 		{...attributes}
-		{type}
+		type={loading ? 'button' : type}
 		{disabled}
 		{tabindex}
 		data-variant={variant}

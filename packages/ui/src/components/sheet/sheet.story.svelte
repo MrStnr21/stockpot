@@ -70,13 +70,15 @@
 		{:else if group === 'states'}
 			<div class="space-y-2">
 				<p class="text-caption text-ink-3">Pressed · Save</p>
-				<div class="grid grid-cols-2 gap-2.5 rounded-lg bg-surface px-4 pt-4 pb-5 shadow-sheet">
+				<div
+					class="grid grid-cols-2 gap-2.5 rounded-lg bg-surface px-4 pt-4 pb-5 shadow-(--shadow-sheet)"
+				>
 					{@render actions('pressed')}
 				</div>
 			</div>
 			<div class="space-y-2">
 				<p class="text-caption text-ink-3">Disabled · no category picked yet</p>
-				<div class="space-y-4 rounded-lg bg-surface px-4 pt-4 pb-5 shadow-sheet">
+				<div class="space-y-4 rounded-lg bg-surface px-4 pt-4 pb-5 shadow-(--shadow-sheet)">
 					{@render categories()}
 					<div class="grid grid-cols-2 gap-2.5">{@render actions('disabled')}</div>
 					<p class="text-detail text-ink-2">Pick a category to save.</p>
@@ -84,7 +86,7 @@
 			</div>
 			<div class="space-y-2">
 				<p class="text-caption text-ink-3">Loading · suggesting, then saving</p>
-				<div class="space-y-4 rounded-lg bg-surface px-4 pt-4 pb-5 shadow-sheet">
+				<div class="space-y-4 rounded-lg bg-surface px-4 pt-4 pb-5 shadow-(--shadow-sheet)">
 					<div class="space-y-1.5" aria-busy="true">
 						<p class="text-field-label text-ink-2">Category · suggesting</p>
 						<div class="flex gap-2" aria-hidden="true">

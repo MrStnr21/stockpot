@@ -21,7 +21,7 @@
 
 <div
 	data-tone={tone}
-	class="flex min-h-13 min-w-0 items-center gap-3 rounded-lg bg-inverse py-1 pr-1.5 pl-4 font-ui text-body-compact font-medium text-on-inverse shadow-toast"
+	class="flex min-h-13 min-w-0 items-center gap-3 rounded-lg bg-inverse py-1 pr-1.5 pl-4 font-ui text-body-compact font-medium text-on-inverse shadow-(--shadow-toast)"
 >
 	{#if tone === 'loading'}
 		<Spinner class="text-inverse-accent" />

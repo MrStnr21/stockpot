@@ -101,7 +101,7 @@
 
 {#if inline}
 	{#if open}
-		<section aria-labelledby={titleId} class="rounded-t-xl shadow-sheet">
+		<section aria-labelledby={titleId} class="rounded-t-xl shadow-(--shadow-sheet)">
 			{@render panel()}
 		</section>
 	{/if}
@@ -115,7 +115,7 @@
 		onpointerdown={handlePointerDown}
 		onclick={handleBackdropClick}
 		class={[
-			'group/sheet fixed inset-x-0 top-auto bottom-0 m-0 h-fit max-h-dvh w-full max-w-none overflow-x-hidden overflow-y-auto rounded-t-xl bg-surface text-ink shadow-sheet md:inset-0 md:m-auto md:max-w-sheet-max md:rounded-xl',
+			'group/sheet fixed inset-x-0 top-auto bottom-0 m-0 h-fit max-h-dvh w-full max-w-none overflow-x-hidden overflow-y-auto rounded-t-xl bg-surface text-ink shadow-(--shadow-sheet) md:inset-0 md:m-auto md:max-w-sheet-max md:rounded-xl',
 			'opacity-0 transition-[display,overlay,opacity,translate] transition-discrete duration-(--duration-base) ease-enter open:opacity-100 motion-reduce:transition-[display,overlay,opacity] starting:open:opacity-0',
 			'motion-safe:translate-y-full motion-safe:open:translate-y-0 md:motion-safe:translate-y-4 motion-safe:starting:open:translate-y-full md:motion-safe:starting:open:translate-y-4',
 			'backdrop:bg-scrim backdrop:opacity-0 backdrop:transition-[display,overlay,opacity] backdrop:transition-discrete backdrop:duration-(--duration-base) backdrop:ease-enter open:backdrop:opacity-100 starting:open:backdrop:opacity-0',

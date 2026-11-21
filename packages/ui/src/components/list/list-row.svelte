@@ -12,7 +12,9 @@
 	interface Props {
 		title: string
 		subtitle?: string | null
+		/** Decorative only, such as a CategoryTile. */
 		lead?: Snippet
+		/** Decorative only (a time, a count, a chevron): the row itself is the one control. */
 		trail?: Snippet
 		/* Putting the swipe wrapper here keeps the list item as a direct child of the list. */
 		swipe?: Snippet<[row: Snippet]>
