@@ -101,8 +101,10 @@ not see each other's rows. A spec that guards a query budget can also assert the
 
 ## End-to-end tests
 
-Playwright specs live in `tests/e2e/`. `bun run e2e` builds the app and runs them against the
-production server (`playwright.config.ts`). The first run needs a browser:
+`bun run e2e` runs both Playwright suites. The app specs in `tests/e2e/` run against the built app.
+The kit specs in `packages/ui/tests/book/` run against the built book and cover each story preview
+at 390 × 844 and 1440 × 900, along with primitive interactions. Run the kit suite on its own
+with `bun run -F @stockpot/ui e2e`. Install Chromium before the first run with
 `bunx playwright install chromium`.
 
 Playwright has no `it`, so these specs use `test`, wrapped in one top-level `test.describe`, with

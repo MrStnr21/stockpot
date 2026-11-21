@@ -20,7 +20,7 @@ its boards in a **Boards** line, and its pull request is reviewed against them; 
 
 | Path                     | What it is                                                                                                                                                                                           |
 | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`kit.css`](kit.css)     | Every kit token as CSS custom properties, for light (`:root`, `[data-scheme='light']`) and dark (`[data-scheme='dark']`). WEB-2 moved them into `packages/ui/src/theme.css`.                         |
+| [`kit.css`](kit.css)     | Every kit token as CSS custom properties, for light (`:root`, `[data-scheme='light']`) and dark (`[data-scheme='dark']`). WEB-2 moved them into the [UI theme](../../packages/ui/src/theme.css).     |
 | [`boards/`](boards/)     | One image per board and scheme, rendered from the canvas: what to look at when implementing or reviewing.                                                                                            |
 | [`project/`](project/)   | The canvas's own files, as the design tool stores them: the index `canvas.json`, one `.dc.html` file per board, and the CSS the boards read (`tokens.css`, `kit.css` for primitives, `screens.css`). |
 | [`README.md`](README.md) | This file: how the canvas is organised and the list of boards.                                                                                                                                       |
