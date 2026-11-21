@@ -3,10 +3,327 @@
  * SPDX-FileCopyrightText: 2026 The stockpot authors
  */
 
-/* Placeholder tokens until the design kit lands; the app imports this file after Tailwind. */
-@theme {
-	--color-broth-50: oklch(0.98 0.02 85);
-	--color-broth-500: oklch(0.72 0.14 70);
-	--color-broth-900: oklch(0.3 0.06 60);
-	--font-sans: ui-sans-serif, system-ui, sans-serif;
+@theme static {
+	--color-*: initial;
+
+	--font-ui: 'Inter', ui-sans-serif, system-ui, sans-serif;
+	--font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+	--font-read: 'Literata', ui-serif, Georgia, serif;
+
+	/* Interface type (Inter). Inputs stay at 16px so iOS Safari does not zoom on focus. */
+	--text-title-l: 28px;
+	--text-title-l--line-height: 34px;
+	--text-title-l--font-weight: 700;
+	--text-title-l--letter-spacing: -0.02em;
+	--text-title-m: 20px;
+	--text-title-m--line-height: 26px;
+	--text-title-m--font-weight: 650;
+	--text-title-m--letter-spacing: -0.01em;
+	--text-title-s: 17px;
+	--text-title-s--line-height: 22px;
+	--text-title-s--font-weight: 600;
+	--text-title-s--letter-spacing: -0.005em;
+	--text-body: 16px;
+	--text-body--line-height: 24px;
+	--text-body--font-weight: 400;
+	--text-body-s: 14px;
+	--text-body-s--line-height: 20px;
+	--text-body-s--font-weight: 400;
+	--text-label: 14px;
+	--text-label--line-height: 18px;
+	--text-label--font-weight: 600;
+	--text-caption: 12px;
+	--text-caption--line-height: 16px;
+	--text-caption--font-weight: 500;
+	--text-caption--letter-spacing: 0.01em;
+	--text-micro: 11px;
+	--text-micro--line-height: 14px;
+	--text-micro--font-weight: 600;
+	--text-micro--letter-spacing: 0.02em;
+
+	/* Reading type (Literata): card titles, card text and reports. */
+	--text-read-display: 34px;
+	--text-read-display--line-height: 40px;
+	--text-read-display--font-weight: 600;
+	--text-read-display--letter-spacing: -0.015em;
+	--text-read-title: 26px;
+	--text-read-title--line-height: 32px;
+	--text-read-title--font-weight: 600;
+	--text-read-title--letter-spacing: -0.01em;
+	--text-read-body: 17px;
+	--text-read-body--line-height: 27px;
+	--text-read-body--font-weight: 400;
+	--text-read-quote: 15px;
+	--text-read-quote--line-height: 22px;
+	--text-read-quote--font-weight: 400;
+
+	--spacing-spinner: 18px;
+	--border-width-spinner-sm: 1.5px;
+
+	--radius-xs: 6px;
+	--radius-sm: 10px;
+	--radius-md: 14px;
+	--radius-lg: 20px;
+	--radius-xl: 28px;
+	--radius-full: 9999px;
+
+	--ease-standard: cubic-bezier(0.2, 0, 0, 1);
+	--ease-enter: cubic-bezier(0.05, 0.7, 0.1, 1);
+	--ease-exit: cubic-bezier(0.3, 0, 0.8, 0.15);
+	--duration-fast: 120ms;
+	--duration-base: 200ms;
+	--duration-slow: 320ms;
+	--duration-shimmer: 1400ms;
+	--duration-spin: 800ms;
+	--duration-spin-reduced: 2400ms;
+
+	--color-canvas: oklch(0.977 0.007 350);
+	--color-surface: oklch(0.998 0.002 350);
+	--color-fill: oklch(0.951 0.012 350);
+	--color-fill-strong: oklch(0.918 0.016 350);
+	--color-line: oklch(0.905 0.014 350);
+	--color-line-strong: oklch(0.8 0.02 350);
+
+	--color-ink: oklch(0.255 0.03 350);
+	--color-ink-2: oklch(0.46 0.03 350);
+	--color-ink-3: oklch(0.525 0.025 350);
+	--color-ink-disabled: oklch(0.74 0.015 350);
+
+	--color-accent: oklch(0.575 0.2 355);
+	--color-accent-pressed: oklch(0.5 0.185 355);
+	--color-on-accent: oklch(0.995 0.003 355);
+	--color-accent-soft: oklch(0.94 0.034 355);
+	--color-accent-soft-pressed: oklch(0.905 0.055 355);
+	--color-accent-ink: oklch(0.47 0.17 355);
+	--color-focus: oklch(0.575 0.2 355);
+
+	--color-danger: oklch(0.54 0.2 27);
+	--color-danger-pressed: oklch(0.47 0.18 27);
+	--color-on-danger: oklch(0.995 0.002 27);
+	--color-danger-soft: oklch(0.945 0.028 27);
+	--color-danger-ink: oklch(0.47 0.17 27);
+
+	--color-inverse: oklch(0.27 0.03 350);
+	--color-on-inverse: oklch(0.96 0.008 350);
+	--color-inverse-accent: oklch(0.8 0.12 355);
+
+	--color-skeleton: oklch(0.935 0.012 350);
+	--color-skeleton-shine: oklch(0.965 0.008 350);
+	--color-scrim: oklch(0.255 0.03 350 / 0.36);
+
+	--color-cat-english: oklch(0.56 0.15 255);
+	--color-cat-english-soft: oklch(0.945 0.027 255);
+	--color-cat-english-ink: oklch(0.44 0.13 255);
+	--color-cat-ai: oklch(0.54 0.18 300);
+	--color-cat-ai-soft: oklch(0.945 0.031 300);
+	--color-cat-ai-ink: oklch(0.44 0.16 300);
+	--color-cat-tech: oklch(0.58 0.099 195);
+	--color-cat-tech-soft: oklch(0.945 0.03 195);
+	--color-cat-tech-ink: oklch(0.43 0.073 195);
+	--color-cat-concept: oklch(0.6 0.14 145);
+	--color-cat-concept-soft: oklch(0.948 0.035 145);
+	--color-cat-concept-ink: oklch(0.43 0.11 145);
+	--color-cat-idea: oklch(0.64 0.14 65);
+	--color-cat-idea-soft: oklch(0.955 0.04 80);
+	--color-cat-idea-ink: oklch(0.47 0.1 65);
+	--color-cat-other: oklch(0.56 0.025 265);
+	--color-cat-other-soft: oklch(0.948 0.008 265);
+	--color-cat-other-ink: oklch(0.43 0.025 265);
+
+	--shadow-card: 0 1px 2px oklch(0.255 0.03 350 / 0.06), 0 2px 8px oklch(0.255 0.03 350 / 0.05);
+	--shadow-sheet: 0 -8px 32px oklch(0.255 0.03 350 / 0.12);
+	--shadow-toast: 0 8px 24px oklch(0.255 0.03 350 / 0.2);
+}
+
+@layer theme {
+	:root {
+		color-scheme: light dark;
+	}
+
+	/* A light panel can sit inside a dark subtree and has to reset the inherited tokens. */
+	[data-scheme='light'] {
+		color-scheme: light;
+
+		--color-canvas: oklch(0.977 0.007 350);
+		--color-surface: oklch(0.998 0.002 350);
+		--color-fill: oklch(0.951 0.012 350);
+		--color-fill-strong: oklch(0.918 0.016 350);
+		--color-line: oklch(0.905 0.014 350);
+		--color-line-strong: oklch(0.8 0.02 350);
+
+		--color-ink: oklch(0.255 0.03 350);
+		--color-ink-2: oklch(0.46 0.03 350);
+		--color-ink-3: oklch(0.525 0.025 350);
+		--color-ink-disabled: oklch(0.74 0.015 350);
+
+		--color-accent: oklch(0.575 0.2 355);
+		--color-accent-pressed: oklch(0.5 0.185 355);
+		--color-on-accent: oklch(0.995 0.003 355);
+		--color-accent-soft: oklch(0.94 0.034 355);
+		--color-accent-soft-pressed: oklch(0.905 0.055 355);
+		--color-accent-ink: oklch(0.47 0.17 355);
+		--color-focus: oklch(0.575 0.2 355);
+
+		--color-danger: oklch(0.54 0.2 27);
+		--color-danger-pressed: oklch(0.47 0.18 27);
+		--color-on-danger: oklch(0.995 0.002 27);
+		--color-danger-soft: oklch(0.945 0.028 27);
+		--color-danger-ink: oklch(0.47 0.17 27);
+
+		--color-inverse: oklch(0.27 0.03 350);
+		--color-on-inverse: oklch(0.96 0.008 350);
+		--color-inverse-accent: oklch(0.8 0.12 355);
+
+		--color-skeleton: oklch(0.935 0.012 350);
+		--color-skeleton-shine: oklch(0.965 0.008 350);
+		--color-scrim: oklch(0.255 0.03 350 / 0.36);
+
+		--color-cat-english: oklch(0.56 0.15 255);
+		--color-cat-english-soft: oklch(0.945 0.027 255);
+		--color-cat-english-ink: oklch(0.44 0.13 255);
+		--color-cat-ai: oklch(0.54 0.18 300);
+		--color-cat-ai-soft: oklch(0.945 0.031 300);
+		--color-cat-ai-ink: oklch(0.44 0.16 300);
+		--color-cat-tech: oklch(0.58 0.099 195);
+		--color-cat-tech-soft: oklch(0.945 0.03 195);
+		--color-cat-tech-ink: oklch(0.43 0.073 195);
+		--color-cat-concept: oklch(0.6 0.14 145);
+		--color-cat-concept-soft: oklch(0.948 0.035 145);
+		--color-cat-concept-ink: oklch(0.43 0.11 145);
+		--color-cat-idea: oklch(0.64 0.14 65);
+		--color-cat-idea-soft: oklch(0.955 0.04 80);
+		--color-cat-idea-ink: oklch(0.47 0.1 65);
+		--color-cat-other: oklch(0.56 0.025 265);
+		--color-cat-other-soft: oklch(0.948 0.008 265);
+		--color-cat-other-ink: oklch(0.43 0.025 265);
+
+		--shadow-card: 0 1px 2px oklch(0.255 0.03 350 / 0.06), 0 2px 8px oklch(0.255 0.03 350 / 0.05);
+		--shadow-sheet: 0 -8px 32px oklch(0.255 0.03 350 / 0.12);
+		--shadow-toast: 0 8px 24px oklch(0.255 0.03 350 / 0.2);
+	}
+
+	/* Keep both dark blocks in sync so explicit and system dark use the same palette. */
+	[data-scheme='dark'] {
+		color-scheme: dark;
+
+		--color-canvas: oklch(0.165 0.014 350);
+		--color-surface: oklch(0.205 0.017 350);
+		--color-fill: oklch(0.25 0.019 350);
+		--color-fill-strong: oklch(0.295 0.021 350);
+		--color-line: oklch(0.29 0.018 350);
+		--color-line-strong: oklch(0.4 0.022 350);
+
+		--color-ink: oklch(0.955 0.008 350);
+		--color-ink-2: oklch(0.79 0.018 350);
+		--color-ink-3: oklch(0.68 0.02 350);
+		--color-ink-disabled: oklch(0.45 0.018 350);
+
+		--color-accent: oklch(0.76 0.14 355);
+		--color-accent-pressed: oklch(0.69 0.15 355);
+		--color-on-accent: oklch(0.22 0.05 355);
+		--color-accent-soft: oklch(0.31 0.07 355);
+		--color-accent-soft-pressed: oklch(0.36 0.085 355);
+		--color-accent-ink: oklch(0.83 0.1 355);
+		--color-focus: oklch(0.76 0.14 355);
+
+		--color-danger: oklch(0.7 0.16 27);
+		--color-danger-pressed: oklch(0.63 0.17 27);
+		--color-on-danger: oklch(0.2 0.04 27);
+		--color-danger-soft: oklch(0.3 0.07 27);
+		--color-danger-ink: oklch(0.82 0.1 27);
+
+		--color-inverse: oklch(0.93 0.012 350);
+		--color-on-inverse: oklch(0.24 0.03 350);
+		--color-inverse-accent: oklch(0.5 0.18 355);
+
+		--color-skeleton: oklch(0.255 0.018 350);
+		--color-skeleton-shine: oklch(0.3 0.02 350);
+		--color-scrim: oklch(0 0 0 / 0.55);
+
+		--color-cat-english: oklch(0.74 0.12 255);
+		--color-cat-english-soft: oklch(0.3 0.06 255);
+		--color-cat-english-ink: oklch(0.86 0.07 255);
+		--color-cat-ai: oklch(0.74 0.14 300);
+		--color-cat-ai-soft: oklch(0.3 0.07 300);
+		--color-cat-ai-ink: oklch(0.86 0.08 300);
+		--color-cat-tech: oklch(0.76 0.1 195);
+		--color-cat-tech-soft: oklch(0.3 0.045 195);
+		--color-cat-tech-ink: oklch(0.87 0.07 195);
+		--color-cat-concept: oklch(0.77 0.14 145);
+		--color-cat-concept-soft: oklch(0.3 0.05 145);
+		--color-cat-concept-ink: oklch(0.87 0.09 145);
+		--color-cat-idea: oklch(0.82 0.14 80);
+		--color-cat-idea-soft: oklch(0.31 0.05 75);
+		--color-cat-idea-ink: oklch(0.89 0.1 85);
+		--color-cat-other: oklch(0.72 0.025 265);
+		--color-cat-other-soft: oklch(0.3 0.012 265);
+		--color-cat-other-ink: oklch(0.86 0.015 265);
+
+		--shadow-card: 0 1px 2px oklch(0 0 0 / 0.4);
+		--shadow-sheet: 0 -8px 32px oklch(0 0 0 / 0.5);
+		--shadow-toast: 0 8px 24px oklch(0 0 0 / 0.5);
+	}
+
+	@media (prefers-color-scheme: dark) {
+		:root:not([data-scheme='light']) {
+			color-scheme: dark;
+
+			--color-canvas: oklch(0.165 0.014 350);
+			--color-surface: oklch(0.205 0.017 350);
+			--color-fill: oklch(0.25 0.019 350);
+			--color-fill-strong: oklch(0.295 0.021 350);
+			--color-line: oklch(0.29 0.018 350);
+			--color-line-strong: oklch(0.4 0.022 350);
+
+			--color-ink: oklch(0.955 0.008 350);
+			--color-ink-2: oklch(0.79 0.018 350);
+			--color-ink-3: oklch(0.68 0.02 350);
+			--color-ink-disabled: oklch(0.45 0.018 350);
+
+			--color-accent: oklch(0.76 0.14 355);
+			--color-accent-pressed: oklch(0.69 0.15 355);
+			--color-on-accent: oklch(0.22 0.05 355);
+			--color-accent-soft: oklch(0.31 0.07 355);
+			--color-accent-soft-pressed: oklch(0.36 0.085 355);
+			--color-accent-ink: oklch(0.83 0.1 355);
+			--color-focus: oklch(0.76 0.14 355);
+
+			--color-danger: oklch(0.7 0.16 27);
+			--color-danger-pressed: oklch(0.63 0.17 27);
+			--color-on-danger: oklch(0.2 0.04 27);
+			--color-danger-soft: oklch(0.3 0.07 27);
+			--color-danger-ink: oklch(0.82 0.1 27);
+
+			--color-inverse: oklch(0.93 0.012 350);
+			--color-on-inverse: oklch(0.24 0.03 350);
+			--color-inverse-accent: oklch(0.5 0.18 355);
+
+			--color-skeleton: oklch(0.255 0.018 350);
+			--color-skeleton-shine: oklch(0.3 0.02 350);
+			--color-scrim: oklch(0 0 0 / 0.55);
+
+			--color-cat-english: oklch(0.74 0.12 255);
+			--color-cat-english-soft: oklch(0.3 0.06 255);
+			--color-cat-english-ink: oklch(0.86 0.07 255);
+			--color-cat-ai: oklch(0.74 0.14 300);
+			--color-cat-ai-soft: oklch(0.3 0.07 300);
+			--color-cat-ai-ink: oklch(0.86 0.08 300);
+			--color-cat-tech: oklch(0.76 0.1 195);
+			--color-cat-tech-soft: oklch(0.3 0.045 195);
+			--color-cat-tech-ink: oklch(0.87 0.07 195);
+			--color-cat-concept: oklch(0.77 0.14 145);
+			--color-cat-concept-soft: oklch(0.3 0.05 145);
+			--color-cat-concept-ink: oklch(0.87 0.09 145);
+			--color-cat-idea: oklch(0.82 0.14 80);
+			--color-cat-idea-soft: oklch(0.31 0.05 75);
+			--color-cat-idea-ink: oklch(0.89 0.1 85);
+			--color-cat-other: oklch(0.72 0.025 265);
+			--color-cat-other-soft: oklch(0.3 0.012 265);
+			--color-cat-other-ink: oklch(0.86 0.015 265);
+
+			--shadow-card: 0 1px 2px oklch(0 0 0 / 0.4);
+			--shadow-sheet: 0 -8px 32px oklch(0 0 0 / 0.5);
+			--shadow-toast: 0 8px 24px oklch(0 0 0 / 0.5);
+		}
+	}
 }

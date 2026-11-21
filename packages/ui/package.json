@@ -9,6 +9,8 @@
 		"./*": "./src/components/*/index.ts"
 	},
 	"scripts": {
+		"book": "bunx --bun astro dev",
+		"book:build": "bunx --bun astro build",
 		"check": "bunx --bun astro check",
 		"fmt": "bunx --bun prettier --cache --write .",
 		"fmt:check": "bunx --bun prettier --cache --check .",
@@ -28,6 +30,7 @@
 		"@tailwindcss/vite": "^4.3.5",
 		"@types/bun": "^1.4.4",
 		"astro": "^7.4.12",
+		"astrobook": "0.13.3",
 		"eslint-plugin-astro": "^3.2.1",
 		"eslint-plugin-svelte": "^3.24.1",
 		"oxlint": "^1.94.0",

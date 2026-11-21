@@ -2,7 +2,14 @@
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
 import svelte from '@astrojs/svelte'
+import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'astro/config'
+import astrobook from 'astrobook'
 
-// The package has no site of its own yet; this config lets `astro check` type-check its components.
-export default defineConfig({ integrations: [svelte()] })
+export default defineConfig({
+	integrations: [
+		svelte(),
+		astrobook({ directory: 'src', css: ['./src/book/book.css'], head: './src/book/head.astro' }),
+	],
+	vite: { plugins: [tailwindcss()] },
+})

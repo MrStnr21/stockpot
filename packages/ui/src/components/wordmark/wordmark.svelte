@@ -10,7 +10,7 @@
 	const { tagline }: Props = $props()
 </script>
 
-<p class="text-4xl font-semibold tracking-tight text-broth-900">stockpot</p>
+<p class="text-4xl font-semibold tracking-tight text-ink">stockpot</p>
 {#if tagline}
-	<p class="mt-2 text-lg text-broth-900/80">{tagline}</p>
+	<p class="mt-2 text-lg text-ink-2">{tagline}</p>
 {/if}
