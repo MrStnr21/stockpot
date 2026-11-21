@@ -179,6 +179,25 @@
 			transform: translateX(100%);
 		}
 	}
+
+	--border-width-field: 1.5px;
+	--text-subheading: 22px;
+	--text-subheading--line-height: 28px;
+	--text-subheading--font-weight: 600;
+	--text-subheading--letter-spacing: -0.01em;
+	--text-field-label: 13px;
+	--text-field-label--line-height: 18px;
+	--text-field-label--font-weight: 600;
+	--spacing-sheet-max: 560px;
+	--text-tab-badge: 10px;
+	--text-tab-badge--line-height: 14px;
+	--text-tab-badge--font-weight: 700;
+	--blur-tab-bar: 20px;
+	--opacity-tab-bar: 88%;
+	--text-body-compact: 15px;
+	--text-body-compact--line-height: 20px;
+	--toast-action-pressed-mix: 14%;
+	--toast-action-disabled-mix: 40%;
 }
 
 @layer theme {
