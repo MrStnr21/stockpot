@@ -1,0 +1,10 @@
+{
+	"name": "Literata",
+	"version": "3.103",
+	"license": "OFL-1.1",
+	"source": "https://github.com/googlefonts/literata/releases/tag/3.103",
+	"files": {
+		"LiterataVariable.woff2": "5e50643479bee69e0204164602f830502b0db42bbc29da83edc9980df17e34df",
+		"LiterataVariable-Italic.woff2": "ddfb5600779fccc34c8fc6ff32a1b60a04355e9ae00a230539d852de7e0eb4ee"
+	}
+}

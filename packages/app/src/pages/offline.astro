@@ -1,0 +1,21 @@
+---
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 The stockpot authors
+
+import { EmptyState } from '@stockpot/ui/empty-state'
+
+import Shell from '#/layouts/shell.astro'
+import { pickLocale, t } from '#/lib/i18n'
+
+/* Public: the service worker stores it when it installs and serves it, marked offline, when the server
+ * cannot be reached and no copy of the page asked for is kept. It holds nothing private. */
+const locale = pickLocale(Astro.request.headers.get('accept-language'))
+
+const strings = t(locale)
+---
+
+<Shell title={strings.nav.label} {locale} current={null}>
+	<EmptyState icon="alert" title={strings.offlinePage.emptyTitle}>
+		{strings.offlinePage.empty}
+	</EmptyState>
+</Shell>

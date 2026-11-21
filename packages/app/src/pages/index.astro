@@ -2,25 +2,28 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
-import { Wordmark } from '@stockpot/ui/wordmark'
+import { Button } from '@stockpot/ui/button'
+import { EmptyState } from '@stockpot/ui/empty-state'
 
-import Layout from '#/layouts/layout.astro'
+import Shell from '#/layouts/shell.astro'
+import { pickLocale, t } from '#/lib/i18n'
 
 // Sign-in sends a visitor on to setup while the instance has no owner.
 if (Astro.locals.owner === null) {
 	// oxlint-disable-next-line unicorn/prefer-module -- Astro runs the frontmatter as a function, and a page redirects by returning the response.
 	return Astro.redirect('/signin')
 }
+
+const locale = pickLocale(Astro.request.headers.get('accept-language'))
+
+const strings = t(locale)
 ---
 
-<Layout title="stockpot">
-	<main class="mx-auto flex min-h-dvh max-w-xl flex-col justify-center px-6">
-		<Wordmark tagline="Toss in the scraps of your day. Wake up to broth." />
-		<p class="mt-8 text-ink-2">Work in progress: nothing to capture yet.</p>
-		<form method="post" action="/signout" class="mt-8">
-			<button type="submit" class="rounded border px-3 py-2">
-				Sign out
-			</button>
-		</form>
-	</main>
-</Layout>
+<Shell title={strings.nav.today} {locale} current="today" heading={strings.nav.today}>
+	<EmptyState icon="sun" title={strings.today.emptyTitle}>
+		{strings.today.empty}
+		<Button slot="action" href="/add">
+			{strings.today.addNote}
+		</Button>
+	</EmptyState>
+</Shell>

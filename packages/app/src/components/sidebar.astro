@@ -1,0 +1,60 @@
+---
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 The stockpot authors
+
+import { Button } from '@stockpot/ui/button'
+import { Icon } from '@stockpot/ui/icon'
+
+import Brand from '#/components/brand.astro'
+import type { Messages } from '#/lib/i18n/en'
+import { navItems, type NavCounts, type NavKey } from '#/lib/nav'
+
+interface Props {
+	current: NavKey | null
+	counts: NavCounts
+	strings: Messages
+	sourceUrl: string
+}
+
+const { current, counts, strings, sourceUrl } = Astro.props
+
+// Add is the "New note" button above the list, so the list leaves it out.
+const items = navItems.filter((item) => item.key !== 'add')
+
+function countOf(key: NavKey) {
+	return key === 'today' || key === 'notes' || key === 'base' ? counts[key] : null
+}
+---
+
+<aside class="fixed inset-y-0 left-0 z-5 hidden w-sidebar flex-col gap-1 border-r border-line bg-surface px-4 py-6 xl:flex">
+	<Brand />
+	<Button href="/add" icon="plus" block class="mt-1 mb-4.5">
+		{strings.newNote}
+		<span class="ml-2 inline-flex h-5 items-center rounded-xs bg-current/14 px-1.5 text-caption/4 tracking-wide">
+			N
+		</span>
+	</Button>
+	<nav aria-label={strings.nav.label} class="flex flex-col gap-1">
+		{items.map((item) => (
+			<a
+				href={item.href}
+				aria-current={item.key === current ? 'page' : undefined}
+				class="group flex h-11 items-center gap-3 rounded-sm px-3 text-label text-ink-2 outline-focus focus-visible:outline-2 focus-visible:outline-offset-2 aria-[current=page]:bg-accent-soft aria-[current=page]:text-accent-ink"
+			>
+				<Icon name={item.icon} class="size-5" />
+				{strings.nav[item.key]}
+				{countOf(item.key) !== null && (
+					<span class="ml-auto text-caption/4 font-semibold text-ink-3 group-aria-[current=page]:text-accent-ink">
+						{countOf(item.key)}
+					</span>
+				)}
+			</a>
+		))}
+	</nav>
+	<a
+		href={sourceUrl}
+		class="mt-auto inline-flex min-h-11 items-center rounded-sm px-3 text-caption text-ink-3 outline-focus hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
+	>
+		{strings.sourceCode}
+	</a>
+</aside>

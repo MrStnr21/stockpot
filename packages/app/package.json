@@ -22,6 +22,7 @@
 		"lint:fix": "OXLINT_TSGOLINT_PATH=../../tools/lint/tsrs-lint.ts bunx --bun oxlint --deny-warnings --fix",
 		"test": "bun test --pass-with-no-tests",
 		"e2e": "bun run build && bunx --bun playwright test",
+		"icons": "bun ./scripts/render-icons.ts",
 		"db:generate": "bunx --bun drizzle-kit generate"
 	},
 	"dependencies": {

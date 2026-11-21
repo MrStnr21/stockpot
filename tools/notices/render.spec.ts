@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from 'bun:test'
 
-import type { Dependency } from './collect'
+import type { Dependency, Font } from './collect'
 import { renderNotices, splitLicense } from './render'
 
 const mitTerms = 'Permission is hereby granted, free of charge, to any person obtaining a copy.'
@@ -67,6 +67,35 @@ describe('render', () => {
 
 			it('says so instead of printing an empty block', () => {
 				expect(renderNotices([pan])).toContain('_The package ships no licence file._')
+			})
+		})
+
+		describe('with a bundled font', () => {
+			const ofl = 'This Font Software is licensed under the SIL Open Font License.'
+
+			const font: Font = {
+				name: 'Serif',
+				version: '2.0',
+				license: 'OFL-1.1',
+				source: 'https://example.com/serif',
+				licenseText: `Copyright 2020 The Serif Authors\n\n${ofl}\n`,
+			}
+
+			const notices = renderNotices([], [font])
+
+			it('lists it with version, licence and source', () => {
+				expect(notices).toContain('| Serif | 2.0 | OFL-1.1 | <https://example.com/serif> |')
+			})
+
+			it('keeps its copyright and the licence text', () => {
+				expect(notices).toContain('- `Serif@2.0`: Copyright 2020 The Serif Authors')
+				expect(notices).toContain(ofl)
+			})
+
+			it('groups its licence text with the other fonts under the same terms', () => {
+				const sans = { ...font, name: 'Sans', licenseText: `Copyright 2021 Sans\n\n${ofl}\n` }
+
+				expect(renderNotices([], [font, sans]).split(ofl)).toHaveLength(2)
 			})
 		})
 	})

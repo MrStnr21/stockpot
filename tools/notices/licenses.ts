@@ -26,6 +26,11 @@ const compatible = new Set([
 	'MIT',
 	'MIT-0',
 	'MPL-2.0',
+	/*
+	 * Fonts ship next to the code. OFL-1.1 permits bundling them with any software, which is all we do;
+	 * it only forbids selling the fonts alone and requires the licence to travel with them.
+	 */
+	'OFL-1.1',
 	'Python-2.0',
 	'Unlicense',
 	'Zlib',

@@ -9,7 +9,11 @@ import { Wordmark } from '@stockpot/ui/wordmark'
 
 ```css
 @import '@stockpot/ui/theme.css';
+@import '@stockpot/ui/fonts.css';
 ```
+
+`fonts.css` declares `@font-face` for Inter and Literata from the vendored files in `src/fonts/`;
+Vite fingerprints them, so nothing is requested from a font host.
 
 ## Primitives
 

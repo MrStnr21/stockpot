@@ -5,6 +5,7 @@
 
 @import 'tailwindcss';
 @import '@stockpot/ui/theme.css';
+@import '@stockpot/ui/fonts.css';
 
 /* Tailwind scans the app by default; the UI package's components live outside it. */
 @source '../../ui/src';

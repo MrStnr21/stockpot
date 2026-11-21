@@ -4,12 +4,13 @@
 
 /*
  * `bun run notices` writes THIRD_PARTY_NOTICES.md from the run-time dependencies of the shipped
- * workspaces; `bun run notices -- --check` fails when the committed file is stale. Both fail when a
- * dependency's licence is not compatible with AGPL-3.0-or-later (tools/notices/licenses.ts).
+ * workspaces and the fonts vendored in packages/ui; `bun run notices -- --check` fails when the
+ * committed file is stale. Both fail when a licence is not compatible with AGPL-3.0-or-later
+ * (tools/notices/licenses.ts) or a font file differs from the SHA-256 recorded in its font.json.
  */
 import { argv, file, write } from 'bun'
 
-import { collectDependencies } from './collect.ts'
+import { collectDependencies, collectFonts } from './collect.ts'
 import { isCompatible } from './licenses.ts'
 import { renderNotices } from './render.ts'
 
@@ -19,7 +20,9 @@ const output = `${root}THIRD_PARTY_NOTICES.md`
 
 const dependencies = await collectDependencies(root, [`${root}packages/app`, `${root}packages/ui`])
 
-const incompatible = dependencies.filter(({ license }) => !isCompatible(license))
+const fonts = await collectFonts(`${root}packages/ui/src/fonts`)
+
+const incompatible = [...dependencies, ...fonts].filter(({ license }) => !isCompatible(license))
 
 if (incompatible.length > 0) {
 	const list = incompatible.map(({ name, version, license }) => `${name}@${version} (${license})`)
@@ -28,7 +31,7 @@ if (incompatible.length > 0) {
 	process.exit(1)
 }
 
-const notices = renderNotices(dependencies)
+const notices = renderNotices(dependencies, fonts)
 
 if (argv.includes('--check')) {
 	const committed = file(output)
