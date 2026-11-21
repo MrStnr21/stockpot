@@ -1,0 +1,39 @@
+---
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 The stockpot authors
+
+import { Button } from '@stockpot/ui/button'
+import { EmptyState } from '@stockpot/ui/empty-state'
+
+import Shell from '#/layouts/shell.astro'
+import { pickLocale, t } from '#/lib/i18n'
+import { config } from '#/server/config'
+
+// Sign-in sends a visitor on to setup while the instance has no owner.
+if (Astro.locals.owner === null) {
+	// oxlint-disable-next-line unicorn/prefer-module -- Astro runs the frontmatter as a function, and a page redirects by returning the response.
+	return Astro.redirect('/signin')
+}
+
+const locale = pickLocale(Astro.request.headers.get('accept-language'))
+
+const strings = t(locale)
+---
+
+<Shell title={strings.nav.settings} {locale} current="settings" heading={strings.nav.settings}>
+	<EmptyState icon="sliders" title={strings.settings.emptyTitle}>
+		{strings.settings.empty}
+	</EmptyState>
+	<form method="post" action="/signout" class="flex justify-center">
+		<Button type="submit" variant="outline">
+			{strings.signOut}
+		</Button>
+	</form>
+	<!-- The sidebar carries this link from 1440 px; below that the bar and the rail have no room for it. -->
+	<a
+		href={config.sourceUrl}
+		class="mx-auto inline-flex min-h-11 items-center rounded-sm px-3 text-caption text-ink-3 outline-focus hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 xl:hidden"
+	>
+		{strings.sourceCode}
+	</a>
+</Shell>

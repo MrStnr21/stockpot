@@ -194,6 +194,9 @@
 	--text-tab-badge--font-weight: 700;
 	--blur-tab-bar: 20px;
 	--opacity-tab-bar: 88%;
+	--spacing-rail: 88px;
+	--spacing-sidebar: 264px;
+	--spacing-column: 680px;
 	--text-body-compact: 15px;
 	--text-body-compact--line-height: 20px;
 	--toast-action-pressed-mix: 14%;

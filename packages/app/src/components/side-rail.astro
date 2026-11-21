@@ -1,0 +1,39 @@
+---
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 The stockpot authors
+
+import { Tab } from '@stockpot/ui/tab-bar'
+
+import type { Messages } from '#/lib/i18n/en'
+import { navItems, type NavCounts, type NavKey } from '#/lib/nav'
+
+interface Props {
+	label: string
+	current: NavKey | null
+	counts: NavCounts
+	strings: Messages['nav']
+}
+
+const { label, current, counts, strings } = Astro.props
+
+// Add leads the rail, and the others keep the phone bar's order.
+const items = navItems.toSorted((a, b) => Number(b.key === 'add') - Number(a.key === 'add'))
+---
+
+<nav
+	aria-label={label}
+	class="fixed inset-y-0 left-0 z-5 hidden w-rail flex-col items-center gap-1.5 border-r border-line bg-surface pt-10 pb-6 md:flex xl:hidden"
+>
+	{items.map((item) => (
+		<Tab
+			href={item.href}
+			icon={item.icon}
+			current={item.key === current}
+			add={item.key === 'add'}
+			badge={item.key === 'today' ? counts.today : null}
+			class:list={['md:min-h-15 md:w-19', item.key === 'add' && 'mb-3.5']}
+		>
+			{strings[item.key]}
+		</Tab>
+	))}
+</nav>
