@@ -6,8 +6,8 @@
  * integration in astro.config.ts imports it from the Node adapter's server entry. Astro loads the
  * middleware and pages only on the first request, so anything that must happen at startup goes here.
  */
-import { readTimeZone } from '#/features/settings/server'
-import { instanceResearchJob } from '#/instance'
+import { readBatchTime, readTimeZone } from '#/features/settings/server'
+import { instanceBatchJob, instanceResearchJob } from '#/instance'
 import { instanceAuth } from '#/server/auth'
 import { instanceDb } from '#/server/db/instance'
 import { startRunner, stopRunner } from '#/server/jobs/runner'
@@ -23,7 +23,12 @@ auth.needsSetup()
 const db = await instanceDb()
 
 // An entry module, so it may hand the runner the features' jobs; server/ may not import them.
-await startRunner({ db, jobs: [await instanceResearchJob()], timeZone: () => readTimeZone(db) })
+await startRunner({
+	db,
+	jobs: [await instanceResearchJob()],
+	schedules: [{ job: await instanceBatchJob(), at: () => readBatchTime(db) }],
+	timeZone: () => readTimeZone(db),
+})
 
 /* The Node adapter installs no signal handlers, so without these a stop would end the process with
  * a job in hand. The job is requeued on the next start either way; stopping first lets it finish. */

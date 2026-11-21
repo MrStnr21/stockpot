@@ -2,22 +2,28 @@
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
 import { createSuggester, type Suggester } from '#/features/capture/server/suggest'
+import { createBatchJob } from '#/features/digest/server/batch'
 import { learnAliases, learnSense } from '#/features/notes/server/learn'
-import { createResearchJob, type ResearchPayload } from '#/features/research/server/pipeline'
+import { pendingResearchNoteIds } from '#/features/research/server/pending'
+import {
+	createResearchJob,
+	queueResearch,
+	type ResearchPayload,
+} from '#/features/research/server/pipeline'
 import { readSettings } from '#/features/settings/server'
 import { config } from '#/server/config'
 import type { Db } from '#/server/db/client'
 import { instanceDb } from '#/server/db/instance'
 import { createRouter, type Router } from '#/server/engines/router'
 import { currentRunner } from '#/server/jobs/runner'
-import type { JobDefinition } from '#/server/jobs/types'
+import type { JobDefinition, ScheduledRun } from '#/server/jobs/types'
 import { openLink } from '#/server/links/open-link'
 import { log } from '#/server/log'
 
 /*
  * The process's shared services that are built from features: the router reads the settings feature,
- * the suggester belongs to capture, the research job composes research, notes and settings. server/
- * may not import features, so they live in this entry module, opened on first use like the database.
+ * the suggester belongs to capture, and the jobs compose digest, research, notes and settings.
+ * server/ may not import features, so they live in this entry module, opened on first use like the database.
  * One router keeps each engine and Gemini's usage counters once per process; one suggester keeps one
  * cache; the runner accepts only the job definition it was started with.
  */
@@ -26,6 +32,7 @@ interface ProcessServices {
 	router?: Promise<Router>
 	suggester?: Suggester
 	researchJob?: Promise<JobDefinition<ResearchPayload>>
+	batchJob?: Promise<JobDefinition<ScheduledRun>>
 }
 
 const thisProcess: ProcessServices = {}
@@ -107,4 +114,45 @@ export async function instanceResearchJob(): Promise<JobDefinition<ResearchPaylo
 	thisProcess.researchJob ??= instanceDb().then(buildResearchJob)
 
 	return thisProcess.researchJob
+}
+
+function buildBatchJob(
+	db: Db,
+	researchJob: JobDefinition<ResearchPayload>,
+): JobDefinition<ScheduledRun> {
+	return createBatchJob({
+		db,
+		pending: () => pendingResearchNoteIds(db),
+		queue: (noteIds) => {
+			const runner = currentRunner()
+
+			if (runner === undefined) {
+				log.warn('No job runner to queue the nightly batch', { notes: noteIds.length })
+
+				return
+			}
+
+			const runAt = new Date()
+
+			queueResearch(
+				{
+					db,
+					enqueue: (payload, priority) => {
+						runner.enqueue(researchJob, payload, { priority, runAt })
+					},
+				},
+				noteIds,
+				'batch',
+			)
+		},
+	})
+}
+
+/** The nightly batch job src/boot.ts registers as a daily schedule. */
+export async function instanceBatchJob(): Promise<JobDefinition<ScheduledRun>> {
+	thisProcess.batchJob ??= Promise.all([instanceDb(), instanceResearchJob()]).then(
+		([db, researchJob]) => buildBatchJob(db, researchJob),
+	)
+
+	return thisProcess.batchJob
 }
