@@ -28,7 +28,7 @@ its boards in a **Boards** line, and its pull request is reviewed against them; 
 The `.dc.html` files render only inside the design tool, which supplies their runtime; read them for
 exact values, and the images for the look. Fonts are named by family only, Inter for the interface
 and Literata for what the owner reads. The boards load them from Google Fonts to draw; production
-serves them from the app, and no font files are committed.
+serves the fonts from the app, vendored unmodified in `packages/ui/src/fonts/` with their licences.
 
 ## How the canvas is organised
 

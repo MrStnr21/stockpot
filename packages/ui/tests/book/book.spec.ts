@@ -26,13 +26,6 @@ async function openStory(page: Page, path: string) {
 }
 
 test.describe('UI kit book', () => {
-	test.beforeEach(async ({ page }) => {
-		// Keep third-party font availability out of local browser checks.
-		await page.route('https://fonts.googleapis.com/**', async (route) =>
-			route.fulfill({ contentType: 'text/css', body: '' }),
-		)
-	})
-
 	test.afterEach(async ({ page }) => {
 		const messages = await page.consoleMessages()
 

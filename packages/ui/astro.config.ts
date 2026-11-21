@@ -7,9 +7,6 @@ import { defineConfig } from 'astro/config'
 import astrobook from 'astrobook'
 
 export default defineConfig({
-	integrations: [
-		svelte(),
-		astrobook({ directory: 'src', css: ['./src/book/book.css'], head: './src/book/head.astro' }),
-	],
+	integrations: [svelte(), astrobook({ directory: 'src', css: ['./src/book/book.css'] })],
 	vite: { plugins: [tailwindcss()] },
 })

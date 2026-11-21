@@ -6,12 +6,18 @@ import { describe, expect, it } from 'bun:test'
 import { isCompatible } from './licenses'
 
 describe('isCompatible', () => {
-	it.each(['MIT', 'Apache-2.0', 'ISC', 'BSD-3-Clause', 'MPL-2.0', 'LGPL-3.0+', 'GPL-3.0-or-later'])(
-		'accepts %s',
-		(license) => {
-			expect(isCompatible(license)).toBe(true)
-		},
-	)
+	it.each([
+		'MIT',
+		'Apache-2.0',
+		'ISC',
+		'BSD-3-Clause',
+		'MPL-2.0',
+		'OFL-1.1',
+		'LGPL-3.0+',
+		'GPL-3.0-or-later',
+	])('accepts %s', (license) => {
+		expect(isCompatible(license)).toBe(true)
+	})
 
 	it.each(['GPL-2.0-only', 'CC-BY-NC-4.0', 'SEE LICENSE IN LICENSE.txt', 'UNLICENSED', ''])(
 		'rejects %s',

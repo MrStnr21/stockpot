@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
-import { file, Glob } from 'bun'
+import { CryptoHasher, file, Glob } from 'bun'
 import { dirname, join } from 'node:path'
 import * as v from 'valibot'
 
@@ -133,4 +133,67 @@ export async function collectDependencies(
 	return [...seen.values()].toSorted(
 		(a, b) => a.name.localeCompare(b.name) || a.version.localeCompare(b.version),
 	)
+}
+
+const fontManifest = v.object({
+	name: v.string(),
+	version: v.string(),
+	license: v.string(),
+	source: v.string(),
+	files: v.record(v.string(), v.string()),
+})
+
+export interface Font {
+	name: string
+	version: string
+	license: string
+	source: string
+	licenseText: string | null
+}
+
+async function sha256(path: string): Promise<string> {
+	return new CryptoHasher('sha256').update(await file(path).bytes()).digest('hex')
+}
+
+/**
+ * The fonts vendored under `directory`, one folder each with a `font.json`. A listed file whose SHA-256
+ * differs from the recorded one fails, so a modified font cannot ship unnoticed.
+ */
+export async function collectFonts(directory: string): Promise<Font[]> {
+	const manifests = await Array.fromAsync(
+		new Glob('*/font.json').scan({ cwd: directory, onlyFiles: true }),
+	)
+
+	const fonts = await Promise.all(
+		manifests.toSorted().map(async (manifestPath) => {
+			const folder = join(directory, dirname(manifestPath))
+			const font = v.parse(fontManifest, await file(join(directory, manifestPath)).json())
+
+			const mismatches = await Promise.all(
+				Object.entries(font.files).map(async ([name, expected]) => {
+					const exists = await file(join(folder, name)).exists()
+
+					return !exists || (await sha256(join(folder, name))) !== expected ? name : null
+				}),
+			)
+
+			const modified = mismatches.filter((name) => name !== null)
+
+			if (modified.length > 0) {
+				throw new Error(
+					`${font.name}: ${modified.join(', ')} missing or differs from the SHA-256 in font.json. Fonts ship unmodified.`,
+				)
+			}
+
+			return {
+				name: font.name,
+				version: font.version,
+				license: font.license,
+				source: font.source,
+				licenseText: await readText(folder, /^ofl/iu),
+			}
+		}),
+	)
+
+	return fonts.toSorted((a, b) => a.name.localeCompare(b.name))
 }
