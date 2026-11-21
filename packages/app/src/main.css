@@ -8,3 +8,6 @@
 
 /* Tailwind scans the app by default; the UI package's components live outside it. */
 @source '../../ui/src';
+/* The kit's book and stories are for the playground only; keep their classes out of the app's CSS. */
+@source not '../../ui/src/book';
+@source not '../../ui/src/**/*.story.svelte';

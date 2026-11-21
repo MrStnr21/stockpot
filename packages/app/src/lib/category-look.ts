@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
-export const categoryColors = ['english', 'ai', 'tech', 'concept', 'idea', 'other'] as const
+import type { IconName } from '@stockpot/ui/icon'
+
+export { categoryColors } from '@stockpot/ui/icon'
 
 export const categoryIcons = [
 	'english',
@@ -22,4 +24,4 @@ export const categoryIcons = [
 	'leaf',
 	'flask',
 	'pen',
-] as const
+] as const satisfies readonly IconName[]

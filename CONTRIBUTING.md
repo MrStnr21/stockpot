@@ -43,8 +43,8 @@ bun run e2e
 
 - `check` type-checks every workspace. Run it before `lint`: `astro check` generates the Astro
   types that the app's `tsconfig.json` includes.
-- `test` runs the unit specs of every workspace; `e2e` builds the app and runs the Playwright
-  suite. The first `e2e` run needs a browser: `bunx playwright install chromium`.
+- `test` runs the unit specs of every workspace. `e2e` builds the app and the UI kit book and runs
+  their Playwright suites. Install Chromium before the first run with `bunx playwright install chromium`.
 - `fmt:check` and `lint` fail on any formatting difference or lint diagnostic. `bun run fmt`
   formats everything; `bun run lint:fix` applies automatic lint fixes, so review its diff.
 - `check:license` fails on a source file without its SPDX header, and `check:links` on a broken

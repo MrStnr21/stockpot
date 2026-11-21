@@ -93,15 +93,17 @@ jobs:
         working-directory: packages/app
         run: bunx playwright install --with-deps chromium
 
-      - name: Build and run the suite
+      - name: Build and run both suites
         run: bun run e2e
 
-      - name: Upload the Playwright report
+      - name: Upload the Playwright reports
         if: failure()
         uses: actions/upload-artifact@v7
         with:
           name: playwright-report
-          path: packages/app/playwright-report/
+          path: |
+            packages/app/playwright-report/
+            packages/ui/playwright-report/
           retention-days: 7
 
   secrets:

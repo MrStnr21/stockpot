@@ -22,6 +22,24 @@ export default defineConfig({
 				'eslint/no-restricted-imports': ['error', { patterns: [appImports] }],
 			},
 		},
+		{
+			files: ['playwright.config.ts', 'tests/book/**/*.ts'],
+			rules: { 'eslint/no-restricted-imports': ['error', { patterns: [appImports] }] },
+		},
+		{
+			files: ['tests/book/**/*.spec.ts'],
+			jsPlugins: ['eslint-plugin-playwright'],
+			rules: {
+				'playwright/missing-playwright-await': 'error',
+				'playwright/no-conditional-in-test': 'error',
+				'playwright/no-focused-test': 'error',
+				'playwright/no-skipped-test': 'error',
+				'playwright/no-wait-for-timeout': 'error',
+				'playwright/require-hook': 'error',
+				'playwright/require-top-level-describe': ['error', { maxTopLevelDescribes: 1 }],
+				'playwright/valid-expect': 'error',
+			},
+		},
 	],
 	rules: {
 		...componentConfig.rules,

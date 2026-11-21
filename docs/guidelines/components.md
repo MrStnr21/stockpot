@@ -31,6 +31,11 @@ and the [design canvas](../design-canvas/README.md).
   A primitive's `index.ts` is the only kind of barrel file; do not add others. Primitives know
   nothing about the app: no app imports, no fetching, no runtime built-ins.
 
+  Open the kit book with `bun run -F @stockpot/ui book`. Put `<name>.stories.ts` and
+  `<name>.story.svelte` next to the primitive. The default export points to the demo component and
+  each named export selects a board row or state group through `args`. Render each demo in both
+  schemes with `packages/ui/src/book/scheme-panels.svelte`.
+
 - **App-wide components** that combine primitives (the tab bar, an empty state) live in
   `src/components/`.
 - **Feature components** live in their feature, in `client/` or at the feature root. Follow the
