@@ -79,6 +79,15 @@ describe('activateWorker', () => {
 			expect(await storedText('/')).toBe('<html>today v2</html>')
 		})
 
+		it('keeps the old assets when a stored page does not answer in time', async () => {
+			harness.network.answers.set('/notes', 'hang')
+
+			await activateWorker({ ...harness.env('v2'), renewTimeoutMs: 20 })
+
+			expect(await harness.storage.keys()).toContain('assets-v1')
+			expect(await storedText('/notes')).toBe('<html>notes v1</html>')
+		})
+
 		it('keeps the old assets when a renewed page answers with an error', async () => {
 			harness.network.answers.set('/notes', serverError())
 			await activateWorker(harness.env('v2'))

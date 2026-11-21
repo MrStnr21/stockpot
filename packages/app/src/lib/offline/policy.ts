@@ -19,6 +19,9 @@ export const pagesCacheName = 'pages'
 
 export const assetsCachePrefix = 'assets-'
 
+/** Where the build puts its fingerprinted files. */
+export const builtAssetsPrefix = '/_astro/'
+
 /** The part of a request the worker looks at. */
 export type RequestFacts = Pick<Request, 'method' | 'mode' | 'destination' | 'url'>
 
@@ -51,7 +54,11 @@ export function classifyRequest(
 		return 'ignored'
 	}
 
-	if (precached.has(url.pathname)) {
+	/*
+	 * The built files are named by content, so a stored page of an older build may ask for files the
+	 * current list no longer has. They are answered from the old asset caches, so those count too.
+	 */
+	if (precached.has(url.pathname) || url.pathname.startsWith(builtAssetsPrefix)) {
 		return 'asset'
 	}
 
@@ -84,6 +91,13 @@ export function isStorablePage(response: ResponseFacts): boolean {
 /** A proxy in front of a stopped server answers with these instead of failing the connection. */
 export function isUnreachable(response: Pick<Response, 'status'>): boolean {
 	return response.status === 502 || response.status === 503 || response.status === 504
+}
+
+const builtAssetUrl = /\/_astro\/[^"'\s)<>?#\\]+/gu
+
+/** The build's files a page refers to, as paths. */
+export function referencedAssets(html: string): string[] {
+	return [...new Set(Array.from(html.matchAll(builtAssetUrl), (found) => found[0]))]
 }
 
 const htmlTag = /<html(?=[\s>])[^>]*>/iu

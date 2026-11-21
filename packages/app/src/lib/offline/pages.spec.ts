@@ -198,13 +198,12 @@ describe('the private pages', () => {
 			expect(response.status).toBe(303)
 		})
 
-		it('lets the sign-out through even when the network fails', async () => {
-			const signingOut = serveSignOut(harness.env(), navigation('/signout', 'POST'))
-
-			expect(signingOut).rejects.toThrow()
-			await signingOut.catch(() => null)
+		it('drops the pages and answers with the offline page when the network fails', async () => {
+			const response = await serveSignOut(harness.env(), navigation('/signout', 'POST'))
 
 			expect(harness.storage.stores.has('pages')).toBe(false)
+			expect(response.status).toBe(503)
+			expect(await response.text()).toContain('data-connection="offline"')
 		})
 	})
 })

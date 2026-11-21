@@ -27,8 +27,8 @@ async function renewPages(env: WorkerEnv): Promise<boolean> {
 	let renewed = true
 
 	for (const path of paths) {
-		// oxlint-disable-next-line eslint/no-await-in-loop -- A page or two, one after the other.
-		const answer = await fetchPage(env, path, { cache: 'reload', timeoutMs: null })
+		// oxlint-disable-next-line eslint/no-await-in-loop -- A page or two, one after the other, each with its own time limit.
+		const answer = await fetchPage(env, path, { cache: 'reload', timeoutMs: env.renewTimeoutMs })
 
 		if (isSignedOut(answer)) {
 			// oxlint-disable-next-line eslint/no-await-in-loop -- Ends the loop.

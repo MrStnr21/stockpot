@@ -157,7 +157,8 @@ async function sha256(path: string): Promise<string> {
 
 /**
  * The fonts vendored under `directory`, one folder each with a `font.json`. A listed file whose SHA-256
- * differs from the recorded one fails, so a modified font cannot ship unnoticed.
+ * differs from the recorded one fails, so a modified font cannot ship unnoticed, and so does a font
+ * file the manifest does not list, which would ship without a checksum.
  */
 export async function collectFonts(directory: string): Promise<Font[]> {
 	const manifests = await Array.fromAsync(
@@ -168,6 +169,18 @@ export async function collectFonts(directory: string): Promise<Font[]> {
 		manifests.toSorted().map(async (manifestPath) => {
 			const folder = join(directory, dirname(manifestPath))
 			const font = v.parse(fontManifest, await file(join(directory, manifestPath)).json())
+
+			const present = await Array.fromAsync(
+				new Glob('**/*.{woff2,woff,ttf,otf}').scan({ cwd: folder, onlyFiles: true }),
+			)
+
+			const unlisted = present.filter((name) => !Object.hasOwn(font.files, name)).toSorted()
+
+			if (unlisted.length > 0) {
+				throw new Error(
+					`${font.name}: ${unlisted.join(', ')} not listed in font.json. Every font file needs its SHA-256 there.`,
+				)
+			}
 
 			const mismatches = await Promise.all(
 				Object.entries(font.files).map(async ([name, expected]) => {

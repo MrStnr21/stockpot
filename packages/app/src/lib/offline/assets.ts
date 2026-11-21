@@ -48,6 +48,7 @@ export async function findAsset(env: WorkerEnv, path: string): Promise<Response 
 	return undefined
 }
 
+/** Any build's file: its cache, else an older build's, else the network. Nothing new is stored. */
 export async function serveAsset(env: WorkerEnv, request: Request): Promise<Response> {
 	const stored = await findAsset(env, new URL(request.url).pathname)
 

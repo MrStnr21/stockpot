@@ -32,10 +32,18 @@ declare global {
 	var skipWaiting: () => Promise<void>
 
 	var clients: { claim: () => Promise<void> }
+
+	var registration: { update: () => Promise<void> }
 }
 
 // A page that has not answered in this many milliseconds is replaced by its stored copy.
 const pageTimeoutMs = 4000
+
+/*
+ * Each stored page gets this long while an update renews them; Chromium holds the page's own
+ * fetches until activation ends, so an unbounded wait would freeze the app.
+ */
+const renewTimeoutMs = 10_000
 
 const worker = createWorker({
 	caches,
@@ -44,6 +52,10 @@ const worker = createWorker({
 	version: VERSION,
 	precache: PRECACHE,
 	timeoutMs: pageTimeoutMs,
+	renewTimeoutMs,
+	update: async () => {
+		await globalThis.registration.update()
+	},
 })
 
 // A new build takes over at once; the update keeps the old assets until stored pages are renewed.

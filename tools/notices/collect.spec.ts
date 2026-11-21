@@ -61,6 +61,13 @@ describe('collectFonts', () => {
 		expect(collectFonts(directory)).rejects.toThrow('Serif.woff2')
 	})
 
+	it('fails when a font file is not listed in font.json', async () => {
+		await addFont(digest)
+		await writeFile(join(directory, 'serif', 'Serif-Italic.woff2'), bytes)
+
+		expect(collectFonts(directory)).rejects.toThrow('Serif-Italic.woff2')
+	})
+
 	it('finds nothing in a folder without fonts', async () => {
 		expect(await collectFonts(directory)).toEqual([])
 	})

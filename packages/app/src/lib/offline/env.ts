@@ -31,6 +31,10 @@ export interface WorkerEnv {
 	readonly precache: readonly string[]
 	/** How long a page may take before its stored copy is served instead. */
 	readonly timeoutMs: number
+	/** How long an update may wait for each stored page; a page that is slower counts as not renewed. */
+	readonly renewTimeoutMs: number
+	/** Asks the browser to look for a newer worker (`registration.update()`). */
+	readonly update: () => Promise<void>
 }
 
 /** `event.waitUntil` for work that may outlive the response. */

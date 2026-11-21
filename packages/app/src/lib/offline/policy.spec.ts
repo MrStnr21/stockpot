@@ -9,6 +9,7 @@ import {
 	isStorablePage,
 	isUnreachable,
 	markOffline,
+	referencedAssets,
 	staleAssetCaches,
 	type RequestFacts,
 	type RequestKind,
@@ -50,6 +51,7 @@ describe('the offline policy', () => {
 			['/notes?page=2', 'navigation'],
 			['/notes/', 'navigation'],
 			['/_astro/app.css', 'asset'],
+			['/_astro/old-build.css', 'asset'],
 			['/offline', 'asset'],
 		]
 
@@ -102,6 +104,19 @@ describe('the offline policy', () => {
 			['an answer without a type', { headers: new Headers() }],
 		] as const)('refuses %s', (_name, overrides) => {
 			expect(isStorablePage(response(overrides))).toBe(false)
+		})
+	})
+
+	describe('referencedAssets', () => {
+		it('lists each build file a page names once', () => {
+			const page =
+				'<link href="/_astro/a.css" rel="stylesheet"><script>import("/_astro/b.js?x=1")</script><img src="/_astro/a.css">'
+
+			expect(referencedAssets(page)).toEqual(['/_astro/a.css', '/_astro/b.js'])
+		})
+
+		it('finds nothing in a page without build files', () => {
+			expect(referencedAssets('<a href="/notes">Notes</a>')).toEqual([])
 		})
 	})
 

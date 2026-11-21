@@ -13,6 +13,7 @@ import {
 	markOffline,
 	offlinePath,
 	pagesCacheName,
+	referencedAssets,
 	signInPath,
 } from './policy'
 
@@ -75,27 +76,24 @@ export function isSignedOut(answer: PageAnswer): boolean {
 }
 
 /** A copy with the offline marker in its `<html>` tag; the body is decoded, so its length and encoding headers go. */
-async function markedOffline(response: Response): Promise<Response> {
+async function markedOffline(response: Response, status = response.status): Promise<Response> {
 	const headers = new Headers(response.headers)
 
 	headers.delete('content-length')
 	headers.delete('content-encoding')
 
-	return new Response(markOffline(await response.text()), {
-		status: response.status,
-		statusText: response.statusText,
-		headers,
-	})
+	return new Response(markOffline(await response.text()), { status, headers })
 }
 
-async function offlinePage(env: WorkerEnv): Promise<Response> {
-	const stored = await findAsset(env, offlinePath)
+/** The stored offline page, marked offline; `status` says what the request itself came to. */
+export async function offlinePage(env: WorkerEnv, status = 200): Promise<Response> {
+	const stored = await findAsset(env, offlinePath).catch(() => null)
 
-	if (stored === undefined) {
+	if (stored === undefined || stored === null) {
 		return new Response('Offline', { status: 503, headers: { 'content-type': 'text/plain' } })
 	}
 
-	return markedOffline(stored)
+	return markedOffline(stored, status)
 }
 
 async function storedPage(env: WorkerEnv, path: string): Promise<Response | undefined> {
@@ -112,8 +110,30 @@ async function storedPage(env: WorkerEnv, path: string): Promise<Response | unde
 }
 
 /**
+ * A copy is kept only when every build file it names is held by some asset cache: this worker may be
+ * older than the server, and such a copy would show unstyled offline. The previous copy stays, and
+ * the browser is asked for the newer worker.
+ */
+async function storeIfServable(env: WorkerEnv, path: string, response: Response): Promise<void> {
+	const wanted = referencedAssets(await response.clone().text())
+	const found = await Promise.all(wanted.map(async (asset) => findAsset(env, asset)))
+
+	if (found.includes(undefined)) {
+		await env.update().catch(() => null)
+
+		return
+	}
+
+	await storePage(env, path, response)
+}
+
+/*
  * Today and the notes: the network first, and the stored copy when it fails or is slow. Without a
  * stored copy a slow server is waited for, since the offline page would be no better than waiting.
+ *
+ * Known and accepted: the stored copy is also shown when the server is slow or answers 502 to 504,
+ * even if the session has expired meanwhile. It is the owner's own device, and the copy is dropped
+ * at the next answer that redirects to sign-in.
  */
 export async function servePage(
 	env: WorkerEnv,
@@ -141,7 +161,7 @@ export async function servePage(
 	}
 
 	if (isStorablePage(answer.response)) {
-		keepAlive(storePage(env, path, answer.response.clone()))
+		keepAlive(storeIfServable(env, path, answer.response.clone()))
 	}
 
 	return answer.response
@@ -158,7 +178,10 @@ export async function serveNavigation(env: WorkerEnv, request: Request): Promise
 	}
 }
 
-/** The sign-out form: the stored pages go first, so a signed-out device keeps none. */
+/**
+ * The sign-out form: the stored pages go first, so a signed-out device keeps none. When the server
+ * cannot be reached the session survives, and the owner is told so instead of seeing a browser error.
+ */
 export async function serveSignOut(env: WorkerEnv, request: Request): Promise<Response> {
 	try {
 		await dropPages(env)
@@ -166,5 +189,9 @@ export async function serveSignOut(env: WorkerEnv, request: Request): Promise<Re
 		// The sign-out itself must still go through.
 	}
 
-	return env.fetch(request)
+	try {
+		return await env.fetch(request)
+	} catch {
+		return offlinePage(env, 503)
+	}
 }

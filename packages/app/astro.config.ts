@@ -122,10 +122,26 @@ function migrations(): AstroIntegration {
 }
 
 /*
+ * A file's bytes for the worker's version. The server entry carries a session key that Astro draws
+ * anew on every build, which would make identical builds differ, so the key is blanked first.
+ */
+async function fingerprintBytes(path: string): Promise<Uint8Array> {
+	if (!path.endsWith('/server/entry.mjs')) {
+		return file(path).bytes()
+	}
+
+	const text = await file(path).text()
+
+	return new TextEncoder().encode(text.replace(/"key":"[^"]*"/u, '"key":""'))
+}
+
+/*
  * Writes dist/client/sw.js: src/sw.ts bundled for the browser, with PRECACHE (every file of the
- * build, plus the offline page) and VERSION (a hash of the files' names and contents) defined in.
- * A build with changed assets therefore changes sw.js, which is what makes browsers update the
- * worker. The icon's SVG source is left out, as nothing loads it. A failed bundle fails the build.
+ * build, plus the offline page) and VERSION (a hash of the files' names and contents, and of the
+ * server's) defined in. A build with changed assets or server output therefore changes sw.js, which
+ * is what makes browsers update the worker; the server's output counts because the stored offline
+ * page is rendered by it and would go stale on a markup-only change. The icon's SVG source is left
+ * out, as nothing loads it. A failed bundle fails the build.
  */
 function serviceWorker(): AstroIntegration {
 	return {
@@ -138,11 +154,19 @@ function serviceWorker(): AstroIntegration {
 				const files = await Array.fromAsync(new Glob('**/*').scan({ cwd: root }))
 				const paths = files.filter((path) => !unused.has(path)).toSorted()
 
+				const serverRoot = join(root, '../server')
+				const serverFiles = await Array.fromAsync(new Glob('**/*').scan({ cwd: serverRoot }))
+
 				const hasher = new CryptoHasher('sha256')
 
-				for (const path of paths) {
-					// oxlint-disable-next-line eslint/no-await-in-loop -- A few dozen files, hashed in a stable order.
-					hasher.update(`${path}\0`).update(await file(join(root, path)).bytes())
+				for (const [base, list] of [
+					[root, paths],
+					[serverRoot, serverFiles.toSorted()],
+				] as const) {
+					for (const path of list) {
+						// oxlint-disable-next-line eslint/no-await-in-loop -- A few dozen files, hashed in a stable order.
+						hasher.update(`${path}\0`).update(await fingerprintBytes(join(base, path)))
+					}
 				}
 
 				const result = await build({

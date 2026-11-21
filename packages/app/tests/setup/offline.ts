@@ -99,6 +99,8 @@ export interface Harness {
 	readonly storage: FakeCacheStorage
 	readonly network: FakeNetwork
 	readonly keepAlive: KeepAlive
+	/** How often the worker asked the browser for a newer worker. */
+	readonly updates: { readonly count: number }
 	/** The worker's environment for a build; `files` are the paths its install stores. */
 	env: (version?: string, files?: readonly string[]) => WorkerEnv
 	/** Waits for the work the worker kept alive past its answers. */
@@ -109,10 +111,12 @@ export function createHarness(): Harness {
 	const storage = createFakeCacheStorage()
 	const network = createFakeNetwork()
 	const pending: Promise<unknown>[] = []
+	const updates = { count: 0 }
 
 	return {
 		storage,
 		network,
+		updates,
 
 		keepAlive(work) {
 			pending.push(work)
@@ -126,6 +130,10 @@ export function createHarness(): Harness {
 				version,
 				precache: files,
 				timeoutMs: 4000,
+				renewTimeoutMs: 10_000,
+				update: async () => {
+					updates.count += 1
+				},
 			}
 		},
 

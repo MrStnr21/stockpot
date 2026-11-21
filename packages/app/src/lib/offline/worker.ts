@@ -8,7 +8,7 @@
  */
 import { installAssets, serveAsset } from './assets'
 import type { KeepAlive, WorkerEnv } from './env'
-import { serveNavigation, servePage, serveSignOut } from './pages'
+import { offlinePage, serveNavigation, servePage, serveSignOut } from './pages'
 import { classifyRequest, type RequestKind } from './policy'
 import { activateWorker } from './update'
 
@@ -52,8 +52,20 @@ export function createWorker(env: WorkerEnv): Worker {
 			return kindOf(request) !== 'ignored'
 		},
 
+		/* Never rejects: a browser shows its own error page for a rejected answer, and a failed sign-out must say so. */
 		async respond(request, keepAlive) {
-			return answers[kindOf(request)](request, keepAlive)
+			const kind = kindOf(request)
+
+			try {
+				return await answers[kind](request, keepAlive)
+			} catch {
+				// A sign-out is not sent twice.
+				if (kind === 'sign-out') {
+					return offlinePage(env, 503)
+				}
+
+				return env.fetch(request).catch(async () => offlinePage(env))
+			}
 		},
 	}
 }
