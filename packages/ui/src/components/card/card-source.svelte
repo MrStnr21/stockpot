@@ -26,8 +26,8 @@
 	aria-disabled={disabled || undefined}
 	rel="noopener noreferrer"
 	target="_blank"
-	class="inline-flex min-h-11 max-w-full min-w-11 items-center gap-1.5 rounded-xs font-ui text-body-s font-medium wrap-anywhere text-accent-ink outline-focus focus-visible:outline-2 focus-visible:outline-offset-2 aria-disabled:text-ink-disabled"
+	class="inline-flex max-w-full items-center gap-1.5 rounded-xs font-ui text-body-s font-medium wrap-anywhere text-accent-ink outline-focus focus-visible:outline-2 focus-visible:outline-offset-2 aria-disabled:text-ink-disabled"
 >
-	<Icon name="external" size={16} />
+	<Icon name="link" size={16} />
 	<span>{@render children()}</span>
 </a>
