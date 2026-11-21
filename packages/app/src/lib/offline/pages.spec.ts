@@ -64,6 +64,25 @@ describe('the private pages', () => {
 			expect(harness.storage.stores.has('pages')).toBe(false)
 		})
 
+		it('waits for a slow server when nothing is stored', async () => {
+			harness.network.answers.set('/', 'hang')
+			jest.useFakeTimers()
+
+			const answering = serve('/')
+			let isSettled = false
+
+			const settling = answering.then(() => {
+				isSettled = true
+			})
+
+			jest.advanceTimersByTime(10_000)
+			jest.useRealTimers()
+			await Promise.resolve()
+
+			expect(isSettled).toBe(false)
+			expect(settling).toBeInstanceOf(Promise)
+		})
+
 		describe('with a stored copy', () => {
 			beforeEach(async () => {
 				harness.network.answers.set('/', html('<html lang="en">today</html>'))

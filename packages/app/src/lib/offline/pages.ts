@@ -98,23 +98,37 @@ async function offlinePage(env: WorkerEnv): Promise<Response> {
 	return markedOffline(stored)
 }
 
-async function storedPageOrOffline(env: WorkerEnv, path: string): Promise<Response> {
-	const pages = await env.caches.open(pagesCacheName)
-	const stored = await pages.match(pageUrl(env, path), { ignoreVary: true })
+async function storedPage(env: WorkerEnv, path: string): Promise<Response | undefined> {
+	// Opening the cache would create it, and a signed-out device keeps no pages cache at all.
+	const names = await env.caches.keys()
 
-	return stored === undefined ? offlinePage(env) : markedOffline(stored)
+	if (!names.includes(pagesCacheName)) {
+		return undefined
+	}
+
+	const pages = await env.caches.open(pagesCacheName)
+
+	return pages.match(pageUrl(env, path), { ignoreVary: true })
 }
 
-/** Today and the notes: the network first, and the stored copy when it fails or is slow. */
+/**
+ * Today and the notes: the network first, and the stored copy when it fails or is slow. Without a
+ * stored copy a slow server is waited for, since the offline page would be no better than waiting.
+ */
 export async function servePage(
 	env: WorkerEnv,
 	path: string,
 	keepAlive: KeepAlive,
 ): Promise<Response> {
-	const answer = await fetchPage(env, path, { cache: 'no-cache', timeoutMs: env.timeoutMs })
+	const stored = await storedPage(env, path)
+
+	const answer = await fetchPage(env, path, {
+		cache: 'no-cache',
+		timeoutMs: stored === undefined ? null : env.timeoutMs,
+	})
 
 	if (answer.kind === 'failed') {
-		return storedPageOrOffline(env, path)
+		return stored === undefined ? offlinePage(env) : markedOffline(stored)
 	}
 
 	if (answer.kind === 'redirect') {
