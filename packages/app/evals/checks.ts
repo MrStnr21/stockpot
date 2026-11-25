@@ -18,6 +18,7 @@ export const checkIds = [
 	'oneSentence',
 	'uncertain',
 	'filler',
+	'repeats',
 	'private',
 	'category',
 	'senses',

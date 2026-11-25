@@ -15,7 +15,7 @@ import { report } from './report'
 import { technology } from './technology'
 import { vocabulary } from './vocabulary'
 
-export { sourceSchema, type Format, type Level, type Source } from './common'
+export { earlierCard, sourceSchema, type Format, type Level, type Source } from './common'
 
 export const depths = [1, 2, 3] as const satisfies readonly Depth[]
 

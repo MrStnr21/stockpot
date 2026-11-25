@@ -5,7 +5,7 @@ import { $, file, write } from 'bun'
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { briefCardFactory } from '#tests/factories/cards'
+import { briefCardFactory, deeperCardFactory } from '#tests/factories/cards'
 import { evalNoteFactory } from '#tests/factories/eval-notes'
 import { fakeEngine, type Reply } from '#tests/setup/fake-engine'
 
@@ -16,6 +16,10 @@ import type { EvalReport } from './report'
 import { main, parseArgs } from './run'
 
 function briefAnswer(input: Redacted<EngineInput>): Reply {
+	if (input.task !== 'suggest' && input.depth === 2) {
+		return { delayMs: 0, answer: deeperCardFactory.build({ sources: [] }) }
+	}
+
 	const answer =
 		input.task === 'suggest'
 			? { categories: ['brief'], senses: [], language: 'en' }
@@ -86,6 +90,15 @@ describe('the eval command', () => {
 				language: 'en',
 				models: {},
 			})
+		})
+
+		it('takes --deeper as a flag without a value, anywhere among the options', () => {
+			expect(parseArgs(['--deeper', '--engine', 'gemini', '--limit', '5'])).toMatchObject({
+				engine: 'gemini',
+				limit: 5,
+				deeper: true,
+			})
+			expect(parseArgs(['--engine', 'gemini', '--deeper'])).toMatchObject({ deeper: true })
 		})
 
 		it('takes a model for each tier from every --model, and the suggestion timeout', () => {
@@ -203,6 +216,25 @@ describe('the eval command', () => {
 			expect(await file(join(out, 'report.md')).text()).toContain('**Stopped early:**')
 		})
 
+		it('asks for a level-2 card after each first card with --deeper', async () => {
+			const { report } = await runOn(join(folder, 'public-only'), join(folder, 'out-deeper'), {
+				extra: ['--deeper'],
+			})
+
+			expect(report.calls.map(({ task, depth }) => `${task} ${depth}`)).toEqual([
+				'suggest 1',
+				'explain 1',
+				'explain 2',
+				'suggest 1',
+				'explain 1',
+				'explain 2',
+			])
+			expect(report.summary.byFormat).toMatchObject({
+				brief: { calls: 2 },
+				'brief level 2': { calls: 2, passRate: 1 },
+			})
+		})
+
 		it('records the timeouts it ran with', async () => {
 			const out = join(folder, 'out-timeouts')
 
@@ -228,7 +260,7 @@ describe('the eval command', () => {
 			})
 
 			expect(markdown).toContain('| brief | 2 | 100% | 2 | 0 |')
-			expect(sheet).toContain('| Note | Source | Text |')
+			expect(sheet).toContain('| Note | Level | Source | Text |')
 		})
 	})
 })

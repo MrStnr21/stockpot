@@ -3,13 +3,15 @@
 
 import { drainMicrotasks } from 'bun:jsc'
 import { afterEach, beforeEach, describe, expect, it, jest, mock, spyOn } from 'bun:test'
-import { briefCardFactory } from '#tests/factories/cards'
+import { briefCardFactory, deeperCardFactory } from '#tests/factories/cards'
 import { categoryRowFactory } from '#tests/factories/categories'
 import { noteRowFactory } from '#tests/factories/notes'
 import { configuredSettingsFactory } from '#tests/factories/settings'
 import { termRowFactory } from '#tests/factories/terms'
 import { createTestDb } from '#tests/setup/db'
-import { advanceTo, jobRows } from '#tests/setup/jobs'
+import { storeCard } from '#tests/setup/deeper'
+import { advanceBy, advanceTo, jobRows } from '#tests/setup/jobs'
+import { eq } from 'drizzle-orm'
 
 import * as instance from '#/server/db/instance'
 import { explanations } from '#/server/db/schema/explanations'
@@ -23,6 +25,8 @@ import { log } from '#/server/log'
 
 import {
 	instanceBatchJob,
+	instanceDeeper,
+	instanceDeeperJob,
 	instanceResearchJob,
 	instanceResearchNow,
 	instanceSuggester,
@@ -128,7 +132,10 @@ describe('instance', () => {
 						await waitForAnswer
 
 						const result = {
-							output: parseOutput(input.output, card),
+							output: parseOutput(
+								input.output,
+								input.depth === 1 ? card : deeperCardFactory.build({ sources: [] }),
+							),
 							engine: 'gemini',
 							model: null,
 							searchSuggestions: null,
@@ -153,7 +160,7 @@ describe('instance', () => {
 			categoryId = category.id
 			runner = await startRunner({
 				db,
-				jobs: [await instanceResearchJob()],
+				jobs: [await instanceResearchJob(), await instanceDeeperJob()],
 				schedules: [{ job: await instanceBatchJob(), at: '06:30' }],
 				timeZone: () => 'UTC',
 			})
@@ -231,6 +238,33 @@ describe('instance', () => {
 			expect(calls).toEqual([first.text, urgent.text, second.text, third.text])
 			expect(info.mock.calls.filter(([message]) => message === readyMessage)).toEqual([
 				[readyMessage, { noteId: urgentId }],
+			])
+		})
+
+		it('writes a deeper level at once and requeues its draft at the reset', async () => {
+			const note = await saveNote()
+
+			db.update(notes).set({ status: 'read' }).where(eq(notes.id, note.id)).run()
+			await storeCard(db, { noteId: note.id, depth: 1 })
+			draftRedoAt = reset
+
+			await instanceDeeper(note.id, { now: true })
+			await advanceBy(runner, 0)
+
+			expect(cards()).toEqual([
+				{ noteId: note.id, depth: 1, isDraft: false },
+				{ noteId: note.id, depth: 2, isDraft: true },
+			])
+			expect(jobRows(db).filter(({ kind }) => kind === 'deeper')).toMatchObject([
+				{ status: 'done', priority: 10, payload: { noteId: note.id, depth: 2, now: true } },
+				{ status: 'queued', priority: 0, payload: { noteId: note.id, depth: 2 }, runAt: reset },
+			])
+
+			await advanceTo(runner, reset.toISOString())
+
+			expect(cards()).toEqual([
+				{ noteId: note.id, depth: 1, isDraft: false },
+				{ noteId: note.id, depth: 2, isDraft: false },
 			])
 		})
 	})

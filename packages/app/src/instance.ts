@@ -4,21 +4,24 @@
 import { createSuggester, type Suggester } from '#/features/capture/server/suggest'
 import { createBatchJob } from '#/features/digest/server/batch'
 import { learnAliases, learnSense } from '#/features/notes/server/learn'
+import { requestDeeper, type DeeperResult } from '#/features/research/server/deeper'
+import { createDeeperJob, type DeeperPayload } from '#/features/research/server/depth'
+import type { ReadyNote } from '#/features/research/server/engine-call'
 import { researchNow, type ResearchNowResult } from '#/features/research/server/now'
 import { pendingResearchNoteIds } from '#/features/research/server/pending'
 import {
 	createResearchJob,
 	priorityOf,
 	queueResearch,
-	type ReadyNote,
 	type ResearchPayload,
 } from '#/features/research/server/pipeline'
-import { readSettings } from '#/features/settings/server'
+import { readBatchTime, readSettings, readTimeZone } from '#/features/settings/server'
 import { config } from '#/server/config'
 import type { Db } from '#/server/db/client'
 import { instanceDb } from '#/server/db/instance'
 import { createRouter, type Router } from '#/server/engines/router'
 import { HttpError } from '#/server/http'
+import { nextDailyRun, parseTimeOfDay } from '#/server/jobs/daily'
 import { currentRunner } from '#/server/jobs/runner'
 import type { JobDefinition, ScheduledRun } from '#/server/jobs/types'
 import { openLink } from '#/server/links/open-link'
@@ -36,6 +39,7 @@ interface ProcessServices {
 	router?: Promise<Router>
 	suggester?: Suggester
 	researchJob?: { db: Db; job: JobDefinition<ResearchPayload> }
+	deeperJob?: { db: Db; job: JobDefinition<DeeperPayload> }
 	batchJob?: Promise<JobDefinition<ScheduledRun>>
 }
 
@@ -71,12 +75,16 @@ export async function instanceSuggester(): Promise<Suggester> {
 	return thisProcess.suggester
 }
 
-function queueAgain(job: JobDefinition<ResearchPayload>, payload: ResearchPayload, runAt: Date) {
+function queueAgain<Payload extends { noteId: number; now?: true }>(
+	job: JobDefinition<Payload>,
+	payload: Payload,
+	runAt: Date,
+) {
 	const runner = currentRunner()
 
 	// Only the built server runs a runner (src/boot.ts); without one the note waits for the next queue.
 	if (runner === undefined) {
-		log.warn('No job runner to queue research again', { noteId: payload.noteId })
+		log.warn('No job runner to queue a job again', { noteId: payload.noteId })
 
 		return
 	}
@@ -129,6 +137,82 @@ export async function instanceResearchJob(): Promise<JobDefinition<ResearchPaylo
 	}
 
 	return thisProcess.researchJob.job
+}
+
+function buildDeeperJob(db: Db): JobDefinition<DeeperPayload> {
+	const job = createDeeperJob({
+		db,
+		router: {
+			async explain(input, options) {
+				const router = await instanceRouter()
+
+				return router.explain(input, options)
+			},
+			async research(input, options) {
+				const router = await instanceRouter()
+
+				return router.research(input, options)
+			},
+		},
+		openLink: async (url, signal) => openLink(url, { signal }),
+		language: () => readSettings(db).cardLanguage,
+		later: (payload, runAt) => {
+			queueAgain(job, payload, runAt)
+		},
+		notify: notifyReady,
+	})
+
+	return job
+}
+
+/** The deeper job src/boot.ts registers, and the one every enqueue must pass. */
+export async function instanceDeeperJob(): Promise<JobDefinition<DeeperPayload>> {
+	const db = await instanceDb()
+
+	// Keyed on the database like the research job.
+	if (thisProcess.deeperJob?.db !== db) {
+		thisProcess.deeperJob = { db, job: buildDeeperJob(db) }
+	}
+
+	return thisProcess.deeperJob.job
+}
+
+/** The next nightly batch: where a deeper job queued as background work waits, ahead of that night's research. */
+function tonight(db: Db): Date {
+	return nextDailyRun(new Date(), parseTimeOfDay(readBatchTime(db)), readTimeZone(db)).runAt
+}
+
+/**
+ * Asks for the next depth level of a note's card: for tonight's batch, or with `now` at once.
+ * Without a running job runner (the dev server) it answers 503 before it writes anything.
+ */
+export async function instanceDeeper(
+	noteId: number,
+	{ now }: { now: boolean },
+): Promise<DeeperResult> {
+	const [db, job] = await Promise.all([instanceDb(), instanceDeeperJob()])
+	const runner = currentRunner()
+
+	if (runner === undefined) {
+		throw new HttpError(503, {
+			code: 'jobs_unavailable',
+			message: 'The job runner is not running. Try again in a moment.',
+		})
+	}
+
+	return requestDeeper(
+		{
+			db,
+			enqueue: (payload, priority) => {
+				runner.enqueue(job, payload, {
+					priority,
+					runAt: priority === 'now' ? new Date() : tonight(db),
+				})
+			},
+		},
+		noteId,
+		{ now },
+	)
 }
 
 /**

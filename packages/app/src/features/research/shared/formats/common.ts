@@ -125,3 +125,15 @@ export const handsOnLevel = {
 		uncertain,
 	}),
 } as const satisfies Level
+
+/**
+ * A card as the next level sees it, below "Earlier cards": whether the engine was sure of the facts
+ * says nothing the deeper card could build on.
+ */
+export function earlierCard<TCard extends Readonly<Record<string, unknown>>>(
+	card: TCard,
+): Omit<TCard, 'uncertain'> {
+	const { uncertain: _uncertain, ...rest } = card
+
+	return rest
+}

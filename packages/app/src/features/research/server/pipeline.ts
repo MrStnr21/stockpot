@@ -17,7 +17,14 @@ import type { JobContext, JobDefinition } from '#/server/jobs/types'
 import type { LinkOutcome } from '#/server/links/open-link'
 import { log } from '#/server/log'
 
-import { assemble, type ResearchTask } from './assemble'
+import { assemble } from './assemble'
+import {
+	callRouter,
+	notifyReady,
+	publicEngineError,
+	runAtAfterReset,
+	type ReadyNote,
+} from './engine-call'
 import { checkSources } from './links'
 import { save } from './save'
 
@@ -33,10 +40,7 @@ export function priorityOf(payload: ResearchPayload): Priority {
 	return payload.now === true ? 'now' : 'batch'
 }
 
-/** A note whose card the owner asked for is saved and readable. */
-export interface ReadyNote {
-	readonly noteId: number
-}
+export type { ReadyNote } from './engine-call'
 
 /** What a first-level card tells about its term. */
 export interface LearnedCard {
@@ -64,9 +68,6 @@ export interface ResearchDependencies {
 
 const maxAttempts = 3
 
-// A reset that has already passed, or passes in a moment, still waits this long before the next call.
-const shortestWaitMs = 60_000
-
 // Statuses a failed run may change: ready and read keep a draft's redo visible, archived is the owner's.
 const unfinished: NoteStatus[] = ['new', 'queued', 'researching', 'failed']
 
@@ -75,36 +76,6 @@ function setUnfinishedStatus(db: Db, noteId: number, status: NoteStatus) {
 		.set({ status })
 		.where(and(eq(notes.id, noteId), inArray(notes.status, unfinished)))
 		.run()
-}
-
-async function callRouter(
-	router: ResearchDependencies['router'],
-	{ categoryId, input }: ResearchTask,
-	{ id, signal }: JobContext,
-) {
-	signal.throwIfAborted()
-	const options = { categoryId, signal, jobId: id }
-
-	const call =
-		input.task === 'research' ? router.research(input, options) : router.explain(input, options)
-
-	/* The signal may have aborted inside the router call. The engine can still reject its promise
-	 * after this attempt has given up on it. */
-	call.catch(() => null)
-	signal.throwIfAborted()
-	const { promise: aborted, reject } = Promise.withResolvers<never>()
-
-	function abort() {
-		reject(signal.reason)
-	}
-
-	signal.addEventListener('abort', abort, { once: true })
-
-	try {
-		return await Promise.race([call, aborted])
-	} finally {
-		signal.removeEventListener('abort', abort)
-	}
 }
 
 function learnFrom(
@@ -123,32 +94,8 @@ function learnFrom(
 	}
 }
 
-function logNotifyFailure({ noteId }: ReadyNote, error: Error) {
-	log.warn('Notifying that a card is ready failed', { noteId, name: error.name })
-}
-
-/*
- * The card is saved, and a missed notification must not fail the job or retry it. A rejection that
- * nothing handles would end the process, so an async sender is caught too. A synchronous throw is
- * caught before the first await, so it is logged before the job returns.
- */
-function notifyReady(deps: ResearchDependencies, ready: ReadyNote) {
-	async function send() {
-		try {
-			await deps.notify(ready)
-		} catch (error) {
-			logNotifyFailure(ready, error instanceof Error ? error : new Error('unknown'))
-		}
-	}
-
-	// Never rejects: `send` logs every failure itself.
-	send().catch(() => null)
-}
-
 function queueAfterReset(deps: ResearchDependencies, payload: ResearchPayload, reset: Date) {
-	const now = deps.now?.() ?? new Date()
-	const runAt = new Date(Math.max(reset.getTime(), now.getTime() + shortestWaitMs))
-	deps.later(payload, runAt)
+	deps.later(payload, runAtAfterReset(reset, deps.now?.() ?? new Date()))
 }
 
 /*
@@ -228,7 +175,7 @@ async function research(
 
 		// Last, so nothing after it can throw and make a retry notify again.
 		if (payload.now === true) {
-			notifyReady(deps, { noteId })
+			notifyReady(deps.notify, { noteId })
 		}
 	} catch (error) {
 		if (!(error instanceof EngineError && settleEngineFailure(deps, payload, error))) {
@@ -254,9 +201,8 @@ export function createResearchJob(deps: ResearchDependencies): JobDefinition<Res
 					context.attempt < maxAttempts ? 'queued' : 'failed',
 				)
 
-				// The runner stores the message, and a provider may echo the note in its error.
 				if (error instanceof EngineError) {
-					throw new EngineError(error.failure, `The engine failed: ${error.kind}`, { cause: error })
+					throw publicEngineError(error)
 				}
 
 				throw error

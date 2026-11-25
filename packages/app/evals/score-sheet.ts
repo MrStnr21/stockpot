@@ -8,7 +8,7 @@ import * as v from 'valibot'
 
 import type { JsonValue } from '#/server/engines/contract'
 
-import { table, type EvalReport } from './report'
+import { table, type CallRecord, type EvalReport } from './report'
 
 const senseField = v.looseObject({ sense: v.optional(v.string(), '') })
 
@@ -18,27 +18,67 @@ function senseOf(answer: JsonValue | null): string {
 	return result.success ? result.output.sense : ''
 }
 
-/** The manual score sheet: a row per card, with the scores of evals/rubric.md left blank. */
+const notApplicable = '—'
+
+function levelOne(card: CallRecord | undefined): string {
+	return card?.answer === null || card === undefined ? 'no answer' : senseOf(card.answer)
+}
+
+/**
+ * The manual score sheet: a row per card, with the scores of evals/rubric.md left blank. A level-2
+ * card follows its note's first card, and has no sense to judge, only whether it builds on level 1.
+ */
 export function renderScoreSheet(report: EvalReport): string {
 	const cards = new Map(
-		report.calls.filter(({ task }) => task !== 'suggest').map((call) => [call.noteId, call]),
+		report.calls
+			.filter(({ task }) => task !== 'suggest')
+			.map((call) => [`${call.noteId} ${call.depth}`, call]),
 	)
 
-	const rows = report.notes.map((note) => {
-		const card = cards.get(note.id)
+	const rows = report.notes.flatMap((note) => {
+		const second = cards.get(`${note.id} 2`)
 
-		const answered =
-			card?.answer === null || card === undefined ? 'no answer' : senseOf(card.answer)
-
-		return [note.id, note.source, note.text, note.format, answered, '', '', '', '']
+		return [
+			[
+				note.id,
+				'1',
+				note.source,
+				note.text,
+				note.format,
+				levelOne(cards.get(`${note.id} 1`)),
+				'',
+				'',
+				'',
+				notApplicable,
+				'',
+			],
+			...(second === undefined
+				? []
+				: [
+						[
+							note.id,
+							'2',
+							note.source,
+							note.text,
+							note.format,
+							second.answer === null ? 'no answer' : notApplicable,
+							'',
+							'',
+							notApplicable,
+							'',
+							'',
+						],
+					]),
+		]
 	})
 
 	return [
 		`# Score sheet: ${report.engine}, ${report.startedAt}`,
-		'Score each card as evals/rubric.md says: Accurate and Clear from 1 to 5, Right sense yes or no. The cards are in report.json.',
+		'Score each card as evals/rubric.md says: Accurate and Clear from 1 to 5, Right sense yes or no. On a level-2 row, also Builds on, yes or no. The cards are in report.json.',
 		table(
 			[
 				'Note',
+				'Level',
 				'Source',
 				'Text',
 				'Format',
@@ -46,6 +86,7 @@ export function renderScoreSheet(report: EvalReport): string {
 				'Accurate',
 				'Clear',
 				'Right sense',
+				'Builds on',
 				'Comment',
 			],
 			rows,

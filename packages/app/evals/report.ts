@@ -19,6 +19,8 @@ export interface CallRecord {
 	readonly task: Task
 	/** The card format, or `suggestion`. */
 	readonly format: string
+	/** The card's level; 2 for the card a `--deeper` run asks for after the first. */
+	readonly depth: 1 | 2
 	readonly elapsedMs: number
 	/** Why the call gave no answer, such as `timeout`. An `invalid` answer is a `schema` fail instead. */
 	readonly error: string | null
@@ -86,6 +88,8 @@ const callRecordSchema = v.strictObject({
 	noteId: v.string(),
 	task: v.picklist(['suggest', 'explain', 'research']),
 	format: v.string(),
+	// Lines written before level 2 existed have none, and are level 1.
+	depth: v.optional(v.picklist([1, 2]), 1),
 	elapsedMs: v.number(),
 	error: v.nullable(v.string()),
 	checks: v.array(checkResultSchema),
@@ -130,12 +134,17 @@ function groupStats(calls: readonly CallRecord[]): GroupStats {
 	}
 }
 
-const groupOrder = ['suggestion', ...formatIds]
+// Level-2 cards are grouped apart, so the level-1 numbers stay comparable between runs.
+const groupOrder = ['suggestion', ...formatIds.flatMap((id) => [id, `${id} level 2`])]
+
+function groupOf({ format, depth }: CallRecord): string {
+	return depth === 2 ? `${format} level 2` : format
+}
 
 export function summarize(calls: readonly CallRecord[]): Summary {
 	const byFormat = Object.fromEntries(
 		groupOrder.flatMap((format) => {
-			const group = calls.filter((call) => call.format === format)
+			const group = calls.filter((call) => groupOf(call) === format)
 
 			return group.length === 0 ? [] : [[format, groupStats(group)]]
 		}),
@@ -197,11 +206,11 @@ export function table(header: readonly string[], rows: readonly (readonly string
 function failures(calls: readonly CallRecord[]): string[][] {
 	return calls.flatMap((call) => {
 		const failed = call.checks.filter(({ passed }) => passed === false)
-		const error = call.error === null ? [] : [[call.noteId, call.format, 'error', call.error]]
+		const error = call.error === null ? [] : [[call.noteId, groupOf(call), 'error', call.error]]
 
 		return [
 			...error,
-			...failed.map(({ check, detail }) => [call.noteId, call.format, check, detail ?? '']),
+			...failed.map(({ check, detail }) => [call.noteId, groupOf(call), check, detail ?? '']),
 		]
 	})
 }
