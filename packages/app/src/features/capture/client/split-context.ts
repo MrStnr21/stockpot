@@ -28,6 +28,7 @@ export function splitContext(field: string): SplitContext {
 		.trim()
 		.split(/\s+/u)
 		.filter((token) => token !== '')
+
 	const urlIndex = tokens.findIndex((token) => isWebUrl(token))
 	const url = urlIndex === -1 ? null : (tokens[urlIndex] ?? null)
 	const context = tokens.filter((_, index) => index !== urlIndex).join(' ')

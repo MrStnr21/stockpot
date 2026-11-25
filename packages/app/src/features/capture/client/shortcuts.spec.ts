@@ -3,7 +3,13 @@
 
 import { describe, expect, it } from 'bun:test'
 
-import { isApplePlatform, opensSheet, sheetShortcut, type ShortcutKey } from './shortcuts'
+import {
+	isApplePlatform,
+	isPlainClick,
+	opensSheet,
+	sheetShortcut,
+	type ShortcutKey,
+} from './shortcuts'
 
 function press(key: string, params: Partial<ShortcutKey> = {}): ShortcutKey {
 	return {
@@ -93,6 +99,29 @@ describe('shortcuts', () => {
 			['Linux', 'Mozilla/5.0 (X11; Linux x86_64) Firefox/133.0', false],
 		])('detects %s', (_case, userAgent, expected) => {
 			expect(isApplePlatform(userAgent)).toBe(expected)
+		})
+	})
+
+	describe('isPlainClick', () => {
+		const click = {
+			button: 0,
+			metaKey: false,
+			ctrlKey: false,
+			altKey: false,
+			shiftKey: false,
+			defaultPrevented: false,
+		}
+
+		it.each([
+			['a primary click', click, true],
+			['a middle click', { ...click, button: 1 }, false],
+			['a Meta click', { ...click, metaKey: true }, false],
+			['a Ctrl click', { ...click, ctrlKey: true }, false],
+			['a Shift click', { ...click, shiftKey: true }, false],
+			['an Alt click', { ...click, altKey: true }, false],
+			['a handled click', { ...click, defaultPrevented: true }, false],
+		])('treats %s', (_case, event, expected) => {
+			expect(isPlainClick(event)).toBe(expected)
 		})
 	})
 })

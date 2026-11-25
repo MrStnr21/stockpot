@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
+import { Button } from '@stockpot/ui/button'
 import { EmptyState } from '@stockpot/ui/empty-state'
 
 import Shell from '#/layouts/shell.astro'
@@ -18,8 +19,11 @@ const locale = pickLocale(Astro.request.headers.get('accept-language'))
 const strings = t(locale)
 ---
 
-<Shell title={strings.nav.add} {locale} current="add" heading={strings.nav.add}>
+<Shell title={strings.nav.add} {locale} current="add" heading={strings.nav.add} initiallyOpen>
 	<EmptyState icon="plus" title={strings.add.emptyTitle}>
 		{strings.add.empty}
+		<Button slot="action" href="/add" icon="plus">
+			{strings.newNote}
+		</Button>
 	</EmptyState>
 </Shell>

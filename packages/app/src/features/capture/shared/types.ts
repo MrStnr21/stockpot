@@ -6,7 +6,17 @@
  * what `POST /api/suggest` and `POST /api/notes` send, so the browser bundle never depends on the
  * server modules that build them.
  */
+import type { CategoryColor, IconName } from '@stockpot/ui/icon'
+
 import type { NoteStatus } from '#/server/db/schema/notes'
+
+/** A category as the sheet draws it, in the owner's order. */
+export interface CaptureCategory {
+	readonly id: number
+	readonly name: string
+	readonly color: CategoryColor
+	readonly icon: IconName
+}
 
 export interface SuggestSense {
 	readonly sense: string

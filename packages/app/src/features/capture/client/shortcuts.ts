@@ -79,3 +79,24 @@ export function opensSheet(
 export function isApplePlatform(userAgent: string): boolean {
 	return /Mac|iPhone|iPad/u.test(userAgent)
 }
+
+export interface ClickLike {
+	readonly button: number
+	readonly metaKey: boolean
+	readonly ctrlKey: boolean
+	readonly altKey: boolean
+	readonly shiftKey: boolean
+	readonly defaultPrevented: boolean
+}
+
+/** A primary click with no modifier: one a link would follow in the same tab. */
+export function isPlainClick(event: ClickLike): boolean {
+	return (
+		event.button === 0 &&
+		!event.metaKey &&
+		!event.ctrlKey &&
+		!event.altKey &&
+		!event.shiftKey &&
+		!event.defaultPrevented
+	)
+}

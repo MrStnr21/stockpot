@@ -14,7 +14,7 @@ const locale = pickLocale(Astro.request.headers.get('accept-language'))
 const strings = t(locale)
 ---
 
-<Shell title={strings.nav.label} {locale} current={null}>
+<Shell title={strings.nav.label} {locale} current={null} capture={false}>
 	<EmptyState icon="alert" title={strings.offlinePage.emptyTitle}>
 		{strings.offlinePage.empty}
 	</EmptyState>
