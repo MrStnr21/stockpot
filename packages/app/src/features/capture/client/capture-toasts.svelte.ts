@@ -51,6 +51,18 @@ export function researchingToast(strings: CaptureStrings, term: string): ToastCo
 	}
 }
 
+/** After Undo: a short confirmation, or an error when the note could not be removed. */
+export function undoneToast(strings: CaptureStrings, removed: boolean): ToastContent {
+	return removed
+		? { tone: 'default', title: strings.removed, detail: null, action: null }
+		: { tone: 'error', title: strings.undoFailed, detail: null, action: null }
+}
+
+/** The note is saved, but its research or deeper call was refused or did not arrive. */
+export function followUpFailedToast(strings: CaptureStrings, term: string): ToastContent {
+	return { tone: 'error', title: strings.followUpFailed, detail: term, action: null }
+}
+
 /** One toast at a time: a new one replaces the old, and each goes when its time is up. */
 export class ToastQueue {
 	public current = $state.raw<CaptureToast | null>(null)

@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
 import { $, env, spawn } from 'bun'
+import { Database } from 'bun:sqlite'
 import { dirname } from 'node:path'
 import { expect, type Page } from '@playwright/test'
 
@@ -35,8 +36,9 @@ interface OwnerServer {
 	readonly startServer: (
 		configFile: string,
 		environment?: Record<string, string>,
-	) => Promise<{ code: string; stop: () => Promise<void> }>
+	) => Promise<{ code: string; dataDir: string; stop: () => Promise<void> }>
 	readonly createOwner: (page: Page, code: string, password: string) => Promise<void>
+	readonly signIn: (page: Page, password: string) => Promise<void>
 }
 
 /*
@@ -74,7 +76,7 @@ export function ownerServer(offset: number): OwnerServer {
 			await $`rm -rf ${directory}`
 		}
 
-		return { code: await readSetupCode(server.stdout), stop }
+		return { code: await readSetupCode(server.stdout), dataDir: directory, stop }
 	}
 
 	/** Claims the instance on its setup page and lands on Today, signed in. */
@@ -88,5 +90,36 @@ export function ownerServer(offset: number): OwnerServer {
 		await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible()
 	}
 
-	return { origin, startServer, createOwner }
+	/** Signs the owner in and lands on Today. */
+	async function signIn(page: Page, password: string) {
+		await page.goto(`${origin}/signin`)
+		await page.getByLabel('Password').fill(password)
+		await page.getByRole('button', { name: 'Sign in' }).click()
+		await expect(page).toHaveURL(`${origin}/`)
+	}
+
+	return { origin, startServer, createOwner, signIn }
+}
+
+/*
+ * Puts the agent command first in the routing, so a server started with `STOCKPOT_AGENT_COMMAND`
+ * suggests through it. There is no settings API yet; the server reads the routing on every call.
+ */
+export function routeToAgentCommand(dataDir: string): void {
+	const routing = {
+		categories: {},
+		fallbackOrder: ['agent-command', 'gemini', 'openai-compatible'],
+	}
+	const db = new Database(`${dataDir}/stockpot.db`)
+
+	try {
+		db.run('PRAGMA busy_timeout = 5000')
+		db.run(
+			`INSERT INTO settings (key, value, updated_at) VALUES ('routing', ?1, ?2)
+			ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`,
+			[JSON.stringify(routing), Date.now()],
+		)
+	} finally {
+		db.close()
+	}
 }

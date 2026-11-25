@@ -22,10 +22,13 @@ import {
 	type SubmitMode,
 } from './capture-model'
 import {
+	followUpFailedToast,
 	removedToastMs,
 	researchingToast,
 	savedToast,
+	toastMs,
 	ToastQueue,
+	undoneToast,
 	type CaptureStrings,
 } from './capture-toasts.svelte'
 import { contextFieldMaxLength } from './split-context'
@@ -212,19 +215,7 @@ export class CaptureController {
 	public async undo(noteId: number): Promise<void> {
 		const removed = await this.#api.undo(noteId)
 
-		if (removed) {
-			this.toasts.show(
-				{ tone: 'default', title: this.#strings.removed, detail: null, action: null },
-				removedToastMs,
-			)
-		} else {
-			this.toasts.show({
-				tone: 'error',
-				title: this.#strings.undoFailed,
-				detail: null,
-				action: null,
-			})
-		}
+		this.toasts.show(undoneToast(this.#strings, removed), removed ? removedToastMs : toastMs)
 	}
 
 	public destroy(): void {
@@ -265,12 +256,7 @@ export class CaptureController {
 			?.then((started) => {
 				/* A newer toast means the owner moved on; the failure would only interrupt them. */
 				if (!started && this.toasts.isLatest(id)) {
-					this.toasts.show({
-						tone: 'error',
-						title: this.#strings.followUpFailed,
-						detail: term,
-						action: null,
-					})
+					this.toasts.show(followUpFailedToast(this.#strings, term))
 				}
 			})
 			.catch(() => null)
