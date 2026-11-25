@@ -13,6 +13,7 @@ where the runner sits.
 | [`queue.ts`](queue.ts)         | the queries on the `jobs` table                                   |
 | [`schedules.ts`](schedules.ts) | planning each schedule's run                                      |
 | [`daily.ts`](daily.ts)         | the time zone math for daily runs                                 |
+| [`backup.ts`](backup.ts)       | the daily database backup job and its retention                   |
 
 ## Jobs
 
@@ -72,6 +73,11 @@ The nightly batch is the first daily schedule. At `digest.batchTime` (06:30 by d
 notes, notes with a finished first card, and notes that already have a queued or running research
 job. The worker runs the research jobs one at a time, and a `now` job can run ahead of the remaining
 batch jobs.
+
+The second is the daily backup. At 03:00 it copies the database with `VACUUM INTO` into
+`backups/stockpot-<day>.db` in the data directory, under a temporary name that is renamed when the
+copy is complete, and keeps the newest 14. The [restore guide](../../../../../docs/install/restore.md)
+says how to put one back.
 
 - **One planned run.** Each schedule keeps exactly one queued row for its next run, and only the
   schedule queues its kind. A run is claimed and the next day's run planned in one transaction, so a
