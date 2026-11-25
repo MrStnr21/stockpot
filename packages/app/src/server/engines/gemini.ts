@@ -6,17 +6,10 @@
  * no other module imports. A suggestion is one structured call without search. A card is two calls:
  * facts from Google Search and the note's link, then the card as structured output from those facts,
  * because Gemini 2.5 rejects structured output together with tools and the owner's free tier allows
- * search only on Gemini 2.5 (observed in probes on 2026-11-19). The key, the models and the limits are read from
- * settings at every call.
+ * search only on Gemini 2.5 (observed in probes on 2026-11-19). An idea report is the loop in
+ * `gemini-research.ts`. The key, the models and the limits are read from settings at every call.
  */
-import {
-	ApiError,
-	GoogleGenAI,
-	type GenerateContentConfig,
-	type GenerateContentResponse,
-	type HttpOptions,
-} from '@google/genai'
-import type { JsonSchema } from '@valibot/to-json-schema'
+import { ApiError, GoogleGenAI, type GenerateContentConfig, type HttpOptions } from '@google/genai'
 import type * as v from 'valibot'
 
 import type { Db } from '#/server/db/client'
@@ -33,7 +26,9 @@ import {
 	type RunOptions,
 } from './contract'
 import { geminiFailure } from './gemini-errors'
+import { researchIdea, type Generate } from './gemini-research'
 import { addUsage, answerText, readFacts, type Facts } from './gemini-response'
+import { structured } from './gemini-schema'
 import { suggestionThinking } from './gemini-thinking'
 import {
 	createUsageCounters,
@@ -42,23 +37,12 @@ import {
 	type UsageCounters,
 } from './gemini-usage'
 import { buildPrompt } from './prompt'
-import { abortReason, oneAtATime, recordRun, type RunReport } from './runs'
+import { abortReason, oneAtATime, recordRun, type Line, type RunReport } from './runs'
 import type { EngineId, EngineSettings } from './settings'
 
+export { geminiSchema } from './gemini-schema'
+
 const engineId = 'gemini' satisfies EngineId
-
-/**
- * The derived JSON Schema as `responseJsonSchema` takes it. The recorded responses show it taking
- * `pattern`, `format: uri`, `anyOf` and nullable types as derived; probes on 2026-11-19 saw it take
- * `$schema` too, which it does not use, so only that is left out. `responseSchema` is not used:
- * probes saw it reject `$schema` and `additionalProperties`.
- */
-export function geminiSchema(schema: JsonSchema): JsonSchema {
-	// oxlint-disable-next-line no-unused-vars -- The stripped keyword is named only to leave it out.
-	const { $schema, ...rest } = schema
-
-	return rest
-}
 
 const factsStep = [
 	'# This step',
@@ -77,25 +61,15 @@ function cardPrompt(input: Redacted<CardInput>, { text, sources }: Facts) {
 	].join('\n\n')
 }
 
-function structured(output: OutputFormat): GenerateContentConfig {
-	return {
-		responseMimeType: 'application/json',
-		responseJsonSchema: geminiSchema(output.jsonSchema),
-	}
-}
-
 type Settings = EngineSettings['gemini']
-
-type Generate = (
-	contents: string,
-	config: GenerateContentConfig,
-) => Promise<GenerateContentResponse>
 
 interface Request {
 	readonly client: GoogleGenAI
 	readonly model: string
 	readonly apiKey: string
 	readonly options: RunOptions
+	/** Takes the engine's line for each request, instead of the caller for the whole call. */
+	readonly line?: Line
 }
 
 /**
@@ -103,7 +77,7 @@ interface Request {
  * first, across every request the call makes; a stopped request fails with the reason it stopped.
  */
 async function withDeadline<T>(
-	{ client, model, apiKey, options: { timeoutMs, signal } }: Request,
+	{ client, model, apiKey, line, options: { timeoutMs, signal } }: Request,
 	call: (generate: Generate) => Promise<T>,
 ): Promise<T> {
 	signal?.throwIfAborted()
@@ -122,16 +96,29 @@ async function withDeadline<T>(
 		}
 	}
 
-	async function generate(contents: string, config: GenerateContentConfig) {
+	/* `step` is a signal of the caller's own, such as a research step's cap: it stops this request
+	 * alone, and the call goes on. */
+	async function generate(contents: string, config: GenerateContentConfig, step?: AbortSignal) {
 		controller.signal.throwIfAborted()
+		step?.throwIfAborted()
+
+		const stop = step === undefined ? controller.signal : AbortSignal.any([controller.signal, step])
+
+		const request = { model, contents, config: { ...config, abortSignal: stop } }
+
+		async function send() {
+			return client.models.generateContent(request)
+		}
 
 		try {
-			const request = { model, contents, config: { ...config, abortSignal: controller.signal } }
-
-			return await client.models.generateContent(request)
+			return await (line === undefined ? send() : line(stop, send))
 		} catch (error) {
 			if (controller.signal.aborted) {
 				throw abortReason(controller.signal)
+			}
+
+			if (step?.aborted === true) {
+				throw abortReason(step)
 			}
 
 			if (error instanceof ApiError) {
@@ -231,8 +218,8 @@ export function createGeminiEngine({
 	) {
 		const record = { db, engine: engineId, task: input.task, jobId: options.jobId ?? null }
 
-		return inTurn(options.signal, async () =>
-			recordRun(record, async (report) => {
+		async function call() {
+			return recordRun(record, async (report) => {
 				const { apiKey, models, limits } = settings()
 				const model = models[options.tier]
 
@@ -246,19 +233,34 @@ export function createGeminiEngine({
 					throw new Error(`The Gemini engine has no model for the ${options.tier} tier`)
 				}
 
-				// A card takes two requests, and both must fit before the first is sent.
+				// A card takes two requests and a research call seven; all must fit before the first.
 				counters.take(model, limits[options.tier], requestsPerCall(input.task))
 
 				const client = new GoogleGenAI({ apiKey, httpOptions })
-				const request = { client, model, apiKey, options }
+				const line = input.task === 'research' ? inTurn : undefined
+				const request = { client, model, apiKey, options, line }
 
 				return withDeadline(request, async (generate) => {
-					const call = { model, generate, report }
+					const context = { model, generate, report }
 
-					return input.task === 'suggest' ? suggest(input, call) : writeCard(input, call)
+					if (input.task === 'suggest') {
+						return suggest(input, context)
+					}
+
+					if (input.task === 'research') {
+						const { timeoutMs, onProgress } = options
+
+						return researchIdea(input, { ...context, timeoutMs, onProgress })
+					}
+
+					return writeCard(input, context)
 				})
-			}),
-		)
+			})
+		}
+
+		/* A research call takes the line per request, so that it holds back a suggestion for one
+		 * request instead of fifteen minutes; everything else takes it for the whole call. */
+		return input.task === 'research' ? call() : inTurn(options.signal, call)
 	}
 
 	return { id: engineId, suggest: run, explain: run, research: run }

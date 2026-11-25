@@ -141,6 +141,19 @@ describe('gemini-usage', () => {
 				})
 			})
 
+			it('counts a research run as seven requests', async () => {
+				await engineRunRowFactory.transient({ db }).create({ task: 'research', startedAt: today })
+				counters = createUsageCounters(pastRequests(db, 'gemini'))
+
+				// 240 + 7 = 247 of 250: three more fit, the fourth does not.
+				const taken = Array.from({ length: 3 }, () => refusal('gemini-3.1-flash-lite', daily))
+
+				expect(taken.every((error) => error === null)).toBe(true)
+				expect(refusal('gemini-3.1-flash-lite', daily)).toMatchObject({
+					failure: { kind: 'rate_limited' },
+				})
+			})
+
 			it('counts the last minute too', async () => {
 				await engineRunRowFactory.transient({ db }).create({ task: 'research' })
 				counters = createUsageCounters(pastRequests(db, 'gemini'))

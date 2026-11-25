@@ -28,3 +28,16 @@ export function suggestionThinking(model: string): ThinkingConfig | undefined {
 
 	return undefined
 }
+
+/**
+ * The thinking config for the steps of an idea report that plan and write it, which should think as
+ * hard as the model allows. `high` is accepted by every Gemini 3 and later model, and those return an
+ * error when `thinkingBudget` comes with `thinkingLevel`, so only the level is sent. Gemini 2.5 thinks
+ * dynamically by default, and a model this does not recognize gets no config rather than a field it
+ * may reject.
+ */
+export function researchThinking(model: string): ThinkingConfig | undefined {
+	const { major } = generation.exec(model)?.groups ?? {}
+
+	return Number(major) >= 3 ? { thinkingLevel: ThinkingLevel.HIGH } : undefined
+}

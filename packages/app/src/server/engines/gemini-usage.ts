@@ -14,6 +14,7 @@ import type { Db } from '#/server/db/client'
 import { engineRuns } from '#/server/db/schema/jobs'
 
 import { EngineError, type Task } from './contract'
+import { maxQuestions } from './gemini-research'
 
 /** The owner's limits for one tier's model; `null` sets no limit. */
 export interface UsageLimit {
@@ -36,8 +37,16 @@ const minuteMs = 60_000
 // Long enough to hold a whole Pacific day, even the 25-hour one when daylight saving time ends.
 const pacificDayMs = 25 * 3_600_000
 
-/** How many requests a call takes: a card is the facts, then the card. */
+/**
+ * How many requests a call takes: a card is the facts, then the card, and an idea report is a plan,
+ * a search for each of the most questions it may plan, and the report. A report that plans fewer
+ * questions is counted in full too, which errs on the side of the limit.
+ */
 export function requestsPerCall(task: Task): number {
+	if (task === 'research') {
+		return maxQuestions + 2
+	}
+
 	return task === 'suggest' ? 1 : 2
 }
 
