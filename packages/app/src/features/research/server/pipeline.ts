@@ -55,10 +55,10 @@ export interface ResearchDependencies {
 	/** Records a card's sense and aliases on its term. */
 	readonly learn: (termId: number, card: LearnedCard) => void
 	/**
-	 * Called once when a research-now job has saved the note's first card. It must not throw or reject,
-	 * and the job does not wait for it.
+	 * Called once when a research-now job has saved the note's first card. The job does not wait for
+	 * it, and logs and drops a throw or a rejection.
 	 */
-	readonly notify: (ready: ReadyNote) => void
+	readonly notify: (ready: ReadyNote) => void | Promise<void>
 	readonly now?: () => Date
 }
 
@@ -123,16 +123,26 @@ function learnFrom(
 	}
 }
 
+function logNotifyFailure({ noteId }: ReadyNote, error: Error) {
+	log.warn('Notifying that a card is ready failed', { noteId, name: error.name })
+}
+
+/*
+ * The card is saved, and a missed notification must not fail the job or retry it. A rejection that
+ * nothing handles would end the process, so an async sender is caught too. A synchronous throw is
+ * caught before the first await, so it is logged before the job returns.
+ */
 function notifyReady(deps: ResearchDependencies, ready: ReadyNote) {
-	try {
-		deps.notify(ready)
-	} catch (error) {
-		// The card is saved, and a missed notification must not fail the job or retry it.
-		log.warn('Notifying that a card is ready failed', {
-			noteId: ready.noteId,
-			name: error instanceof Error ? error.name : 'unknown',
-		})
+	async function send() {
+		try {
+			await deps.notify(ready)
+		} catch (error) {
+			logNotifyFailure(ready, error instanceof Error ? error : new Error('unknown'))
+		}
 	}
+
+	// Never rejects: `send` logs every failure itself.
+	send().catch(() => null)
 }
 
 function queueAfterReset(deps: ResearchDependencies, payload: ResearchPayload, reset: Date) {

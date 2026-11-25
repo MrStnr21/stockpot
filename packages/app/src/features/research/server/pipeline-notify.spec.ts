@@ -167,4 +167,33 @@ describe('research job notify', () => {
 			expect(warn).toHaveBeenCalledWith(expect.any(String), { noteId: note.id, name: 'Error' })
 		})
 	})
+
+	describe('when notifying rejects', () => {
+		let warn: ReturnType<typeof spyOn<typeof log, 'warn'>>
+
+		beforeEach(() => {
+			warn = spyOn(log, 'warn').mockImplementation(() => {
+				// Keep the expected warning out of the test log.
+			})
+			harness.notify.mockImplementation(async () => {
+				throw new Error('The sender is down')
+			})
+		})
+
+		afterEach(() => {
+			warn.mockRestore()
+		})
+
+		it('keeps the card, finishes the job and logs the rejection instead of leaving it unhandled', async () => {
+			const note = await noteRowFactory.transient({ db: harness.db }).create()
+
+			await harness.research([note.id])
+			await Promise.resolve()
+
+			expect(harness.cardsOf(note.id)).toMatchObject([{ isDraft: false }])
+			expect(jobRows(harness.db)).toMatchObject([{ status: 'done', attempts: 1 }])
+			expect(warn).toHaveBeenCalledTimes(1)
+			expect(warn).toHaveBeenCalledWith(expect.any(String), { noteId: note.id, name: 'Error' })
+		})
+	})
 })

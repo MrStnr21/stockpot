@@ -118,7 +118,7 @@ export interface ResearchHarness {
 	readonly cardsOf: (noteId: number) => (typeof explanations.$inferSelect)[]
 	readonly later: Mock<(payload: ResearchPayload, runAt: Date) => void>
 	readonly learn: Mock<(termId: number, card: LearnedCard) => void>
-	readonly notify: Mock<(ready: ReadyNote) => void>
+	readonly notify: Mock<(ready: ReadyNote) => void | Promise<void>>
 	/** Queues the notes' research as a route would. */
 	readonly queue: (noteIds: readonly number[], priority?: Priority) => void
 	/** Queues the notes' research, then runs what is due. */

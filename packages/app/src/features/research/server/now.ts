@@ -81,6 +81,7 @@ export function researchNow(
 	const pending = pendingResearchNoteIds(db)
 	const unarchive: number[] = []
 	const reopen: number[] = []
+	const reopenWaiting: number[] = []
 	const toQueue: number[] = []
 
 	const results = ids.map((id): ResearchNowResult => {
@@ -101,9 +102,9 @@ export function researchNow(
 			return { id, outcome: 'done' }
 		}
 
-		// The job skips an archived note.
+		// The job skips an archived note. One that already waits for a job shows as queued, not as new.
 		if (archived) {
-			reopen.push(id)
+			;(pending.has(id) ? reopenWaiting : reopen).push(id)
 		}
 
 		if (pending.has(id)) {
@@ -117,12 +118,17 @@ export function researchNow(
 
 	setStatus(deps, unarchive, 'ready')
 	setStatus(deps, reopen, 'new')
+	setStatus(deps, reopenWaiting, 'queued')
 	queueResearch(deps, toQueue, 'now')
 
 	return results
 }
 
-function setStatus({ db }: QueueDependencies, noteIds: number[], status: 'ready' | 'new') {
+function setStatus(
+	{ db }: QueueDependencies,
+	noteIds: number[],
+	status: 'ready' | 'new' | 'queued',
+) {
 	if (noteIds.length === 0) {
 		return
 	}

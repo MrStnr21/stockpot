@@ -109,6 +109,15 @@ describe('researchNow', () => {
 			expect(statusOf(note.id)).toBe('queued')
 		})
 
+		it('marks an archived note that already has a job as queued, not new', async () => {
+			const note = await createNote({ status: 'archived' })
+			await createJob(note.id, 'queued')
+
+			expect(run([note.id])).toEqual([{ id: note.id, outcome: 'pending' }])
+			expect(enqueue).not.toHaveBeenCalled()
+			expect(statusOf(note.id)).toBe('queued')
+		})
+
 		it('queues a note whose only card is a draft, with no job', async () => {
 			const note = await createNote({ status: 'ready' })
 			await giveCard(note.id, { isDraft: true })
