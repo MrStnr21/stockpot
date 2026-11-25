@@ -7,7 +7,7 @@
  */
 import type * as v from 'valibot'
 
-import { EngineError, type CardInput } from '#/server/engines/contract'
+import { EngineError, type CardInput, type ResearchProgress } from '#/server/engines/contract'
 import type { CardResult, Router } from '#/server/engines/router'
 import type { JobContext } from '#/server/jobs/types'
 import { log } from '#/server/log'
@@ -29,15 +29,17 @@ export function runAtAfterReset(reset: Date, now: Date): Date {
 export interface CardCall<TSchema extends v.GenericSchema> {
 	readonly categoryId: number
 	readonly input: CardInput<'explain', TSchema> | CardInput<'research', TSchema>
+	/** Called as a research task advances; an explain task is never given one. */
+	readonly onProgress?: (progress: ResearchProgress) => void
 }
 
 export async function callRouter<TSchema extends v.GenericSchema>(
 	router: Pick<Router, 'explain' | 'research'>,
-	{ categoryId, input }: CardCall<TSchema>,
+	{ categoryId, input, onProgress }: CardCall<TSchema>,
 	{ id, signal }: JobContext,
 ): Promise<CardResult<v.InferOutput<TSchema>>> {
 	signal.throwIfAborted()
-	const options = { categoryId, signal, jobId: id }
+	const options = { categoryId, signal, jobId: id, onProgress }
 
 	const call =
 		input.task === 'research' ? router.research(input, options) : router.explain(input, options)

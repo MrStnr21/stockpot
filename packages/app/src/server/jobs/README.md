@@ -118,7 +118,9 @@ failing.
 Routes reach the runner through `currentRunner()`: the build bundles `runner.ts` once, so a route
 and `boot.ts` share its module instance. `/healthz` reads `health()` this way, and the research-now
 routes enqueue `now` jobs through it, answering 503 when no runner runs (the dev server). The Deeper
-route enqueues through `currentRunner()` too and answers 503 the same way.
+route enqueues through `currentRunner()` too and answers 503 the same way. The research route also
+answers `GET` with the note's status and, while an idea's report is being researched, its progress
+(the counts of [Progress](../../../../../docs/engines.md#progress)); that read needs no runner.
 
 `boot.ts` is an entry module, so unlike `server/` it may import features: it passes the runner every
 feature's job definitions, built once in [`src/instance.ts`](../../instance.ts), and reads the nightly

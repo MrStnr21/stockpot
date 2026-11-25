@@ -311,6 +311,26 @@ single category, and set the fallback order.
 - **One router per process.** [`src/instance.ts`](../packages/app/src/instance.ts) builds and shares
   the router so each engine and Gemini's usage counters exist once. Settings are read at every call.
 
+### Progress
+
+A report takes minutes, so a `research` call can tell where it is. The caller passes
+`RunOptions.onProgress` (the router hands it on as it is), and the engine calls it with
+`ResearchProgress`, four fields that hold counts only, never a question, a finding or a link:
+
+- `step`: `planning`, `searching` or `writing`.
+- `questions`: how many questions the plan holds; 0 while planning.
+- `searched`: how many search steps have finished, answered or not.
+- `pages`: how many distinct pages the searches have read so far.
+
+The Gemini loop reports `planning` with all counts 0 when it starts, then `searching` with
+`questions` set once the plan is made, then `searching` again after each finished step (`searched`
+up by one, `pages` as it stands) and `writing` before the report request. A callback that throws
+does not fail the research. The agent command and OpenAI-compatible engines report nothing. The
+research job keeps the latest progress of each note in memory, once per process, and shows it
+through `GET /api/notes/:id/research` while the job runs; it ignores a call that comes after the
+job's signal aborted, and clears the note's entry however the run ends. A restart loses it, and the
+job restarts anyway. The deeper job reports no progress.
+
 ## The Gemini engine
 
 The Gemini engine
