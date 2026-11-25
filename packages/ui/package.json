@@ -22,18 +22,18 @@
 		"test": "bun test --pass-with-no-tests"
 	},
 	"peerDependencies": {
-		"svelte": "^5.57.3",
+		"svelte": "^5.59.1",
 		"tailwindcss": "^4.3.5"
 	},
 	"devDependencies": {
 		"@astrojs/check": "^0.9.12",
 		"@astrojs/svelte": "^9.1.6",
-		"@configg/bases": "^0.1.11",
+		"@configg/bases": "^0.1.18",
 		"@ianvs/prettier-plugin-sort-imports": "^4.7.1",
 		"@playwright/test": "^1.65.1",
 		"@tailwindcss/vite": "^4.3.5",
-		"@types/bun": "^1.4.4",
-		"astro": "^7.4.12",
+		"@types/bun": "^1.4.5",
+		"astro": "^7.4.13",
 		"astrobook": "0.13.3",
 		"eslint-plugin-astro": "^3.2.1",
 		"eslint-plugin-playwright": "^2.12.2",
@@ -43,7 +43,7 @@
 		"prettier-plugin-astro": "^1.1.2",
 		"prettier-plugin-svelte": "^4.2.0",
 		"prettier-plugin-tailwindcss": "^0.8.1",
-		"svelte": "^5.57.3",
+		"svelte": "^5.59.1",
 		"tailwindcss": "^4.3.5",
 		"tsrs": "^0.25.0-ts7.1.0-beta",
 		"typescript": "^6.0.3"
