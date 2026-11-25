@@ -168,6 +168,8 @@ export default defineConfig({
 			files: ['tests/e2e/**/*.ts'],
 			jsPlugins: ['eslint-plugin-playwright'],
 			rules: {
+				// One top-level `test.describe` holds the whole spec, so its callback is the file.
+				'eslint/max-lines-per-function': 'off',
 				'playwright/missing-playwright-await': 'error',
 				'playwright/no-conditional-in-test': 'error',
 				'playwright/no-focused-test': 'error',

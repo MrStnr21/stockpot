@@ -115,6 +115,8 @@ export function specOverride(files: string[]): Overrides[number] {
 			'specs/structure': 'error',
 			// A spec declares `let` state at the top of a `describe` and assigns it in a hook.
 			'eslint/init-declarations': 'off',
+			// The layout rule puts a whole spec in one top-level `describe`, so its callback is the file.
+			'eslint/max-lines-per-function': 'off',
 		},
 	}
 }
@@ -156,6 +158,8 @@ export const scriptConfig = {
 	...configs.scripts,
 	ignorePatterns,
 	options: { ...configs.scripts.options, ...sharedOptions },
+	// The tools read `process`, `console` and `URL`, which the preset no longer declares.
+	env: { node: true },
 	plugins: ['eslint', 'oxc', 'typescript', 'unicorn', 'import'],
 	jsPlugins: [...antiSlop.jsPlugins],
 	rules: { ...configs.scripts.rules, ...antiSlop.rules, ...sharedRules, ...clientRelaxations },
