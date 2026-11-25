@@ -29,10 +29,10 @@
 		"postinstall": "lefthook install"
 	},
 	"devDependencies": {
-		"@configg/bases": "^0.1.11",
+		"@configg/bases": "^0.1.18",
 		"@secretlint/secretlint-rule-preset-recommend": "^13.1.0",
 		"lefthook": "^2.2.2",
 		"prettier": "^3.10.1",
-		"secretlint": "^14.0.1"
+		"secretlint": "^14.1.0"
 	}
 }
