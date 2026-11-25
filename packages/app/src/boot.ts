@@ -6,10 +6,14 @@
  * integration in astro.config.ts imports it from the Node adapter's server entry. Astro loads the
  * middleware and pages only on the first request, so anything that must happen at startup goes here.
  */
+import { join } from 'node:path'
+
 import { readBatchTime, readTimeZone } from '#/features/settings/server'
 import { instanceBatchJob, instanceResearchJob } from '#/instance'
 import { instanceAuth } from '#/server/auth'
+import { config } from '#/server/config'
 import { instanceDb } from '#/server/db/instance'
+import { createBackupJob } from '#/server/jobs/backup'
 import { startRunner, stopRunner } from '#/server/jobs/runner'
 import { log } from '#/server/log'
 
@@ -26,7 +30,14 @@ const db = await instanceDb()
 await startRunner({
 	db,
 	jobs: [await instanceResearchJob()],
-	schedules: [{ job: await instanceBatchJob(), at: () => readBatchTime(db) }],
+	schedules: [
+		{ job: await instanceBatchJob(), at: () => readBatchTime(db) },
+		// Hours before the nightly batch, while the queue is idle.
+		{
+			job: createBackupJob({ db, directory: join(config.dataDir, 'backups'), keep: 14 }),
+			at: '03:00',
+		},
+	],
 	timeZone: () => readTimeZone(db),
 })
 

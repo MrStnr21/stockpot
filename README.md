@@ -51,6 +51,8 @@ runs on (its `TZ`), or UTC when that is not a named zone.
 
 Engine keys are stored in the database as plain text and never sent back to a browser, so keep the
 data directory readable only by the account that runs stockpot, and treat its backups the same way.
+stockpot copies the database every night into `backups/` in the data directory and keeps the newest
+14; [how to restore one](docs/install/restore.md).
 
 ## First run and signing in
 
