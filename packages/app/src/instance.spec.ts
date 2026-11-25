@@ -19,14 +19,22 @@ import { parseOutput } from '#/server/engines/contract'
 import * as engines from '#/server/engines/router'
 import { startRunner, stopRunner } from '#/server/jobs/runner'
 import type { Runner } from '#/server/jobs/types'
+import { log } from '#/server/log'
 
-import { instanceBatchJob, instanceResearchJob, instanceSuggester } from './instance'
+import {
+	instanceBatchJob,
+	instanceResearchJob,
+	instanceResearchNow,
+	instanceSuggester,
+} from './instance'
 
 const { db } = await createTestDb()
 
 const start = new Date('2026-11-21T06:00:00Z')
 
 const batchTime = '2026-11-21T06:30:00Z'
+
+const readyMessage = 'A research-now card is ready'
 
 const reset = new Date('2026-11-21T07:30:00Z')
 
@@ -83,7 +91,7 @@ describe('instance', () => {
 
 	describe('nightly batch', () => {
 		let runner: Runner
-		let research: Awaited<ReturnType<typeof instanceResearchJob>>
+		let info: ReturnType<typeof spyOn<typeof log, 'info'>>
 		let categoryId: number
 		let calls: string[]
 		let inFlight: number
@@ -104,6 +112,9 @@ describe('instance', () => {
 
 			const card = briefCardFactory.build({ sources: [] })
 
+			info = spyOn(log, 'info').mockImplementation(() => {
+				// Keep the expected messages out of the test log.
+			})
 			spyOn(instance, 'instanceDb').mockResolvedValue(db)
 			spyOn(engines, 'createRouter').mockReturnValue({
 				suggest: unexpectedCall,
@@ -140,10 +151,9 @@ describe('instance', () => {
 			const category = await categoryRowFactory.transient({ db }).create({ format: 'brief' })
 
 			categoryId = category.id
-			research = await instanceResearchJob()
 			runner = await startRunner({
 				db,
-				jobs: [research],
+				jobs: [await instanceResearchJob()],
 				schedules: [{ job: await instanceBatchJob(), at: '06:30' }],
 				timeZone: () => 'UTC',
 			})
@@ -198,6 +208,7 @@ describe('instance', () => {
 			const second = await saveNote()
 			const third = await saveNote()
 			const urgent = noteRowFactory.build({ categoryId })
+			let urgentId = 0
 			const { promise, resolve } = Promise.withResolvers<null>()
 
 			waitForAnswer = promise
@@ -207,9 +218,10 @@ describe('instance', () => {
 				drainMicrotasks()
 				expect(calls).toEqual([first.text])
 
-				const saved = db.insert(notes).values(urgent).returning({ id: notes.id }).get()
+				// Saved after the batch ran, so only the request queues it.
+				urgentId = db.insert(notes).values(urgent).returning({ id: notes.id }).get().id
 
-				runner.enqueue(research, { noteId: saved.id }, { priority: 'now' })
+				await instanceResearchNow([urgentId])
 			} finally {
 				resolve(null)
 			}
@@ -217,6 +229,9 @@ describe('instance', () => {
 			await runner.idle()
 
 			expect(calls).toEqual([first.text, urgent.text, second.text, third.text])
+			expect(info.mock.calls.filter(([message]) => message === readyMessage)).toEqual([
+				[readyMessage, { noteId: urgentId }],
+			])
 		})
 	})
 })

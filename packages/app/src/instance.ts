@@ -35,7 +35,7 @@ import { log } from '#/server/log'
 interface ProcessServices {
 	router?: Promise<Router>
 	suggester?: Suggester
-	researchJob?: Promise<JobDefinition<ResearchPayload>>
+	researchJob?: { db: Db; job: JobDefinition<ResearchPayload> }
 	batchJob?: Promise<JobDefinition<ScheduledRun>>
 }
 
@@ -121,9 +121,14 @@ function buildResearchJob(db: Db): JobDefinition<ResearchPayload> {
 
 /** The research job src/boot.ts registers, and the one every enqueue must pass. */
 export async function instanceResearchJob(): Promise<JobDefinition<ResearchPayload>> {
-	thisProcess.researchJob ??= instanceDb().then(buildResearchJob)
+	const db = await instanceDb()
 
-	return thisProcess.researchJob
+	// Keyed on the database: a process has one, but specs swap it and must not get a job over the last one.
+	if (thisProcess.researchJob?.db !== db) {
+		thisProcess.researchJob = { db, job: buildResearchJob(db) }
+	}
+
+	return thisProcess.researchJob.job
 }
 
 /**
