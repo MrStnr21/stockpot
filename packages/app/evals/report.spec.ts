@@ -18,6 +18,7 @@ function call(overrides: Partial<CallRecord>): CallRecord {
 		noteId: 'note',
 		task: 'explain',
 		format: 'technology',
+		depth: 1,
 		elapsedMs: 1000,
 		error: null,
 		checks: [],
@@ -87,6 +88,42 @@ describe('the eval report', () => {
 				schema: { applied: 3, passed: 3, failed: 0, unverifiable: 0, passRate: 1 },
 				filler: { applied: 1, passed: 0, failed: 1, unverifiable: 0, passRate: 0 },
 			})
+		})
+	})
+
+	describe('level 2', () => {
+		const second = call({
+			noteId: 'a',
+			depth: 2,
+			checks: [passed, { check: 'repeats', passed: false, detail: 'repeats "one two"' }],
+		})
+
+		const withSecond = [...calls, second]
+
+		it('groups a level-2 card apart from level 1, so level-1 numbers stay as they were', () => {
+			const { byFormat, byCheck } = summarize(withSecond)
+
+			expect(byFormat.technology).toMatchObject({ calls: 2 })
+			expect(byFormat['technology level 2']).toMatchObject({ calls: 1, passed: 0 })
+			expect(byCheck.repeats).toMatchObject({ applied: 1, failed: 1, passRate: 0 })
+		})
+
+		it('names the group in the report and its failures', () => {
+			const markdown = renderMarkdown({
+				...report,
+				calls: withSecond,
+				summary: summarize(withSecond),
+			})
+
+			expect(markdown).toContain('| technology level 2 | 1 | 0% |')
+			expect(markdown).toContain('| a | technology level 2 | repeats | repeats "one two" |')
+		})
+
+		it('reads a line written before level 2 existed as level 1', () => {
+			const { depth: _depth, ...old } = calls[1] ?? call({})
+
+			expect(parseCalls(`${JSON.stringify(old)}\n`)).toMatchObject([{ noteId: 'a', depth: 1 }])
+			expect(parseCalls(`${JSON.stringify(second)}\n`)).toMatchObject([{ depth: 2 }])
 		})
 	})
 

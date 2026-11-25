@@ -10,6 +10,7 @@ const card: CallRecord = {
 	noteId: 'b',
 	task: 'explain',
 	format: 'technology',
+	depth: 1,
 	elapsedMs: 1000,
 	error: null,
 	checks: [],
@@ -38,14 +39,31 @@ const report: EvalReport = {
 	summary: summarize([card]),
 }
 
+function row(cells: string[]): string {
+	return `| ${cells.join(' | ')} |`
+}
+
 describe('renderScoreSheet', () => {
 	it('has a row per note with blank scores and escaped text', () => {
 		expect(renderScoreSheet(report)).toContain(
-			String.raw`| b | composed | a \| b | technology | x |  |  |  |  |`,
+			row(['b', '1', 'composed', String.raw`a \| b`, 'technology', 'x', '', '', '', '—', '']),
 		)
 	})
 
 	it('marks a note whose card gave no answer', () => {
-		expect(renderScoreSheet(report)).toContain('| a | owner | bun | technology | no answer |')
+		expect(renderScoreSheet(report)).toContain('| a | 1 | owner | bun | technology | no answer |')
+	})
+
+	it('adds a level-2 row with an empty Builds on column after its note first card', () => {
+		const second: CallRecord = { ...card, depth: 2, answer: { howItWorks: 'y' } }
+		const calls = [card, second]
+		const sheet = renderScoreSheet({ ...report, calls, summary: summarize(calls) })
+
+		expect(sheet).toContain('| Builds on | Comment |')
+		expect(sheet).toContain(
+			row(['b', '2', 'composed', String.raw`a \| b`, 'technology', '—', '', '', '—', '', '']),
+		)
+		expect(sheet.indexOf('| b | 1 |')).toBeLessThan(sheet.indexOf('| b | 2 |'))
+		expect(sheet).not.toContain('| a | 2 |')
 	})
 })

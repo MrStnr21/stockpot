@@ -24,7 +24,7 @@ From the repository root:
 
 ```sh
 bun run eval -- --engine <id> [--notes <file>] [--limit <n>] [--language <code>] \
-  [--model <tier>=<id>]... [--suggest-timeout <ms>] [--out <dir>]
+  [--model <tier>=<id>]... [--suggest-timeout <ms>] [--out <dir>] [--deeper]
 ```
 
 | Option              | Default                                             | Meaning                                                                                                                        |
@@ -36,11 +36,16 @@ bun run eval -- --engine <id> [--notes <file>] [--limit <n>] [--language <code>]
 | `--model`           | the engine's tier models                            | The model for one tier (`fast`, `standard` or `deep`), such as `fast=gemini-2.5-flash-lite`; repeat it for each tier to change |
 | `--suggest-timeout` | 3000                                                | How long a suggestion may take, in milliseconds; cards keep the product's timeouts                                             |
 | `--out`             | `packages/app/evals/local/reports/<time>-<engine>/` | Where the report goes                                                                                                          |
+| `--deeper`          | off                                                 | A flag without a value: after each first card that answered, also ask for its level-2 card, built on the first (see below)     |
 
 For each note the runner asks the engine for a suggestion among the built-in categories, then for
 a first-level card in the note's expected format (a report for an idea), on the tier the routing
-table in docs/engines.md gives that format. Calls run one at a time, so each latency is the call's
-own. A real run calls a real engine: it takes time and spends the provider's usage.
+table in docs/engines.md gives that format. With `--deeper`, a note whose first card answered also
+gets a level-2 call, on the same engine and tier, with the first card as its earlier card, as the
+research feature sends it; a private note's level-2 call carries its term alone and no earlier card.
+The `--limit` counts that call too. Level-2 cards are checked for `schema`, `links`, `filler`,
+`private` and `repeats`, and the report groups them as `<format> level 2`. Calls run one at a time,
+so each latency is the call's own. A real run calls a real engine: it takes time and spends the provider's usage.
 
 `--model` applies to the engines that map tiers to models themselves, Gemini and the
 OpenAI-compatible engine; the agent command's script picks its own models, so the runner refuses
@@ -149,11 +154,13 @@ runner reads `local/` when it exists and runs the public notes alone when it doe
 Each run writes four files to its folder:
 
 - `calls.jsonl`: every call and its checks, appended as soon as the call is done, so stopping a
-  run loses nothing; the other files are built from it;
+  run loses nothing; the other files are built from it. A line without `depth`, written before
+  level 2 existed, reads as level 1;
 - `report.md`: the models and timeouts the run used, the pass rate and the p50 and p95 latency for
   suggestions and for each format, the pass rate of each check, and every failure;
 - `report.json`: the same, with every answer;
-- `score-sheet.md`: a row per card to score by hand, as the rubric says.
+- `score-sheet.md`: a row per card to score by hand, as the rubric says, with a **Builds on** column
+  for the level-2 rows.
 
 The `links` check opens every link a card cites, from your machine. At each hop, it checks that all
 resolved addresses are public and connects directly to a checked IP. See the

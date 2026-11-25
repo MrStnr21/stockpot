@@ -6,16 +6,17 @@ How to run it is in the [README](README.md).
 
 ## Automatic checks
 
-| Check         | Applies to                                             | Passes when                                                                                                                                                                                                                             |
-| ------------- | ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `schema`      | every call                                             | the answer matches the call's format; an engine's `invalid` failure counts as a fail                                                                                                                                                    |
-| `links`       | cards with sources                                     | every source answers with 2xx, 401, 403 or 429 within 10 s per link, including DNS, up to 5 redirects and a GET fallback when HEAD returns 400, 403, 405 or 501. Each hop connects to a checked IP and all its addresses must be public |
-| `oneSentence` | `technology` and `comparison` cards                    | the `summary` is one sentence by the Unicode sentence rules                                                                                                                                                                             |
-| `uncertain`   | notes composed to be unknowable (`expected.uncertain`) | the card is marked `uncertain` and cites no sources                                                                                                                                                                                     |
-| `filler`      | every card                                             | no text in the card uses a phrase from the list below, in any letter case                                                                                                                                                               |
-| `private`     | private notes, on calls that reached the engine        | no payload the engine sent (the request body, or the agent's arguments, stdin and the files they name) holds the note's text as typed, its context or its link; for an engine whose payload is not recorded the check is not verifiable |
-| `category`    | every suggestion                                       | the first category is the note's expected one, or one it also fits (`expected.alsoAccept`)                                                                                                                                              |
-| `senses`      | suggestions for ambiguous terms (two or more `senses`) | the suggestion lists at least two senses                                                                                                                                                                                                |
+| Check         | Applies to                                             | Passes when                                                                                                                                                                                                                                                                  |
+| ------------- | ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `schema`      | every call                                             | the answer matches the call's format; an engine's `invalid` failure counts as a fail                                                                                                                                                                                         |
+| `links`       | cards with sources                                     | every source answers with 2xx, 401, 403 or 429 within 10 s per link, including DNS, up to 5 redirects and a GET fallback when HEAD returns 400, 403, 405 or 501. Each hop connects to a checked IP and all its addresses must be public                                      |
+| `oneSentence` | `technology` and `comparison` cards                    | the `summary` is one sentence by the Unicode sentence rules                                                                                                                                                                                                                  |
+| `uncertain`   | notes composed to be unknowable (`expected.uncertain`) | the card is marked `uncertain` and cites no sources                                                                                                                                                                                                                          |
+| `filler`      | every card                                             | no text in the card uses a phrase from the list below, in any letter case                                                                                                                                                                                                    |
+| `repeats`     | level-2 cards (`--deeper` runs)                        | no run of 8 consecutive words of the level-2 card's text appears in the level-1 card's text. Text is lowercased and split on anything that is not a letter or digit; the sources' titles and addresses are left out, and the level-1 `sense` and `aliases` count as its text |
+| `private`     | private notes, on calls that reached the engine        | no payload the engine sent (the request body, or the agent's arguments, stdin and the files they name) holds the note's text as typed, its context or its link; for an engine whose payload is not recorded the check is not verifiable                                      |
+| `category`    | every suggestion                                       | the first category is the note's expected one, or one it also fits (`expected.alsoAccept`)                                                                                                                                                                                   |
+| `senses`      | suggestions for ambiguous terms (two or more `senses`) | the suggestion lists at least two senses                                                                                                                                                                                                                                     |
 
 A check that applies but cannot be verified is counted apart and leaves its pass rate alone.
 
@@ -57,13 +58,16 @@ Keep each list short and add a phrase only after it shows up in a real card.
 
 ## Manual score sheet
 
-Each run writes `score-sheet.md` next to its report, with a row per note. Score every card:
+Each run writes `score-sheet.md` next to its report, with a row per card: a level-1 row per note, and
+a level-2 row after it when the run asked for level 2. Score every card:
 
 - **Accurate**, 1 to 5: 5 when every fact holds, 1 when the main claim is wrong.
 - **Clear**, 1 to 5: 5 when the card reads in a minute on a phone and needs nothing else, 1 when it
   has to be read twice.
 - **Right sense**, yes or no: the card explains the meaning the note was about, from its context or,
   for an ambiguous term, the `expected.sense` in the eval set.
+- **Builds on**, yes or no, on the level-2 rows of a `--deeper` run: yes when the card adds what
+  level 1 does not say and restates none of its points beyond a short reference.
 
 ## Thresholds
 
@@ -85,5 +89,7 @@ reason, when real reports show it is wrong.
 | `suggestion` latency, p95         | < 1.5 s                     | The suggestion budget in the [engineering principles](../../../docs/principles.md#performance-budgets); a later answer is dropped                                                     |
 | Card latency, p50 (agent command) | < 60 s                      | The agent command budget in the engineering principles                                                                                                                                |
 | `report` latency, p95             | < 15 min                    | The idea report budget in the engineering principles, also the `research` timeout                                                                                                     |
+| `repeats` pass rate               | ≥ 95%                       | Copying a fragment of the card the reader just read is a prompt failure, like a filler phrase                                                                                         |
+| Builds on, share of yes           | ≥ 80%                       | One level-2 card in five may lean on level 1 more than it should; more means the level instructions are not followed                                                                  |
 | Accurate, mean of the score sheet | ≥ 4                         | A card is worth reading only when its facts hold; 4 allows small slips, not wrong main claims                                                                                         |
 | Right sense, share of yes         | ≥ 90%                       | A card about the wrong meaning is wasted; the ambiguous terms make up only four notes                                                                                                 |

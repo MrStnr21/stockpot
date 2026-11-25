@@ -28,7 +28,7 @@ import { renderScoreSheet } from './score-sheet'
 
 export const usage = [
 	'Usage: bun run eval -- --engine <id> [--notes <file>] [--limit <n>] [--language <code>]',
-	'  [--model <tier>=<id>]... [--suggest-timeout <ms>] [--out <dir>]',
+	'  [--model <tier>=<id>]... [--suggest-timeout <ms>] [--out <dir>] [--deeper]',
 ].join('\n')
 
 const positiveNumber = v.pipe(
@@ -81,6 +81,7 @@ const optionsSchema = v.strictObject({
 	model: v.optional(modelsArg, []),
 	'suggest-timeout': v.optional(positiveNumber),
 	out: v.optional(v.string()),
+	deeper: v.optional(v.literal(true)),
 })
 
 const argsSchema = v.pipe(
@@ -122,11 +123,13 @@ function suggestTimeoutFromEnv(environment: EvalEnv): number | undefined {
 }
 
 /**
- * Reads `--name value` pairs, `--model` as often as it is given; a bare `--`, as `bun run` may pass
- * on, is skipped. The environment gives the suggestion timeout when the command line does not.
+ * Reads `--name value` pairs, `--model` as often as it is given, and the `--deeper` flag, which takes
+ * no value; a bare `--`, as `bun run` may pass on, is skipped. The environment gives the suggestion
+ * timeout when the command line does not.
  */
 export function parseArgs(args: readonly string[], environment: EvalEnv = {}): EvalArgs {
-	const tokens = args.filter((token) => token !== '--')
+	const tokens = args.filter((token) => token !== '--' && token !== '--deeper')
+	const deeper = args.includes('--deeper')
 
 	const pairs = Array.from({ length: Math.ceil(tokens.length / 2) }, (_, index) => {
 		const name = tokens.at(index * 2) ?? ''
@@ -144,6 +147,7 @@ export function parseArgs(args: readonly string[], environment: EvalEnv = {}): E
 
 	const result = v.safeParse(argsSchema, {
 		...Object.fromEntries(single),
+		...(deeper && { deeper: true }),
 		...(models.length > 0 && { model: models }),
 	})
 
@@ -171,7 +175,17 @@ const migrationsFolder = join(import.meta.dir, '../src/server/db/migrations')
 /** Runs the eval the arguments describe and writes the report; returns the report's folder. */
 export async function main(args: readonly string[], options: MainOptions): Promise<string> {
 	const parsed = parseArgs(args, options.env)
-	const { engine: engineId, notes: notesFile, limit, language, models: overrides, out } = parsed
+
+	const {
+		engine: engineId,
+		notes: notesFile,
+		limit,
+		language,
+		models: overrides,
+		out,
+		deeper,
+	} = parsed
+
 	const suggest = parsed.suggestTimeoutMs ?? defaultTimeoutMs.suggest
 	const timeoutsMs = { ...defaultTimeoutMs, suggest }
 	const publicFile = resolve(notesFile)
@@ -205,6 +219,7 @@ export async function main(args: readonly string[], options: MainOptions): Promi
 		onCall: save,
 		timeoutsMs,
 		...(limit !== undefined && { maxCalls: limit }),
+		...(deeper === true && { deeper }),
 		...(options.checkLinks && { checkLinks: options.checkLinks }),
 		...(options.now && { now: options.now }),
 		...(options.wait && { wait: options.wait }),
