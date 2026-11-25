@@ -85,7 +85,8 @@ one with the [issue forms](https://github.com/MrStnr21/stockpot/issues/new/choos
 
 Every title starts with an ID in brackets. A roadmap story uses its own, such as `[CAP-1]`.
 Work outside the roadmap takes `[BUG-<n>]` for a bug fix or `[FEATURE-<n>]` for a new feature,
-with running numbers: the first bug fix is `BUG-1`, the next `BUG-2`.
+with running numbers: the first bug fix is `BUG-1`, the next `BUG-2`. A dependency update, by hand
+or from Dependabot, takes `[DEPS]` without a number.
 
 - **One story, one branch, one pull request.** Branch from `main` and name the branch after the
   story in lower case, such as `fnd-6-docs`.

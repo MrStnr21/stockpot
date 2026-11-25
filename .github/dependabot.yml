@@ -7,6 +7,9 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    commit-message:
+      # Dependabot's titles follow `[ID] Imperative summary` too (CONTRIBUTING.md).
+      prefix: '[DEPS]'
     groups:
       # One pull request a week for the tooling's minor and patch releases.
       dev-dependencies:
@@ -20,3 +23,5 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    commit-message:
+      prefix: '[DEPS]'
