@@ -4,6 +4,7 @@
 import { createSuggester, type Suggester } from '#/features/capture/server/suggest'
 import { createBatchJob } from '#/features/digest/server/batch'
 import { learnAliases, learnSense } from '#/features/notes/server/learn'
+import { researchNow, type ResearchNowResult } from '#/features/research/server/now'
 import { pendingResearchNoteIds } from '#/features/research/server/pending'
 import {
 	createResearchJob,
@@ -17,6 +18,7 @@ import { config } from '#/server/config'
 import type { Db } from '#/server/db/client'
 import { instanceDb } from '#/server/db/instance'
 import { createRouter, type Router } from '#/server/engines/router'
+import { HttpError } from '#/server/http'
 import { currentRunner } from '#/server/jobs/runner'
 import type { JobDefinition, ScheduledRun } from '#/server/jobs/types'
 import { openLink } from '#/server/links/open-link'
@@ -122,6 +124,34 @@ export async function instanceResearchJob(): Promise<JobDefinition<ResearchPaylo
 	thisProcess.researchJob ??= instanceDb().then(buildResearchJob)
 
 	return thisProcess.researchJob
+}
+
+/**
+ * Queues research with the `now` priority for the notes, as the research-now routes ask. Without a
+ * running job runner (the dev server) it answers 503 before it writes anything.
+ */
+export async function instanceResearchNow(
+	noteIds: readonly number[],
+): Promise<ResearchNowResult[]> {
+	const [db, job] = await Promise.all([instanceDb(), instanceResearchJob()])
+	const runner = currentRunner()
+
+	if (runner === undefined) {
+		throw new HttpError(503, {
+			code: 'jobs_unavailable',
+			message: 'The job runner is not running. Try again in a moment.',
+		})
+	}
+
+	return researchNow(
+		{
+			db,
+			enqueue: (payload, priority) => {
+				runner.enqueue(job, payload, { priority })
+			},
+		},
+		noteIds,
+	)
 }
 
 function buildBatchJob(
