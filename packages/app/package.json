@@ -31,7 +31,7 @@
 		"@google/genai": "^3.6.1",
 		"@stockpot/ui": "workspace:*",
 		"@valibot/to-json-schema": "^1.8.0",
-		"astro": "^7.4.12",
+		"astro": "^7.4.13",
 		"drizzle-orm": "1.0.0-rc.5",
 		"svelte": "^5.57.3",
 		"tailwindcss": "^4.3.5",

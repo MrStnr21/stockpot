@@ -33,7 +33,7 @@
 		"@playwright/test": "^1.65.1",
 		"@tailwindcss/vite": "^4.3.5",
 		"@types/bun": "^1.4.4",
-		"astro": "^7.4.12",
+		"astro": "^7.4.13",
 		"astrobook": "0.13.3",
 		"eslint-plugin-astro": "^3.2.1",
 		"eslint-plugin-playwright": "^2.12.2",
