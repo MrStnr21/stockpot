@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
-import { and, desc, eq, inArray, isNotNull, isNull, ne, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, isNotNull, isNull, ne, sql, type SQL } from 'drizzle-orm'
 
 import { cardFormat, formats, type CardSchema } from '#/features/research/shared/formats'
 import { isFormatId, type FormatId } from '#/lib/format-ids'
@@ -10,7 +10,7 @@ import { explanations } from '#/server/db/schema/explanations'
 import { categories, notes, terms } from '#/server/db/schema/notes'
 import { redactPrivate, type CardInput } from '#/server/engines/contract'
 
-type Transaction = Parameters<Parameters<Db['transaction']>[0]>[0]
+export type Transaction = Parameters<Parameters<Db['transaction']>[0]>[0]
 
 type Schema = CardSchema<FormatId, 1>
 
@@ -34,14 +34,22 @@ export function resetDeletedNote(tx: Transaction, noteId: number): void {
 		.run()
 }
 
-function readSubject(tx: Transaction, noteId: number) {
+/*
+ * The category a note is researched in: its own, else its term's, else the first brief category. The
+ * query must join `notes` and `terms`.
+ */
+export function noteCategoryId(tx: Transaction): SQL {
 	const fallback = tx
 		.select({ id: categories.id })
 		.from(categories)
 		.orderBy(desc(eq(categories.format, 'brief')), categories.position, categories.id)
 		.limit(1)
 
-	const categoryId = sql`coalesce(${notes.categoryId}, ${terms.categoryId}, ${fallback})`
+	return sql`coalesce(${notes.categoryId}, ${terms.categoryId}, ${fallback})`
+}
+
+function readSubject(tx: Transaction, noteId: number) {
+	const categoryId = noteCategoryId(tx)
 
 	return tx
 		.select({

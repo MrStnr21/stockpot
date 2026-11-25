@@ -3,22 +3,24 @@
 
 import { mock, type Mock } from 'bun:test'
 import { faker } from '@faker-js/faker'
-import { briefCardFactory, reportCardFactory } from '#tests/factories/cards'
+import { briefCardFactory, cardFactories, reportCardFactory } from '#tests/factories/cards'
 import { configuredSettingsFactory } from '#tests/factories/settings'
 import { createTestDb, type TestDb } from '#tests/setup/db'
 import { advanceBy } from '#tests/setup/jobs'
 import { asc, eq } from 'drizzle-orm'
 import type * as v from 'valibot'
 
+import { createDeeperJob, type DeeperPayload } from '#/features/research/server/depth'
+import type { ReadyNote } from '#/features/research/server/engine-call'
 import {
 	createResearchJob,
 	priorityOf,
 	queueResearch,
 	type LearnedCard,
-	type ReadyNote,
 	type ResearchPayload,
 } from '#/features/research/server/pipeline'
 import type { Source } from '#/features/research/shared/formats'
+import { isFormatId } from '#/lib/format-ids'
 import { explanations } from '#/server/db/schema/explanations'
 import { notes, type NoteStatus } from '#/server/db/schema/notes'
 import {
@@ -81,7 +83,26 @@ function fakeEngine(id: EngineId) {
 			}
 
 			const { sources } = state
-			const params = { aliases: [faker.word.noun()], ...(sources !== undefined && { sources }) }
+			const withSources = sources === undefined ? {} : { sources }
+
+			// A deeper card has its own schema, and the strict ones reject a first card's `aliases`.
+			if (input.task !== 'suggest' && input.depth > 1) {
+				if (!isFormatId(input.output.id)) {
+					throw new Error('The fake engine knows no such format')
+				}
+
+				const deeper = cardFactories[input.output.id][input.depth].build(withSources)
+
+				return {
+					output: parseOutput(input.output, deeper),
+					engine: id,
+					model: null,
+					searchSuggestions: null,
+					elapsedMs: 0,
+				}
+			}
+
+			const params = { aliases: [faker.word.noun()], ...withSources }
 
 			const answer =
 				input.output.id === 'report'
@@ -111,18 +132,22 @@ export interface ResearchHarness {
 	readonly db: TestDb
 	readonly runner: Runner
 	readonly job: JobDefinition<ResearchPayload>
+	readonly deeperJob: JobDefinition<DeeperPayload>
 	readonly gemini: FakeEngine
 	readonly openAi: FakeEngine
 	readonly links: Map<string, LinkOutcome>
 	readonly statusOf: (noteId: number) => NoteStatus | undefined
 	readonly cardsOf: (noteId: number) => (typeof explanations.$inferSelect)[]
 	readonly later: Mock<(payload: ResearchPayload, runAt: Date) => void>
+	readonly laterDeeper: Mock<(payload: DeeperPayload, runAt: Date) => void>
 	readonly learn: Mock<(termId: number, card: LearnedCard) => void>
 	readonly notify: Mock<(ready: ReadyNote) => void | Promise<void>>
 	/** Queues the notes' research as a route would. */
 	readonly queue: (noteIds: readonly number[], priority?: Priority) => void
 	/** Queues the notes' research, then runs what is due. */
 	readonly research: (noteIds: readonly number[]) => Promise<void>
+	/** Queues level `depth` of the note's card, then runs what is due. */
+	readonly deepen: (noteId: number, depth: 2 | 3, priority?: Priority) => Promise<void>
 }
 
 /** Starts the runner; the spec stops it. Turn on fake timers first. */
@@ -148,6 +173,10 @@ export async function startResearch(): Promise<ResearchHarness> {
 		runner.enqueue(job, payload, { runAt, priority: priorityOf(payload) })
 	})
 
+	const laterDeeper: ResearchHarness['laterDeeper'] = mock((payload, runAt) => {
+		runner.enqueue(deeperJob, payload, { runAt, priority: priorityOf(payload) })
+	})
+
 	const learn: ResearchHarness['learn'] = mock(() => {
 		// A spec checks the calls, or replaces this to make learning fail.
 	})
@@ -168,7 +197,16 @@ export async function startResearch(): Promise<ResearchHarness> {
 		openLink: async (url) => links.get(url) ?? { kind: 'open', status: 200 },
 	})
 
-	const runner = createRunner({ db, jobs: [job] })
+	const deeperJob = createDeeperJob({
+		db,
+		router,
+		language: () => cardLanguage,
+		later: laterDeeper,
+		notify,
+		openLink: async (url) => links.get(url) ?? { kind: 'open', status: 200 },
+	})
+
+	const runner = createRunner({ db, jobs: [job, deeperJob] })
 
 	runner.start()
 
@@ -203,19 +241,31 @@ export async function startResearch(): Promise<ResearchHarness> {
 		await advanceBy(runner, 0)
 	}
 
+	async function deepen(noteId: number, depth: 2 | 3, priority: Priority = 'now') {
+		runner.enqueue(
+			deeperJob,
+			priority === 'now' ? { noteId, depth, now: true } : { noteId, depth },
+			{ priority },
+		)
+		await advanceBy(runner, 0)
+	}
+
 	return {
 		db,
 		runner,
 		job,
+		deeperJob,
 		gemini: gemini.state,
 		openAi: openAi.state,
 		links,
 		later,
+		laterDeeper,
 		learn,
 		notify,
 		statusOf,
 		cardsOf,
 		queue,
 		research,
+		deepen,
 	}
 }

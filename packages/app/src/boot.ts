@@ -9,7 +9,7 @@
 import { join } from 'node:path'
 
 import { readBatchTime, readTimeZone } from '#/features/settings/server'
-import { instanceBatchJob, instanceResearchJob } from '#/instance'
+import { instanceBatchJob, instanceDeeperJob, instanceResearchJob } from '#/instance'
 import { instanceAuth } from '#/server/auth'
 import { config } from '#/server/config'
 import { instanceDb } from '#/server/db/instance'
@@ -29,7 +29,7 @@ const db = await instanceDb()
 // An entry module, so it may hand the runner the features' jobs; server/ may not import them.
 await startRunner({
 	db,
-	jobs: [await instanceResearchJob()],
+	jobs: [await instanceResearchJob(), await instanceDeeperJob()],
 	schedules: [
 		{ job: await instanceBatchJob(), at: () => readBatchTime(db) },
 		// Hours before the nightly batch, while the queue is idle.

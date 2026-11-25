@@ -4,13 +4,14 @@
 import { createSuggester, type Suggester } from '#/features/capture/server/suggest'
 import { createBatchJob } from '#/features/digest/server/batch'
 import { learnAliases, learnSense } from '#/features/notes/server/learn'
+import { createDeeperJob, type DeeperPayload } from '#/features/research/server/depth'
+import type { ReadyNote } from '#/features/research/server/engine-call'
 import { researchNow, type ResearchNowResult } from '#/features/research/server/now'
 import { pendingResearchNoteIds } from '#/features/research/server/pending'
 import {
 	createResearchJob,
 	priorityOf,
 	queueResearch,
-	type ReadyNote,
 	type ResearchPayload,
 } from '#/features/research/server/pipeline'
 import { readSettings } from '#/features/settings/server'
@@ -36,6 +37,7 @@ interface ProcessServices {
 	router?: Promise<Router>
 	suggester?: Suggester
 	researchJob?: { db: Db; job: JobDefinition<ResearchPayload> }
+	deeperJob?: { db: Db; job: JobDefinition<DeeperPayload> }
 	batchJob?: Promise<JobDefinition<ScheduledRun>>
 }
 
@@ -71,12 +73,16 @@ export async function instanceSuggester(): Promise<Suggester> {
 	return thisProcess.suggester
 }
 
-function queueAgain(job: JobDefinition<ResearchPayload>, payload: ResearchPayload, runAt: Date) {
+function queueAgain<Payload extends { noteId: number; now?: true }>(
+	job: JobDefinition<Payload>,
+	payload: Payload,
+	runAt: Date,
+) {
 	const runner = currentRunner()
 
 	// Only the built server runs a runner (src/boot.ts); without one the note waits for the next queue.
 	if (runner === undefined) {
-		log.warn('No job runner to queue research again', { noteId: payload.noteId })
+		log.warn('No job runner to queue a job again', { noteId: payload.noteId })
 
 		return
 	}
@@ -129,6 +135,44 @@ export async function instanceResearchJob(): Promise<JobDefinition<ResearchPaylo
 	}
 
 	return thisProcess.researchJob.job
+}
+
+function buildDeeperJob(db: Db): JobDefinition<DeeperPayload> {
+	const job = createDeeperJob({
+		db,
+		router: {
+			async explain(input, options) {
+				const router = await instanceRouter()
+
+				return router.explain(input, options)
+			},
+			async research(input, options) {
+				const router = await instanceRouter()
+
+				return router.research(input, options)
+			},
+		},
+		openLink: async (url, signal) => openLink(url, { signal }),
+		language: () => readSettings(db).cardLanguage,
+		later: (payload, runAt) => {
+			queueAgain(job, payload, runAt)
+		},
+		notify: notifyReady,
+	})
+
+	return job
+}
+
+/** The deeper job src/boot.ts registers, and the one every enqueue must pass. */
+export async function instanceDeeperJob(): Promise<JobDefinition<DeeperPayload>> {
+	const db = await instanceDb()
+
+	// Keyed on the database like the research job.
+	if (thisProcess.deeperJob?.db !== db) {
+		thisProcess.deeperJob = { db, job: buildDeeperJob(db) }
+	}
+
+	return thisProcess.deeperJob.job
 }
 
 /**
