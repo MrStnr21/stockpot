@@ -73,7 +73,8 @@ The nightly batch is the first daily schedule. At `digest.batchTime` (06:30 by d
 `digest.timeZone`, it queues research jobs in note creation order. It skips deleted or archived
 notes, notes with a finished first card, and notes that already have a queued or running research
 job. The worker runs the research jobs one at a time, and a `now` job can run ahead of the remaining
-batch jobs.
+batch jobs. Deeper jobs (the next depth level of a card) that were queued for the batch time run
+first that night, because their run time is earlier than the research jobs'.
 
 The second is the daily backup. At 03:00 it copies the database with `VACUUM INTO` into
 `backups/stockpot-<day>.db` in the data directory, under a temporary name that is renamed when the
@@ -116,7 +117,8 @@ failing.
 
 Routes reach the runner through `currentRunner()`: the build bundles `runner.ts` once, so a route
 and `boot.ts` share its module instance. `/healthz` reads `health()` this way, and the research-now
-routes enqueue `now` jobs through it, answering 503 when no runner runs (the dev server).
+routes enqueue `now` jobs through it, answering 503 when no runner runs (the dev server). The Deeper
+route enqueues through `currentRunner()` too and answers 503 the same way.
 
 `boot.ts` is an entry module, so unlike `server/` it may import features: it passes the runner every
 feature's job definitions, built once in [`src/instance.ts`](../../instance.ts), and reads the nightly

@@ -169,8 +169,11 @@ so it cannot be a made-up address.
 
 ### Depth levels
 
-"Deeper" on a card, or a repeat after the card was shown, queues the next level (RES-4). Each level
-is a separate card; the engine gets the lower levels with the call and must not repeat them.
+"Deeper" on a card queues the next level for the nightly batch, where it runs ahead of that night's
+research; Research now, or "Deeper now" in capture, runs it at once. A repeat after the card was shown
+queues it the same way (DIG-5). Each level is a separate card, in the format of the first card; the
+engine gets the lower levels with the call and must not repeat them. A new level makes a read note
+`ready` again, as it is unread (RES-4).
 
 | Level | Purpose                             | Fields                                                                                                                        |
 | ----- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
