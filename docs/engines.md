@@ -386,8 +386,9 @@ The Gemini engine
     research.
 - **One request at a time**, with one `engine_runs` row per call (a card's two requests and a
   report's seven share it): the reported model, the input tokens (the prompt and the tool prompts),
-  the output tokens (the answer and the thinking) and the searches (the queries the search steps
-  ran, summed). Gemini reports no cost, so the cost stays empty. A suggestion or a card holds the
+  the output tokens (the answer and the thinking) and the searches (the queries of the search steps
+  that answered, summed; a step that was capped or blocked is billed by Google but has no usage to
+  count, so the row can undercount). Gemini reports no cost, so the cost stays empty. A suggestion or a card holds the
   engine's line for its whole call, but a report takes it for each request, so that a quarter-hour
   of research does not hold every suggestion behind it: a suggestion waits at most one request.
 - **Limits.** Settings give each tier a per-minute and a per-day request limit for its model, `null`
