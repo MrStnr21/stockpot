@@ -23,6 +23,19 @@ import { save } from './save'
 
 export interface ResearchPayload {
 	noteId: number
+	/* Set by research now: the job keeps its priority across a wait for an engine's reset and notifies
+	 * when its card is saved. Rows queued before it existed have none and run as background work. */
+	now?: true
+}
+
+/** The priority a payload's job runs at: research now overtakes the nightly batch. */
+export function priorityOf(payload: ResearchPayload): Priority {
+	return payload.now === true ? 'now' : 'batch'
+}
+
+/** A note whose card the owner asked for is saved and readable. */
+export interface ReadyNote {
+	readonly noteId: number
 }
 
 /** What a first-level card tells about its term. */
@@ -41,6 +54,11 @@ export interface ResearchDependencies {
 	readonly later: (payload: ResearchPayload, runAt: Date) => void
 	/** Records a card's sense and aliases on its term. */
 	readonly learn: (termId: number, card: LearnedCard) => void
+	/**
+	 * Called once when a research-now job has saved the note's first card. It must not throw or reject,
+	 * and the job does not wait for it.
+	 */
+	readonly notify: (ready: ReadyNote) => void
 	readonly now?: () => Date
 }
 
@@ -100,6 +118,18 @@ function learnFrom(
 		log.warn('Learning from a card failed', {
 			noteId,
 			termId,
+			name: error instanceof Error ? error.name : 'unknown',
+		})
+	}
+}
+
+function notifyReady(deps: ResearchDependencies, ready: ReadyNote) {
+	try {
+		deps.notify(ready)
+	} catch (error) {
+		// The card is saved, and a missed notification must not fail the job or retry it.
+		log.warn('Notifying that a card is ready failed', {
+			noteId: ready.noteId,
 			name: error instanceof Error ? error.name : 'unknown',
 		})
 	}
@@ -177,12 +207,18 @@ async function research(
 		}
 
 		if (result.draft) {
-			queueAfterReset(deps, payload, result.redoAt)
+			// Background work: without the flag, so the finished card does not notify a second time.
+			queueAfterReset(deps, { noteId }, result.redoAt)
 		}
 
 		// Depth is always 1 here, so every card names its sense and aliases.
 		if (saved.termId !== null) {
 			learnFrom(deps, { noteId, termId: saved.termId, card })
+		}
+
+		// Last, so nothing after it can throw and make a retry notify again.
+		if (payload.now === true) {
+			notifyReady(deps, { noteId })
 		}
 	} catch (error) {
 		if (!(error instanceof EngineError && settleEngineFailure(deps, payload, error))) {
@@ -234,7 +270,7 @@ export function queueResearch(
 	priority: Priority,
 ): void {
 	for (const noteId of noteIds) {
-		enqueue({ noteId }, priority)
+		enqueue(priority === 'now' ? { noteId, now: true } : { noteId }, priority)
 	}
 
 	if (noteIds.length === 0) {

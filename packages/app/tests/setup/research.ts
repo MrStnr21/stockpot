@@ -12,8 +12,10 @@ import type * as v from 'valibot'
 
 import {
 	createResearchJob,
+	priorityOf,
 	queueResearch,
 	type LearnedCard,
+	type ReadyNote,
 	type ResearchPayload,
 } from '#/features/research/server/pipeline'
 import type { Source } from '#/features/research/shared/formats'
@@ -116,6 +118,7 @@ export interface ResearchHarness {
 	readonly cardsOf: (noteId: number) => (typeof explanations.$inferSelect)[]
 	readonly later: Mock<(payload: ResearchPayload, runAt: Date) => void>
 	readonly learn: Mock<(termId: number, card: LearnedCard) => void>
+	readonly notify: Mock<(ready: ReadyNote) => void>
 	/** Queues the notes' research as a route would. */
 	readonly queue: (noteIds: readonly number[], priority?: Priority) => void
 	/** Queues the notes' research, then runs what is due. */
@@ -142,11 +145,15 @@ export async function startResearch(): Promise<ResearchHarness> {
 	})
 
 	const later: ResearchHarness['later'] = mock((payload, runAt) => {
-		runner.enqueue(job, payload, { runAt })
+		runner.enqueue(job, payload, { runAt, priority: priorityOf(payload) })
 	})
 
 	const learn: ResearchHarness['learn'] = mock(() => {
 		// A spec checks the calls, or replaces this to make learning fail.
+	})
+
+	const notify: ResearchHarness['notify'] = mock(() => {
+		// A spec checks the calls, or replaces this to make notifying fail.
 	})
 
 	const { cardLanguage } = configuredSettingsFactory.build()
@@ -157,6 +164,7 @@ export async function startResearch(): Promise<ResearchHarness> {
 		language: () => cardLanguage,
 		later,
 		learn,
+		notify,
 		openLink: async (url) => links.get(url) ?? { kind: 'open', status: 200 },
 	})
 
@@ -204,6 +212,7 @@ export async function startResearch(): Promise<ResearchHarness> {
 		links,
 		later,
 		learn,
+		notify,
 		statusOf,
 		cardsOf,
 		queue,

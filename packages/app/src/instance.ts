@@ -7,7 +7,9 @@ import { learnAliases, learnSense } from '#/features/notes/server/learn'
 import { pendingResearchNoteIds } from '#/features/research/server/pending'
 import {
 	createResearchJob,
+	priorityOf,
 	queueResearch,
+	type ReadyNote,
 	type ResearchPayload,
 } from '#/features/research/server/pipeline'
 import { readSettings } from '#/features/settings/server'
@@ -77,7 +79,12 @@ function queueAgain(job: JobDefinition<ResearchPayload>, payload: ResearchPayloa
 		return
 	}
 
-	runner.enqueue(job, payload, { runAt })
+	runner.enqueue(job, payload, { runAt, priority: priorityOf(payload) })
+}
+
+// WEB-6 replaces this stub with the push feature's sender.
+function notifyReady({ noteId }: ReadyNote) {
+	log.info('A research-now card is ready', { noteId })
 }
 
 function buildResearchJob(db: Db): JobDefinition<ResearchPayload> {
@@ -104,6 +111,7 @@ function buildResearchJob(db: Db): JobDefinition<ResearchPayload> {
 			learnAliases(db, termId, aliases)
 			learnSense(db, termId, sense)
 		},
+		notify: notifyReady,
 	})
 
 	return job
