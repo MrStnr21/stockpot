@@ -4,10 +4,13 @@
 import { createSuggester, type Suggester } from '#/features/capture/server/suggest'
 import { createBatchJob } from '#/features/digest/server/batch'
 import { learnAliases, learnSense } from '#/features/notes/server/learn'
+import { researchNow, type ResearchNowResult } from '#/features/research/server/now'
 import { pendingResearchNoteIds } from '#/features/research/server/pending'
 import {
 	createResearchJob,
+	priorityOf,
 	queueResearch,
+	type ReadyNote,
 	type ResearchPayload,
 } from '#/features/research/server/pipeline'
 import { readSettings } from '#/features/settings/server'
@@ -15,6 +18,7 @@ import { config } from '#/server/config'
 import type { Db } from '#/server/db/client'
 import { instanceDb } from '#/server/db/instance'
 import { createRouter, type Router } from '#/server/engines/router'
+import { HttpError } from '#/server/http'
 import { currentRunner } from '#/server/jobs/runner'
 import type { JobDefinition, ScheduledRun } from '#/server/jobs/types'
 import { openLink } from '#/server/links/open-link'
@@ -31,7 +35,7 @@ import { log } from '#/server/log'
 interface ProcessServices {
 	router?: Promise<Router>
 	suggester?: Suggester
-	researchJob?: Promise<JobDefinition<ResearchPayload>>
+	researchJob?: { db: Db; job: JobDefinition<ResearchPayload> }
 	batchJob?: Promise<JobDefinition<ScheduledRun>>
 }
 
@@ -77,7 +81,12 @@ function queueAgain(job: JobDefinition<ResearchPayload>, payload: ResearchPayloa
 		return
 	}
 
-	runner.enqueue(job, payload, { runAt })
+	runner.enqueue(job, payload, { runAt, priority: priorityOf(payload) })
+}
+
+// WEB-6 replaces this stub with the push feature's sender.
+function notifyReady({ noteId }: ReadyNote) {
+	log.info('A research-now card is ready', { noteId })
 }
 
 function buildResearchJob(db: Db): JobDefinition<ResearchPayload> {
@@ -104,6 +113,7 @@ function buildResearchJob(db: Db): JobDefinition<ResearchPayload> {
 			learnAliases(db, termId, aliases)
 			learnSense(db, termId, sense)
 		},
+		notify: notifyReady,
 	})
 
 	return job
@@ -111,9 +121,42 @@ function buildResearchJob(db: Db): JobDefinition<ResearchPayload> {
 
 /** The research job src/boot.ts registers, and the one every enqueue must pass. */
 export async function instanceResearchJob(): Promise<JobDefinition<ResearchPayload>> {
-	thisProcess.researchJob ??= instanceDb().then(buildResearchJob)
+	const db = await instanceDb()
 
-	return thisProcess.researchJob
+	// Keyed on the database: a process has one, but specs swap it and must not get a job over the last one.
+	if (thisProcess.researchJob?.db !== db) {
+		thisProcess.researchJob = { db, job: buildResearchJob(db) }
+	}
+
+	return thisProcess.researchJob.job
+}
+
+/**
+ * Queues research with the `now` priority for the notes, as the research-now routes ask. Without a
+ * running job runner (the dev server) it answers 503 before it writes anything.
+ */
+export async function instanceResearchNow(
+	noteIds: readonly number[],
+): Promise<ResearchNowResult[]> {
+	const [db, job] = await Promise.all([instanceDb(), instanceResearchJob()])
+	const runner = currentRunner()
+
+	if (runner === undefined) {
+		throw new HttpError(503, {
+			code: 'jobs_unavailable',
+			message: 'The job runner is not running. Try again in a moment.',
+		})
+	}
+
+	return researchNow(
+		{
+			db,
+			enqueue: (payload, priority) => {
+				runner.enqueue(job, payload, { priority })
+			},
+		},
+		noteIds,
+	)
 }
 
 function buildBatchJob(

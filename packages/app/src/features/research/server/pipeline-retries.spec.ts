@@ -38,7 +38,7 @@ describe('research retries', () => {
 			await harness.research([note.id])
 
 			expect(harness.statusOf(note.id)).toBe('queued')
-			expect(harness.later).toHaveBeenCalledWith({ noteId: note.id }, inAnHour)
+			expect(harness.later).toHaveBeenCalledWith({ noteId: note.id, now: true }, inAnHour)
 			expect(jobRows(harness.db)).toMatchObject([
 				{ status: 'done', attempts: 1 },
 				{ status: 'queued', attempts: 0, runAt: inAnHour },
@@ -64,7 +64,10 @@ describe('research retries', () => {
 
 			await harness.research([note.id])
 
-			expect(harness.later).toHaveBeenCalledWith({ noteId: note.id }, new Date(calledAt + 60_000))
+			expect(harness.later).toHaveBeenCalledWith(
+				{ noteId: note.id, now: true },
+				new Date(calledAt + 60_000),
+			)
 		})
 
 		it('retries a failed requeue and fails the note on the final attempt', async () => {

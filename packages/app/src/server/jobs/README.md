@@ -36,7 +36,8 @@ runner.enqueue(researchJob, { noteId }, { priority: 'now' })
   for the job. The payload is stored as JSON, so it holds plain data.
 - **Priorities.** The worker takes the due job with the highest priority, then the earliest run time,
   then the oldest row: a `now` job overtakes the queued `batch` jobs. The query is served by
-  `jobs_queue_idx`, and a spec checks its plan.
+  `jobs_queue_idx`, and a spec checks its plan. A research-now job that waits for an engine's reset
+  keeps its `now` priority.
 - **No polling.** The worker sleeps on one timer set for the earliest queued run time, and enqueue
   wakes it.
 - **Retries.** A handler that throws runs again after 30 seconds, then after a delay that doubles up
@@ -114,8 +115,8 @@ own. The dev server does not run `boot.ts`, so no runner works there and `/healt
 failing.
 
 Routes reach the runner through `currentRunner()`: the build bundles `runner.ts` once, so a route
-and `boot.ts` share its module instance. `/healthz` reads `health()` this way, and the first route
-that enqueues will call `enqueue` on it.
+and `boot.ts` share its module instance. `/healthz` reads `health()` this way, and the research-now
+routes enqueue `now` jobs through it, answering 503 when no runner runs (the dev server).
 
 `boot.ts` is an entry module, so unlike `server/` it may import features: it passes the runner every
 feature's job definitions, built once in [`src/instance.ts`](../../instance.ts), and reads the nightly
