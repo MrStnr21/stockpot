@@ -93,6 +93,7 @@ export const ru: Messages = {
 		researchingToast: 'Изучаем {term}',
 		researchingDetail: 'Придёт уведомление',
 		followUpFailed: 'Сохранено, но изучение не началось',
+		saveFailed: 'Не удалось сохранить «{term}»',
 		removed: 'Удалено',
 		undoFailed: 'Не удалось удалить заметку',
 		undo: 'Отменить',

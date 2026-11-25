@@ -66,6 +66,16 @@ describe('createSuggestionRunner', () => {
 			expect(harness.call(0).body).toMatchObject({ context: 'a'.repeat(maxContextLength) })
 		})
 
+		it('cuts a long context before a character it would split in half', () => {
+			const start = 'a'.repeat(maxContextLength - 1)
+
+			harness.type('Kafka')
+			harness.edit({ contextField: `${start}😀 seen` })
+			jest.advanceTimersByTime(suggestDebounceMs)
+
+			expect(harness.call(0).body).toMatchObject({ context: start })
+		})
+
 		it('drops the answer for the previous term as soon as the term changes', () => {
 			harness.type('Kafka')
 			jest.advanceTimersByTime(suggestDebounceMs)

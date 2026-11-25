@@ -19,6 +19,7 @@ interface FetchCall {
 	readonly method: string | undefined
 	readonly body: unknown
 	readonly respond: (response: Response) => void
+	readonly fail: (error: Error) => void
 }
 
 const categories = [
@@ -37,13 +38,14 @@ describe('CaptureController', () => {
 			categories,
 			strings: en.capture,
 			fetch: async (url, init) => {
-				const { promise, resolve } = Promise.withResolvers<Response>()
+				const { promise, resolve, reject } = Promise.withResolvers<Response>()
 
 				calls.push({
 					url,
 					method: init.method,
 					body: init.body === undefined ? null : JSON.parse(init.body),
 					respond: resolve,
+					fail: reject,
 				})
 
 				return promise
@@ -72,10 +74,18 @@ describe('CaptureController', () => {
 	}
 
 	/* Reopening and typing ask for suggestions too, so the save is found by its address. */
-	async function answerSave() {
-		const save = calls.find(({ url }) => url === '/api/notes')
+	function saveCall() {
+		const found = calls.find(({ url }) => url === '/api/notes')
 
-		save?.respond(Response.json(savedNoteFactory.build({ text: 'Alpha' }), { status: 201 }))
+		if (found === undefined) {
+			throw new Error('No save was sent.')
+		}
+
+		return found
+	}
+
+	async function answerSave() {
+		saveCall().respond(Response.json(savedNoteFactory.build({ text: 'Alpha' }), { status: 201 }))
 		drainMicrotasks()
 	}
 
@@ -86,6 +96,11 @@ describe('CaptureController', () => {
 
 	function toastTitles() {
 		return controller.toasts.current?.title
+	}
+
+	function answerSuggest(index: number, categoryIds: number[]) {
+		call(index).respond(Response.json(suggestAnswerFactory.build({ categories: categoryIds })))
+		drainMicrotasks()
 	}
 
 	describe('when the term changes after an answer', () => {
@@ -167,6 +182,102 @@ describe('CaptureController', () => {
 				contextField: 'seen in a paper',
 			})
 			expect(toastTitles()).toBe('Saved: Alpha')
+		})
+	})
+
+	describe('when an answer arrives while a save is on its way', () => {
+		beforeEach(() => {
+			type('Kafka')
+			jest.advanceTimersByTime(suggestDebounceMs)
+			answerSuggest(0, [2])
+			controller.isPrivate = true
+			controller.privateChanged()
+		})
+
+		it('closes the sheet although the answer moved the automatic pick', async () => {
+			const saving = controller.submit('primary')
+
+			answerSuggest(1, [1])
+			expect(controller.selection.categoryId).toBe(1)
+			await answerSave()
+			await saving
+
+			expect(controller).toMatchObject({ open: false, term: '' })
+			expect(toastTitles()).toBe('Saved: Kafka')
+			expect(saveCall().body).toMatchObject({ categoryId: 2 })
+		})
+
+		it('keeps the sheet and the pick the owner made by hand during the save', async () => {
+			const saving = controller.submit('primary')
+
+			answerSuggest(1, [2])
+			controller.pickCategory(1)
+			await answerSave()
+			await saving
+
+			expect(controller).toMatchObject({ open: true, term: 'Kafka', isPrivate: true })
+			expect(controller.selection).toMatchObject({ categoryId: 1, isUserPick: true })
+		})
+
+		it('closes the sheet when the owner picked by hand before the save', async () => {
+			controller.pickCategory(2)
+
+			const saving = controller.submit('primary')
+
+			answerSuggest(1, [1])
+			expect(controller.selection.categoryId).toBe(2)
+			await answerSave()
+			await saving
+
+			expect(controller).toMatchObject({ open: false, term: '' })
+		})
+	})
+
+	describe('when a save fails after the owner moved on', () => {
+		const refusal = { error: { message: 'Invalid body', issues: ['text: Too long'] } }
+
+		const failures: [string, (save: FetchCall) => void, string][] = [
+			[
+				'a server error',
+				(save) => {
+					save.respond(new Response(null, { status: 503 }))
+				},
+				en.capture.errorTitle,
+			],
+			[
+				'a network error',
+				(save) => {
+					save.fail(new TypeError('Failed to fetch'))
+				},
+				en.capture.errorTitle,
+			],
+			[
+				'a refusal',
+				(save) => {
+					save.respond(Response.json(refusal, { status: 400 }))
+				},
+				'Too long',
+			],
+		]
+
+		it.each(failures)('names the lost draft after %s', async (_case, answer, detail) => {
+			controller.term = 'Alpha'
+			controller.pickCategory(1)
+
+			const saving = controller.submit('primary')
+
+			controller.setOpen(false)
+			controller.setOpen(true)
+			type('Beta')
+			answer(saveCall())
+			await saving
+
+			expect(controller).toMatchObject({ open: true, term: 'Beta', error: null })
+			expect(controller.toasts.current).toMatchObject({
+				tone: 'error',
+				title: 'Couldn’t save “Alpha”',
+				detail,
+			})
 		})
 	})
 

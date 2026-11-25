@@ -3,6 +3,8 @@
 
 import type { Messages } from '#/lib/i18n/en'
 
+import type { CaptureError } from './capture-draft.svelte'
+
 export type CaptureStrings = Messages['capture']
 
 /** DES-2: a toast stays 4 s. */
@@ -56,6 +58,25 @@ export function undoneToast(strings: CaptureStrings, removed: boolean): ToastCon
 	return removed
 		? { tone: 'default', title: strings.removed, detail: null, action: null }
 		: { tone: 'error', title: strings.undoFailed, detail: null, action: null }
+}
+
+/** The longest reason from the server a toast shows under its title. */
+export const maxToastDetailLength = 120
+
+/** A save failed after the owner moved on to another draft: the toast names the lost one. */
+export function saveFailedToast(
+	strings: CaptureStrings,
+	term: string,
+	error: CaptureError,
+): ToastContent {
+	const reason = error.kind === 'network' ? strings.errorTitle : (error.message?.trim() ?? '')
+
+	return {
+		tone: 'error',
+		title: withTerm(strings.saveFailed, term),
+		detail: reason === '' || reason.length > maxToastDetailLength ? null : reason,
+		action: null,
+	}
 }
 
 /** The note is saved, but its research or deeper call was refused or did not arrive. */

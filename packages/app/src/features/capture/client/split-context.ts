@@ -9,6 +9,13 @@ export const maxUrlLength = 2048
 /** The one "where you saw it" field holds both, so it may be as long as the two together. */
 export const contextFieldMaxLength = maxContextLength + maxUrlLength
 
+/** Cuts text to `max` UTF-16 units without leaving the first half of a surrogate pair at the end. */
+export function cutText(text: string, max: number): string {
+	const cut = text.slice(0, max)
+
+	return /[\uD800-\uDBFF]$/u.test(cut) ? cut.slice(0, -1) : cut
+}
+
 export interface SplitContext {
 	readonly context: string | null
 	readonly url: string | null

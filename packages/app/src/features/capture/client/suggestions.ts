@@ -4,7 +4,7 @@
 import * as v from 'valibot'
 
 import type { JsonFetch, SuggestAnswer } from '../shared/types'
-import { maxContextLength, splitContext } from './split-context'
+import { cutText, maxContextLength, splitContext } from './split-context'
 
 /** "After a half-second pause" in the DES-2 boards. */
 export const suggestDebounceMs = 500
@@ -197,7 +197,7 @@ export function createSuggestionRunner({
 		/* The save shows the server's 400 for a long context; a suggestion only needs its start. */
 		const body = {
 			text,
-			context: context?.slice(0, maxContextLength) ?? null,
+			context: context === null ? null : cutText(context, maxContextLength),
 			url,
 			private: input.private,
 		}

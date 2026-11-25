@@ -91,6 +91,7 @@ export const en = {
 		researchingToast: 'Researching {term}',
 		researchingDetail: 'You’ll get a notification',
 		followUpFailed: 'Saved, but research did not start',
+		saveFailed: 'Couldn’t save “{term}”',
 		removed: 'Removed',
 		undoFailed: 'Couldn’t remove the note',
 		undo: 'Undo',

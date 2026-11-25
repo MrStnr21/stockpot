@@ -1,19 +1,20 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
+import { createCaptureApi, type CaptureApi, type SubmitResult } from './capture-api'
 import {
-	createCaptureApi,
-	type CaptureApi,
-	type CaptureDraft,
-	type SubmitResult,
-} from './capture-api'
-import { CaptureDraftState, type CaptureDraftOptions } from './capture-draft.svelte'
+	CaptureDraftState,
+	type CaptureDraftOptions,
+	type CaptureError,
+	type SentDraft,
+} from './capture-draft.svelte'
 import { deeperNoteId, historyMatch, type SubmitMode } from './capture-model'
 import {
 	followUpFailedToast,
 	removedToastMs,
 	researchingToast,
 	savedToast,
+	saveFailedToast,
 	toastMs,
 	ToastQueue,
 	undoneToast,
@@ -53,24 +54,19 @@ export class CaptureController extends CaptureDraftState {
 		const mode: SubmitMode = button === 'primary' ? 'save' : this.actions.secondary
 		const seen = this.answer === null ? null : historyMatch(this.answer, 'seen')
 
-		const draft = {
-			text: this.term,
-			contextField: this.contextField,
-			categoryId,
-			private: this.isPrivate,
-		}
+		const sent = this.send(categoryId)
 
 		this.isSaving = true
 		this.error = null
 
 		const result = await this.#api.submit({
 			mode,
-			draft,
+			draft: sent.draft,
 			deeperNoteId: mode === 'deeper' && seen !== null ? deeperNoteId(seen) : null,
 		})
 
 		this.isSaving = false
-		this.#settle(result, mode, draft)
+		this.#settle(result, mode, sent)
 	}
 
 	public async undo(noteId: number): Promise<void> {
@@ -90,11 +86,12 @@ export class CaptureController extends CaptureDraftState {
 
 	/*
 	 * The sheet may hold a new draft by the time a save answers, after Esc and N; only the draft that
-	 * was sent is closed and cleared, or shows its error. The toast always reports the save.
+	 * was sent is closed and cleared, or shows its error row. A save always ends in a toast unless
+	 * its error row shows, so a draft the owner has moved on from is never lost in silence.
 	 */
-	#settle(result: SubmitResult, mode: SubmitMode, draft: CaptureDraft) {
-		const term = draft.text.trim()
-		const isCurrent = this.holds(draft)
+	#settle(result: SubmitResult, mode: SubmitMode, sent: SentDraft) {
+		const term = sent.draft.text.trim()
+		const isCurrent = this.holds(sent)
 
 		if (result.kind === 'busy') {
 			return
@@ -107,11 +104,15 @@ export class CaptureController extends CaptureDraftState {
 		}
 
 		if (result.kind === 'invalid' || result.kind === 'failed') {
+			const error: CaptureError =
+				result.kind === 'invalid'
+					? { kind: 'invalid', message: result.message }
+					: { kind: 'network' }
+
 			if (isCurrent) {
-				this.error =
-					result.kind === 'invalid'
-						? { kind: 'invalid', message: result.message }
-						: { kind: 'network' }
+				this.error = error
+			} else {
+				this.toasts.show(saveFailedToast(this.#strings, term, error))
 			}
 
 			return
