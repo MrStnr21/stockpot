@@ -28,12 +28,6 @@ export const maxTermLength = 1000
 export type CaptureError =
 	{ readonly kind: 'network' } | { readonly kind: 'invalid'; readonly message: string | null }
 
-/** A draft as a save sent it, with the count of the owner's category choices at that moment. */
-export interface SentDraft {
-	readonly draft: CaptureDraft
-	readonly picks: number
-}
-
 export interface CaptureDraftOptions {
 	readonly categories: readonly CaptureCategory[]
 	readonly fetch: JsonFetch
@@ -47,13 +41,6 @@ export class CaptureDraftState {
 
 	/** The trimmed term the suggestion follows, so an edit that keeps it keeps the pick too. */
 	#askedTerm = ''
-
-	/*
-	 * The owner's own choices of category: a chip, a meaning, "None of these", "Different meaning" or
-	 * a new term. The term, the context and Private change only when the owner edits them, but the
-	 * category also follows each answer, so a changed category counts as an edit only after these.
-	 */
-	#picks = 0
 
 	public open = $state(false)
 	public term = $state('')
@@ -144,27 +131,23 @@ export class CaptureDraftState {
 	}
 
 	public pickCategory(categoryId: number): void {
-		this.#picks += 1
 		this.selection = pickCategory(this.selection, categoryId)
 	}
 
 	public pickSense(index: number): void {
 		if (this.answer !== null) {
-			this.#picks += 1
 			this.selection = pickSense(this.selection, this.answer, index)
 		}
 	}
 
 	public noneOfThese(): void {
 		if (this.answer !== null) {
-			this.#picks += 1
 			this.selection = dismissSenses(this.selection, this.answer)
 		}
 	}
 
 	public differentMeaning(): void {
 		if (this.answer !== null) {
-			this.#picks += 1
 			this.selection = dismissSeen(this.selection, this.answer)
 		}
 	}
@@ -178,28 +161,19 @@ export class CaptureDraftState {
 	}
 
 	/** The draft as it stands, to send with this category. */
-	protected send(categoryId: number): SentDraft {
-		return {
-			draft: {
-				text: this.term,
-				contextField: this.contextField,
-				categoryId,
-				private: this.isPrivate,
-			},
-			picks: this.#picks,
-		}
+	protected send(categoryId: number): CaptureDraft {
+		return { text: this.term, contextField: this.contextField, categoryId, private: this.isPrivate }
 	}
 
-	/**
-	 * The sheet still holds this draft: the owner changed none of its fields since it was sent. A
-	 * category that only followed a later answer leaves the draft the same.
+	/*
+	 * The sheet still holds this draft: the owner's own fields are as they were sent. The category
+	 * does not count, since it also follows each answer and a hand pick alone is no new note.
 	 */
-	protected holds({ draft, picks }: SentDraft): boolean {
+	protected holds(draft: CaptureDraft): boolean {
 		return (
-			draft.text === this.term &&
+			draft.text.trim() === this.term.trim() &&
 			draft.contextField === this.contextField &&
-			draft.private === this.isPrivate &&
-			(picks === this.#picks || draft.categoryId === this.selection.categoryId)
+			draft.private === this.isPrivate
 		)
 	}
 
@@ -236,7 +210,6 @@ export class CaptureDraftState {
 		}
 
 		this.#askedTerm = term
-		this.#picks += 1
 		this.selection = initialSelection
 		this.showAll = false
 

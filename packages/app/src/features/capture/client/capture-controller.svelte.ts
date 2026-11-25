@@ -1,12 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
-import { createCaptureApi, type CaptureApi, type SubmitResult } from './capture-api'
+import {
+	createCaptureApi,
+	type CaptureApi,
+	type CaptureDraft,
+	type SubmitResult,
+} from './capture-api'
 import {
 	CaptureDraftState,
 	type CaptureDraftOptions,
 	type CaptureError,
-	type SentDraft,
 } from './capture-draft.svelte'
 import { deeperNoteId, historyMatch, type SubmitMode } from './capture-model'
 import {
@@ -54,19 +58,19 @@ export class CaptureController extends CaptureDraftState {
 		const mode: SubmitMode = button === 'primary' ? 'save' : this.actions.secondary
 		const seen = this.answer === null ? null : historyMatch(this.answer, 'seen')
 
-		const sent = this.send(categoryId)
+		const draft = this.send(categoryId)
 
 		this.isSaving = true
 		this.error = null
 
 		const result = await this.#api.submit({
 			mode,
-			draft: sent.draft,
+			draft,
 			deeperNoteId: mode === 'deeper' && seen !== null ? deeperNoteId(seen) : null,
 		})
 
 		this.isSaving = false
-		this.#settle(result, mode, sent)
+		this.#settle(result, mode, draft)
 	}
 
 	public async undo(noteId: number): Promise<void> {
@@ -86,12 +90,13 @@ export class CaptureController extends CaptureDraftState {
 
 	/*
 	 * The sheet may hold a new draft by the time a save answers, after Esc and N; only the draft that
-	 * was sent is closed and cleared, or shows its error row. A save always ends in a toast unless
-	 * its error row shows, so a draft the owner has moved on from is never lost in silence.
+	 * was sent is closed and cleared. A failure shows once: in the error row of the open sheet that
+	 * still holds the draft, else in a toast, so a draft is never lost in silence. Closed, the sheet
+	 * keeps the failed draft for when it opens again.
 	 */
-	#settle(result: SubmitResult, mode: SubmitMode, sent: SentDraft) {
-		const term = sent.draft.text.trim()
-		const isCurrent = this.holds(sent)
+	#settle(result: SubmitResult, mode: SubmitMode, draft: CaptureDraft) {
+		const term = draft.text.trim()
+		const isCurrent = this.holds(draft)
 
 		if (result.kind === 'busy') {
 			return
@@ -109,7 +114,7 @@ export class CaptureController extends CaptureDraftState {
 					? { kind: 'invalid', message: result.message }
 					: { kind: 'network' }
 
-			if (isCurrent) {
+			if (isCurrent && this.open) {
 				this.error = error
 			} else {
 				this.toasts.show(saveFailedToast(this.#strings, term, error))
