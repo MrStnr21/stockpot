@@ -19,7 +19,7 @@ import { advanceBy, advanceTo, jobRows, succeedingHandler, type Handler } from '
 import { log, type Logger } from '#/server/log'
 
 import { createRunner } from './runner'
-import type { JobDefinition, Runner, ScheduledRun } from './types'
+import type { DailySchedule, JobDefinition, Runner, ScheduledRun } from './types'
 
 describe('daily schedules', () => {
 	let sqlite: Database
@@ -31,8 +31,12 @@ describe('daily schedules', () => {
 	let runner: Runner
 
 	/** Starts a runner with one schedule; a second call stands for the server after a restart. */
-	function startScheduled() {
-		runner = createRunner({ db, schedules: [{ job: digest, at }], timeZone: () => timeZone })
+	function startScheduled(scheduledAt: DailySchedule['at'] = at) {
+		runner = createRunner({
+			db,
+			schedules: [{ job: digest, at: scheduledAt }],
+			timeZone: () => timeZone,
+		})
 		runner.start()
 
 		return runner
@@ -131,14 +135,47 @@ describe('daily schedules', () => {
 		it('fires the day at once when the time moves from 09:00 to 07:00 after 07:00', async () => {
 			timeZone = 'Asia/Tokyo'
 			at = '09:00'
-			startScheduled()
+			startScheduled(() => at)
 			await advanceTo(runner, '2026-11-18T23:00:00Z')
-			await runner.stop()
 			at = '07:00'
-			startScheduled()
+			runner.refreshSchedules()
 			await advanceBy(runner, 0)
 
 			expect(firedDays()).toEqual(['2026-11-19'])
+		})
+	})
+
+	describe('with a time getter', () => {
+		beforeEach(() => {
+			jest.useFakeTimers({ now: new Date('2026-11-18T06:00:00Z') })
+			timeZone = 'UTC'
+			at = '06:30'
+			startScheduled(() => at)
+		})
+
+		it('uses the getter at start and moves the planned day on refresh', async () => {
+			expect(jobRows(db)).toMatchObject([{ runAt: new Date('2026-11-18T06:30:00Z') }])
+
+			at = '07:30'
+			runner.refreshSchedules()
+
+			expect(jobRows(db)).toMatchObject([
+				{ payload: { day: '2026-11-18' }, runAt: new Date('2026-11-18T07:30:00Z') },
+			])
+			await advanceTo(runner, '2026-11-18T07:30:00Z')
+			expect(firedDays()).toEqual(['2026-11-18'])
+		})
+
+		it('plans the following day at the current time when the queued run fires', async () => {
+			at = '07:30'
+			await advanceTo(runner, '2026-11-18T06:30:00Z')
+
+			const nextRunAt = new Date('2026-11-19T07:30:00Z')
+
+			expect(jobRows(db)).toMatchObject([
+				{ status: 'done', payload: { day: '2026-11-18' } },
+				{ status: 'queued', payload: { day: '2026-11-19' }, runAt: nextRunAt },
+			])
 		})
 	})
 
@@ -206,7 +243,7 @@ describe('daily schedules', () => {
 		})
 	})
 
-	describe('when the time zone setting is invalid at the run time', () => {
+	describe.each(['zone', 'time'])('with an invalid %s at run time', (setting) => {
 		let logged: Mock<Logger['error']>
 
 		beforeEach(async () => {
@@ -217,8 +254,10 @@ describe('daily schedules', () => {
 
 			timeZone = 'Asia/Tokyo'
 			at = '07:00'
-			startScheduled()
-			timeZone = 'Asia/Nowhere'
+			startScheduled(() => at)
+
+			timeZone = setting === 'zone' ? 'Asia/Nowhere' : 'Asia/Tokyo'
+			at = setting === 'time' ? '24:00' : '07:00'
 			await advanceTo(runner, '2026-11-18T22:00:00Z')
 		})
 
@@ -234,6 +273,7 @@ describe('daily schedules', () => {
 
 		it('fires the run once the setting is valid again', async () => {
 			timeZone = 'Asia/Tokyo'
+			at = '07:00'
 			await advanceBy(runner, 30_000)
 
 			expect(firedDays()).toEqual(['2026-11-19'])

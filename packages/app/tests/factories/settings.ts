@@ -21,7 +21,12 @@ export function agentCommand(): string {
 
 /** Settings with every engine in them configured: each key holds a random value. */
 export const configuredSettingsFactory = Factory.define<Settings>(() => ({
-	digest: { time: '07:15', limit: faker.number.int({ min: 1, max: 50 }), timeZone: 'Asia/Tokyo' },
+	digest: {
+		time: '07:15',
+		batchTime: '05:45',
+		limit: faker.number.int({ min: 1, max: 50 }),
+		timeZone: 'Asia/Tokyo',
+	},
 	cardLanguage: 'de',
 	engines: {
 		gemini: {

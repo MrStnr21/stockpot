@@ -14,23 +14,30 @@ import {
 } from './queue'
 import type { DailySchedule } from './types'
 
-/** A schedule as the runner keeps it, with its time of day parsed. */
+/** A schedule as the runner keeps it, with a getter for its parsed time of day. */
 export interface Plan {
 	kind: string
-	at: Temporal.PlainTime
+	at: () => Temporal.PlainTime
 	priority: Priority
 }
 
 export function toPlan({ job, at, priority = 'batch' }: DailySchedule): Plan {
-	return { kind: job.kind, at: parseTimeOfDay(at), priority }
+	// oxlint-disable-next-line anti-slop/no-runtime-typeof -- The schedule API accepts a typed union of a string and a getter.
+	if (typeof at === 'function') {
+		return { kind: job.kind, at: () => parseTimeOfDay(at()), priority }
+	}
+
+	const time = parseTimeOfDay(at)
+
+	return { kind: job.kind, at: () => time, priority }
 }
 
 /** A scheduled run's payload, read back from its row. */
 const scheduledRun = v.object({ day: v.string() })
 
 /** The local date a scheduled run belongs to, or undefined for a row whose payload has none. */
-function dayOf(job: JobRow) {
-	const parsed = v.safeParse(scheduledRun, job.payload)
+function dayOf(job: JobRow | undefined) {
+	const parsed = v.safeParse(scheduledRun, job?.payload)
 
 	return parsed.success ? parsed.output.day : undefined
 }
@@ -44,12 +51,20 @@ function dayOf(job: JobRow) {
 export function planDailyRun(
 	db: Queryable,
 	{ kind, at, priority }: Plan,
-	{ timeZone, now }: { timeZone: string; now: Date },
+	{ timeZone, now, claimed }: { timeZone: string; now: Date; claimed?: JobRow },
 ): void {
+	const time = at()
 	const planned = plannedRun(db, kind)
 
 	if (planned === undefined) {
-		const run = nextDailyRun(now, at, timeZone)
+		const next = nextDailyRun(now, time, timeZone)
+		const day = dayOf(claimed)
+
+		// A move to a later time can make the day just claimed look like the next run.
+		const run =
+			day !== undefined && next.day <= day
+				? dailyRunOn(Temporal.PlainDate.from(day).add({ days: 1 }).toString(), time, timeZone)
+				: next
 
 		insertJob(db, { kind, payload: { day: run.day }, priority, runAt: run.runAt })
 
@@ -57,7 +72,9 @@ export function planDailyRun(
 	}
 
 	const day = dayOf(planned)
-	const run = day === undefined ? nextDailyRun(now, at, timeZone) : dailyRunOn(day, at, timeZone)
+
+	const run =
+		day === undefined ? nextDailyRun(now, time, timeZone) : dailyRunOn(day, time, timeZone)
 
 	if (run.runAt.getTime() !== planned.runAt.getTime()) {
 		replanJob(db, { id: planned.id, runAt: run.runAt, payload: { day: run.day } })
@@ -75,7 +92,7 @@ export function catchUpDailyRun(
 	{ timeZone, now }: { timeZone: string; now: Date },
 ): JobRow {
 	const day = dayOf(job)
-	const latest = latestDailyRun(now, plan.at, timeZone)
+	const latest = latestDailyRun(now, plan.at(), timeZone)
 
 	if (job.attempts !== 1 || day === undefined || latest.day <= day) {
 		return job

@@ -142,15 +142,15 @@ function claimAndPlan(worker: Worker, db: Queryable) {
 	const timeZone = worker.timeZone()
 	const claimed = catchUpDailyRun(db, { job, plan }, { timeZone, now })
 
-	planDailyRun(db, plan, { timeZone, now })
+	planDailyRun(db, plan, { timeZone, now, claimed })
 
 	return claimed
 }
 
 /*
  * Claims the next due job and, for a schedule, plans the next day's run in one transaction, so that a
- * crash or a throw, such as an invalid time zone from settings, neither leaves the row running nor
- * loses the plan.
+ * crash or a throw, such as an invalid time or time zone from settings, neither leaves the row
+ * running nor loses the plan.
  */
 function claim(worker: Worker) {
 	return worker.running ? worker.db.transaction((tx) => claimAndPlan(worker, tx)) : undefined

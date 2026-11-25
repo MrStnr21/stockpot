@@ -34,6 +34,15 @@ export function insertJob(db: Queryable, { kind, payload, priority, runAt }: New
 		.get().id
 }
 
+export function activeJobPayloads(db: Queryable, kind: string): unknown[] {
+	return db
+		.select({ payload: jobs.payload })
+		.from(jobs)
+		.where(and(eq(jobs.kind, kind), inArray(jobs.status, ['queued', 'running'])))
+		.all()
+		.map(({ payload }) => payload)
+}
+
 /**
  * The next due job: queued, highest priority first, then the earliest run time, then the oldest row.
  * `jobs_queue_idx` serves both the filter and the order, so no sort runs; a spec checks the plan.
