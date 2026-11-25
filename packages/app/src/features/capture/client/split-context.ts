@@ -22,16 +22,24 @@ function isWebUrl(token: string) {
 	)
 }
 
-/** Takes the first http(s) link out of the field as the note's `url`; the rest is its `context`. */
+/**
+ * Takes the first http(s) link out of the field as the note's `url`; the rest, as the owner typed
+ * it, is its `context`. Where the link stood between two words, one space stays.
+ */
 export function splitContext(field: string): SplitContext {
-	const tokens = field
-		.trim()
-		.split(/\s+/u)
-		.filter((token) => token !== '')
+	const link = [...field.matchAll(/\S+/gu)].find(([token]) => isWebUrl(token))
 
-	const urlIndex = tokens.findIndex((token) => isWebUrl(token))
-	const url = urlIndex === -1 ? null : (tokens[urlIndex] ?? null)
-	const context = tokens.filter((_, index) => index !== urlIndex).join(' ')
+	if (link === undefined) {
+		const context = field.trim()
+
+		return { context: context === '' ? null : context, url: null }
+	}
+
+	const [url] = link
+	const before = field.slice(0, link.index).replace(/[ \t]+$/u, '')
+	const after = field.slice(link.index + url.length).replace(/^[ \t]+/u, '')
+	const joint = /\S$/u.test(before) && /^\S/u.test(after) ? ' ' : ''
+	const context = `${before}${joint}${after}`.trim()
 
 	return { context: context === '' ? null : context, url }
 }

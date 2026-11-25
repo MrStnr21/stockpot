@@ -26,7 +26,13 @@ describe('splitContext', () => {
 			{ context: 'ftp://example.com/file seen', url: null },
 		],
 		['a URL over the limit', `${longUrl} seen`, { context: `${longUrl} seen`, url: null }],
-		['runs of whitespace', 'seen   in\n\na  talk', { context: 'seen in a talk', url: null }],
+		['text as typed', 'seen   in\n\na  talk', { context: 'seen   in\n\na  talk', url: null }],
+		['a URL between words', `seen in ${url} yesterday`, { context: 'seen in yesterday', url }],
+		[
+			'a URL on a line of its own',
+			`seen in\n${url}\nyesterday`,
+			{ context: 'seen in\n\nyesterday', url },
+		],
 	])('splits %s', (_case, field, expected) => {
 		expect(splitContext(field)).toEqual(expected)
 	})

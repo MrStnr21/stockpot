@@ -4,7 +4,7 @@
 import * as v from 'valibot'
 
 import type { JsonFetch, SuggestAnswer } from '../shared/types'
-import { splitContext } from './split-context'
+import { maxContextLength, splitContext } from './split-context'
 
 /** "After a half-second pause" in the DES-2 boards. */
 export const suggestDebounceMs = 500
@@ -87,7 +87,7 @@ export interface SuggestionRunnerOptions {
 }
 
 export interface SuggestionRunner {
-	/** The term changed: ask after a pause in typing. */
+	/** The term changed: loading for it at once, and the request after a pause in typing. */
 	schedule: () => void
 	/** Ask at once, as when Private is toggled. */
 	askNow: () => void
@@ -191,7 +191,16 @@ export function createSuggestionRunner({
 		}
 
 		onChange({ kind: 'loading', text })
-		const body = { text, ...splitContext(input.contextField), private: input.private }
+
+		const { context, url } = splitContext(input.contextField)
+
+		/* The save shows the server's 400 for a long context; a suggestion only needs its start. */
+		const body = {
+			text,
+			context: context?.slice(0, maxContextLength) ?? null,
+			url,
+			private: input.private,
+		}
 
 		send(current, body, 0).catch(() => null)
 	}
@@ -199,13 +208,16 @@ export function createSuggestionRunner({
 	return {
 		schedule() {
 			const current = cancel()
+			const text = read().text.trim()
 
-			if (read().text.trim() === '') {
+			if (text === '') {
 				onChange({ kind: 'empty' })
 
 				return
 			}
 
+			/* An answer for the previous term must not show, or be acted on, while this one waits. */
+			onChange({ kind: 'loading', text })
 			timer = setTimeout(() => {
 				timer = null
 

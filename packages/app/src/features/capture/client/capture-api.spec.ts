@@ -231,14 +231,14 @@ describe('createCaptureApi', () => {
 		it('deletes the note', async () => {
 			answerWith(new Response(null, { status: 204 }))
 
-			expect(await api.undo(7)).toBe(true)
+			expect(await api.undo(7)).toBe('removed')
 			expect(calls).toEqual([{ url: '/api/notes/7', method: 'DELETE', body: null }])
 		})
 
 		it('reports a failed delete', async () => {
 			answerWith(new TypeError('Failed to fetch'))
 
-			expect(await api.undo(7)).toBe(false)
+			expect(await api.undo(7)).toBe('failed')
 		})
 
 		it('sends one delete when Undo is pressed twice', async () => {
@@ -248,9 +248,9 @@ describe('createCaptureApi', () => {
 
 			const first = api.undo(7)
 
-			expect(await api.undo(7)).toBe(false)
+			expect(await api.undo(7)).toBe('busy')
 			resolve(new Response(null, { status: 204 }))
-			expect(await first).toBe(true)
+			expect(await first).toBe('removed')
 			expect(calls).toHaveLength(1)
 		})
 	})

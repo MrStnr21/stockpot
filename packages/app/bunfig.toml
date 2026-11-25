@@ -5,4 +5,4 @@
 # Specs sit next to the code in src/ and next to the helpers in tests/; Playwright owns tests/e2e/.
 root = "."
 pathIgnorePatterns = ["tests/e2e/**", "dist/**"]
-preload = ["./tests/setup/faker.ts"]
+preload = ["./tests/setup/faker.ts", "./tests/setup/svelte-modules.ts"]

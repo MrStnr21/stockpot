@@ -7,6 +7,7 @@ import { faker } from '@faker-js/faker'
 import { suggestAnswerFactory } from '#tests/factories/suggestions'
 import { SuggestionHarness } from '#tests/setup/suggestion-runner'
 
+import { maxContextLength } from './split-context'
 import { pendingRetryMs, suggestDebounceMs } from './suggestions'
 
 describe('createSuggestionRunner', () => {
@@ -55,6 +56,25 @@ describe('createSuggestionRunner', () => {
 				url: link,
 				private: false,
 			})
+		})
+
+		it('cuts a context longer than the server takes', () => {
+			harness.type('Kafka')
+			harness.edit({ contextField: 'a'.repeat(maxContextLength + 10) })
+			jest.advanceTimersByTime(suggestDebounceMs)
+
+			expect(harness.call(0).body).toMatchObject({ context: 'a'.repeat(maxContextLength) })
+		})
+
+		it('drops the answer for the previous term as soon as the term changes', () => {
+			harness.type('Kafka')
+			jest.advanceTimersByTime(suggestDebounceMs)
+			harness.call(0).respond(Response.json(suggestAnswerFactory.build()))
+			drainMicrotasks()
+			harness.type('Kafkaesque')
+
+			expect(harness.lastState()).toEqual({ kind: 'loading', text: 'Kafkaesque' })
+			expect(harness.calls).toHaveLength(1)
 		})
 
 		it('does not ask for an empty term and resets to the empty state', () => {

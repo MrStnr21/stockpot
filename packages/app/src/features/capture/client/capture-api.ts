@@ -39,10 +39,13 @@ export type SubmitResult =
 	/** A save is in flight already. */
 	| { readonly kind: 'busy' }
 
+/** `busy` when an Undo for the same note is still on its way: the first one reports. */
+export type UndoResult = 'removed' | 'failed' | 'busy'
+
 export interface CaptureApi {
 	submit: (request: SubmitRequest) => Promise<SubmitResult>
-	/** Deletes a note this sheet created; true when it is gone. */
-	undo: (noteId: number) => Promise<boolean>
+	/** Deletes a note this sheet created. */
+	undo: (noteId: number) => Promise<UndoResult>
 	readonly isSaving: boolean
 }
 
@@ -181,7 +184,7 @@ export function createCaptureApi({ fetch }: CaptureApiOptions): CaptureApi {
 		},
 		async undo(noteId) {
 			if (undoing.has(noteId)) {
-				return false
+				return 'busy'
 			}
 
 			undoing.add(noteId)
@@ -189,9 +192,9 @@ export function createCaptureApi({ fetch }: CaptureApiOptions): CaptureApi {
 			try {
 				const response = await fetch(`/api/notes/${noteId}`, { method: 'DELETE' })
 
-				return response.ok
+				return response.ok ? 'removed' : 'failed'
 			} catch {
-				return false
+				return 'failed'
 			} finally {
 				undoing.delete(noteId)
 			}

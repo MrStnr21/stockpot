@@ -110,6 +110,7 @@ export function routeToAgentCommand(dataDir: string): void {
 		categories: {},
 		fallbackOrder: ['agent-command', 'gemini', 'openai-compatible'],
 	}
+
 	const db = new Database(`${dataDir}/stockpot.db`)
 
 	try {
