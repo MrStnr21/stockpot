@@ -109,6 +109,9 @@ bun --env-file ~/.config/stockpot/dev.env run eval -- --engine gemini --limit 20
   engine sends Gemini 2.5 Flash suggestions with thinking turned off (`thinkingBudget: 0`).
 - **`deep=gemini-2.5-flash`** rather than the default `gemini-2.5-pro`, whose free quota is smaller
   than Flash's, so that the idea reports do not stop the run on a limit.
+- **A Gemini report is a research loop** of up to 7 requests (a plan, up to 5 searches and the
+  report; see [The Gemini engine](../../../docs/engines.md#the-gemini-engine)), so a free key runs
+  out quickly: each idea note costs a day's share. Searching on Gemini 3 and later needs a paid key.
 - **`--limit 20`**, because a free key's daily quota for Gemini 2.5 Flash ran out after about 20
   requests, and a card takes two.
 - **`--suggest-timeout 10000`**, because the product's 3 s suggestion timeout cuts off most

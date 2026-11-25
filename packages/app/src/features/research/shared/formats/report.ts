@@ -15,6 +15,11 @@ const existingSolution = v.strictObject({
 	note: text(300, 'What it does and how it differs from the idea.'),
 })
 
+const approach = v.strictObject({
+	name: text(80, 'The approach, named in a few words.'),
+	tradeoff: text(400, 'Its main trade-off against the other ways to build it.'),
+})
+
 const landscape = v.strictObject({
 	...senseFields,
 	summary: text(500, 'The idea restated in one or two sentences: what it is and for whom.'),
@@ -23,17 +28,18 @@ const landscape = v.strictObject({
 		{ min: 0, max: 8 },
 		'Solutions and competitors that already exist; empty when you found none.',
 	),
-	approaches: list(
-		text(400, 'One approach and its main trade-off.'),
-		{ min: 1, max: 5 },
-		'Ways to build it, each with its main trade-off.',
-	),
+	approaches: list(approach, { min: 1, max: 5 }, 'Ways to build it, each with its main trade-off.'),
 	risks: list(
 		text(300, 'One risk.'),
 		{ min: 1, max: 5 },
 		'What could make it fail: technical, legal, market.',
 	),
 	firstSteps: list(text(300, 'One step.'), { min: 1, max: 5 }, 'Concrete first steps, in order.'),
+	gaps: list(
+		text(300, 'One question the research could not answer.'),
+		{ min: 0, max: 6 },
+		'Open questions: what the research could not answer or did not reach before its time limit; empty when none.',
+	),
 	sources: sources(10),
 	uncertain,
 })
@@ -85,7 +91,7 @@ export const report = {
 	levels: {
 		1: {
 			instructions:
-				'This is the first report on the idea: what exists already, how it could be built, what could go wrong and where to start. Make it thorough and organised, with every claim backed by a source you found.',
+				'This is the first report on the idea: what exists already, how it could be built, what could go wrong and where to start. Make it thorough and organised, with every claim backed by a source you found. Name what you could not find out under `gaps`.',
 			schema: landscape,
 		},
 		2: {

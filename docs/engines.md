@@ -71,14 +71,14 @@ feature maps each id to its schemas in
 one module per format, and passes the chosen format's schema with each call, so engines never import
 a feature.
 
-| Format       | Task       | For                                                             | Built-in category |
-| ------------ | ---------- | --------------------------------------------------------------- | ----------------- |
-| `vocabulary` | `explain`  | A word or phrase in a language the owner is learning            | English           |
-| `technology` | `explain`  | A technology or technical term                                  | Technology        |
-| `comparison` | `explain`  | A product or model in a crowded field, against its alternatives | AI                |
-| `concept`    | `explain`  | An idea from any field: a principle, a pattern, a law           | Concept           |
-| `report`     | `research` | An idea the owner might build                                   | Idea              |
-| `brief`      | `explain`  | Anything else: a short explanation with links                   | Other             |
+| Format       | Task                                                                                                                                                                                                                                                | For                                                             | Built-in category |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | ----------------- |
+| `vocabulary` | `explain`                                                                                                                                                                                                                                           | A word or phrase in a language the owner is learning            | English           |
+| `technology` | `explain`                                                                                                                                                                                                                                           | A technology or technical term                                  | Technology        |
+| `comparison` | `explain`                                                                                                                                                                                                                                           | A product or model in a crowded field, against its alternatives | AI                |
+| `concept`    | `explain`                                                                                                                                                                                                                                           | An idea from any field: a principle, a pattern, a law           | Concept           |
+| `report`     | `summary` ("In short": what and for whom); `existing` (0–8 `{ name, note }`); `approaches` (1–5 `{ name, tradeoff }`); `risks` (1–5); `firstSteps` (1–5, in order); `gaps` (0–6 open questions the research could not answer); `sources` (up to 10) |
+| `brief`      | `explain`                                                                                                                                                                                                                                           | Anything else: a short explanation with links                   | Other             |
 
 The app seeds the built-ins once, then treats them as ordinary categories and adds each category's
 extra instructions to every prompt in it, including prompts for private notes.
@@ -294,6 +294,11 @@ single category, and set the fallback order.
   engine on the path is then the primary. `research` has no fallback beyond that engine, because
   the OpenAI-compatible engine writes from text only and cannot search; the job waits for the reset.
   It still runs on a text-only engine when that is the only one configured.
+- **Which engines run the idea loop.** Only Gemini runs the research loop of
+  [The Gemini engine](#the-gemini-engine). The agent command and the OpenAI-compatible engines run
+  a report as one call within the call's time limit, take effort from the `deep` tier alone (their
+  model or template is the owner's, and no `reasoning_effort` is sent, because compatible servers
+  reject unknown fields) and report no progress.
 - **Remembered limits.** After `rate_limited`, the router keeps the reset in memory for that engine
   and tier (Gemini counts requests per model) and skips the engine without a call until then. A
   rejected key is not remembered, so a fixed key works on the next call.
@@ -305,6 +310,26 @@ single category, and set the fallback order.
   stored, so one from a fallback engine is simply shown.
 - **One router per process.** [`src/instance.ts`](../packages/app/src/instance.ts) builds and shares
   the router so each engine and Gemini's usage counters exist once. Settings are read at every call.
+
+### Progress
+
+A report takes minutes, so a `research` call can tell where it is. The caller passes
+`RunOptions.onProgress` (the router hands it on as it is), and the engine calls it with
+`ResearchProgress`, four fields that hold counts only, never a question, a finding or a link:
+
+- `step`: `planning`, `searching` or `writing`.
+- `questions`: how many questions the plan holds; 0 while planning.
+- `searched`: how many search steps have finished, answered or not.
+- `pages`: how many distinct pages the searches have read so far.
+
+The Gemini loop reports `planning` with all counts 0 when it starts, then `searching` with
+`questions` set once the plan is made, then `searching` again after each finished step (`searched`
+up by one, `pages` as it stands) and `writing` before the report request. A callback that throws
+does not fail the research. The agent command and OpenAI-compatible engines report nothing. The
+research job keeps the latest progress of each note in memory, once per process, and shows it
+through `GET /api/notes/:id/research` while the job runs; it ignores a call that comes after the
+job's signal aborted, and clears the note's entry however the run ends. A restart loses it, and the
+job restarts anyway. The deeper job reports no progress.
 
 ## The Gemini engine
 
@@ -326,24 +351,56 @@ The Gemini engine
   the `fast` tier may be a Gemini 3 or a Gemini 2.5 Flash model; a free key needs the latter, because
   the tier also writes vocabulary cards, which search (see
   [What the real calls showed](#what-the-real-calls-showed)).
-- **Cards** (`explain` and `research`) are two requests to the tier's model. The first has Google
-  Search and URL context and no schema, and writes down the facts the card needs as plain notes; the
-  second writes the card as structured output from those facts, and may cite only the pages the
-  first searched or opened. Two requests, because the models a free key could search with refused
-  structured output together with search (see [What the real calls showed](#what-the-real-calls-showed)).
-- **One request at a time**, with one `engine_runs` row per call (a card's two requests share it):
-  the reported model, the input tokens (the prompt and the tool prompts), the output tokens (the
-  answer and the thinking) and the searches (the queries the facts step ran). Gemini reports no
-  cost, so the cost stays empty.
+- **Cards** (`explain`) are two requests to the tier's model. The first has Google Search and URL
+  context and no schema, and writes down the facts the card needs as plain notes; the second writes
+  the card as structured output from those facts, and may cite only the pages the first searched or
+  opened. Two requests, because the models a free key could search with refused structured output
+  together with search (see [What the real calls showed](#what-the-real-calls-showed)).
+- **Idea reports** (`research`) are a loop of up to seven requests
+  ([`gemini-research.ts`](../packages/app/src/server/engines/gemini-research.ts)), because Deep
+  Research is a preview agent with no structured output that may take longer than the research time
+  limit. First a plan: one structured request that splits the research into 2 to 5 questions. Then
+  one search request for each question, in order, with Google Search and URL context and no schema,
+  which writes the facts as notes of at most 300 words (each cut to 4,000 characters). Last the
+  report: one structured request with every question and its notes, a numbered list of the pages the
+  searches read (without duplicates), and the only sources it may cite. Plan and report use
+  `thinkingLevel: HIGH` on Gemini 3 and later (`researchThinking` in `gemini-thinking.ts`) and the
+  model's own setting on Gemini 2.5, which thinks as much as it needs; a search step keeps the
+  model's default so that it stays within its cap. Search and schema stay in separate requests on
+  every model, because the combined mode is a preview that only Gemini 3 and later accept, and
+  needs a paid key.
+  - **Time.** The call's limit (15 minutes by default) is one deadline for all its requests. Within
+    it the plan gets a tenth, a search step a fifth, and the report a reserve of a third; a search
+    starts only if its whole cap still leaves that reserve, which is 1.5, 3 and 5 minutes of the 15.
+  - **Cut short.** A search that reaches its cap, or whose answer is blocked, empty or cut off,
+    leaves its question unanswered, and so does a question that never started for want of time. The
+    report is then written from the rest. Its prompt lists the unanswered questions under "Not
+    researched", so that the report names them in `gaps`, and the engine sets `uncertain: true` on
+    it, so the card shows the "unsure" banner and its gaps: the clear message, with the partial
+    result kept. When no search is answered there is nothing to write from, and the call fails with
+    `timeout` ("The idea research found nothing before its time limit"), which the job runner
+    retries. A rate limit, a rejected key, the caller's abort and the call's deadline fail it
+    unchanged; the findings are not kept for a retry.
+  - **Progress.** The loop tells `onProgress` where it is: planning, searching (the questions, the
+    steps finished, the distinct pages read) and writing. A callback that throws does not fail the
+    research.
+- **One request at a time**, with one `engine_runs` row per call (a card's two requests and a
+  report's seven share it): the reported model, the input tokens (the prompt and the tool prompts),
+  the output tokens (the answer and the thinking) and the searches (the queries of the search steps
+  that answered, summed; a step that was capped or blocked is billed by Google but has no usage to
+  count, so the row can undercount). Gemini reports no cost, so the cost stays empty. A suggestion or a card holds the
+  engine's line for its whole call, but a report takes it for each request, so that a quarter-hour
+  of research does not hold every suggestion behind it: a suggestion waits at most one request.
 - **Limits.** Settings give each tier a per-minute and a per-day request limit for its model, `null`
   (no limit) by default. Counters count each model's requests in the last minute and since midnight
   Pacific time, when Google resets daily quotas. A call that would pass a limit is refused before any
   request, as `rate_limited` until the window has room again (the next Pacific midnight for the daily
-  limit), and records its run; a card counts as two requests. The counters live in memory, in the one
+  limit), and records its run; a card counts as two requests and a report as seven (the plan, five
+  searches and the report, however many questions the plan holds). The counters live in memory, in the one
   server process, behind `UsageCounters` in
   [`gemini-usage.ts`](../packages/app/src/server/engines/gemini-usage.ts): they start from the engine's runs in `engine_runs`
-  since the last Pacific midnight and in the last minute (a card counts two requests, and a run
-  refused as `rate_limited` none), so a restart keeps the day's count. A run counts against the model
+  since the last Pacific midnight and in the last minute (a card counts two requests, a report
+  seven, and a run refused as `rate_limited` none), so a restart keeps the day's count. A run counts against the model
   Gemini reported, so a tier set to an alias such as `gemini-flash-latest` is seeded under the model
   the alias pointed to. Google's own quota still applies.
 - **Errors**
@@ -432,16 +489,18 @@ for results grounded with Google Search. Those that affect stockpot:
   long as the law requires.
 - **Resubmitting grounded text.** The terms allow sending a grounded result's text back,
   temporarily and through a function call, in a later prompt for a refined result, on three
-  conditions. The two-request card relies on this clause:
+  conditions. The two-request card and the report loop rely on this clause:
   - _The interim result is used for nothing else._ The facts exist only in memory during the call:
-    the engine passes them to the card request and returns the card alone. They are not stored,
-    logged or written to `engine_runs`.
+    the engine passes them to the card request and returns the card alone. A report's findings of
+    all its search steps stay in memory together until its last request, and are not kept for a
+    retry. They are not stored, logged or written to `engine_runs`.
   - _An interim result the end user never sees is deleted once the final result exists._ The facts
     are never shown, and nothing keeps them after the call ends.
   - _The final result is shown with its Search Suggestions or other links_ (at most five Search
     Suggestions). The engine returns `searchSuggestions` with the card; storing them with the card
     and showing them next to it are left to later stories, the research feature and the card
-    interface.
+    interface. A report has one per search step: the engine keeps the first step's, unmodified, so
+    it stays within the five.
   - The clause names a function call; the engine puts the facts in the text of an ordinary second
     request instead. Whether that counts is part of the open decision below.
 - **No modification, interstitials or redirection.** Grounded results and Search Suggestions may

@@ -12,6 +12,7 @@ import type * as v from 'valibot'
 
 import { createDeeperJob, type DeeperPayload } from '#/features/research/server/depth'
 import type { ReadyNote } from '#/features/research/server/engine-call'
+import type { ProgressBoard } from '#/features/research/server/ideas'
 import {
 	createResearchJob,
 	priorityOf,
@@ -52,8 +53,8 @@ export interface FakeEngine {
 	readonly answers: LearnedCard[]
 	sources?: Source[]
 	failure: Error | null
-	/** Runs inside each call, before it answers. */
-	during: () => void | Promise<void>
+	/** Runs inside each call, before it answers, with the options the router passed. */
+	during: (options: RunOptions) => void | Promise<void>
 }
 
 async function neverSuggest(): Promise<never> {
@@ -73,10 +74,10 @@ function fakeEngine(id: EngineId) {
 	function method(name: EngineCall['method']) {
 		return async <TSchema extends v.GenericSchema>(
 			input: Redacted<EngineInput & { readonly output: OutputFormat<TSchema> }>,
-			{ tier }: RunOptions,
+			options: RunOptions,
 		) => {
-			state.calls.push({ method: name, input, tier })
-			await state.during()
+			state.calls.push({ method: name, input, tier: options.tier })
+			await state.during(options)
 
 			if (state.failure !== null) {
 				throw state.failure
@@ -150,8 +151,17 @@ export interface ResearchHarness {
 	readonly deepen: (noteId: number, depth: 2 | 3, priority?: Priority) => Promise<void>
 }
 
-/** Starts the runner; the spec stops it. Turn on fake timers first. */
-export async function startResearch(): Promise<ResearchHarness> {
+function cardsIn(db: TestDb, noteId: number) {
+	return db
+		.select()
+		.from(explanations)
+		.where(eq(explanations.noteId, noteId))
+		.orderBy(asc(explanations.id))
+		.all()
+}
+
+/** Starts the runner; the spec stops it. Turn on fake timers first. `progress` is the job's board. */
+export async function startResearch(progress?: ProgressBoard): Promise<ResearchHarness> {
 	const { db } = await createTestDb()
 	const { engines } = configuredSettingsFactory.build()
 	const gemini = fakeEngine('gemini')
@@ -194,6 +204,7 @@ export async function startResearch(): Promise<ResearchHarness> {
 		later,
 		learn,
 		notify,
+		progress,
 		openLink: async (url) => links.get(url) ?? { kind: 'open', status: 200 },
 	})
 
@@ -227,15 +238,6 @@ export async function startResearch(): Promise<ResearchHarness> {
 		return db.select({ status: notes.status }).from(notes).where(eq(notes.id, noteId)).get()?.status
 	}
 
-	function cardsOf(noteId: number) {
-		return db
-			.select()
-			.from(explanations)
-			.where(eq(explanations.noteId, noteId))
-			.orderBy(asc(explanations.id))
-			.all()
-	}
-
 	async function research(noteIds: readonly number[]) {
 		queue(noteIds)
 		await advanceBy(runner, 0)
@@ -263,7 +265,7 @@ export async function startResearch(): Promise<ResearchHarness> {
 		learn,
 		notify,
 		statusOf,
-		cardsOf,
+		cardsOf: (noteId) => cardsIn(db, noteId),
 		queue,
 		research,
 		deepen,

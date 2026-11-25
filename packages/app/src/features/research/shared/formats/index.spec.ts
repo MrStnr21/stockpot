@@ -55,6 +55,18 @@ describe('formats', () => {
 			expect(v.is(cardFormat(id, depth).schema, broken)).toBe(false)
 		})
 
+		it.each(['gaps', 'approaches'] as const)('rejects a level 1 report without %s', (key) => {
+			const { [key]: _missing, ...broken } = cardFactories.report[1].build()
+
+			expect(v.is(cardFormat('report', 1).schema, broken)).toBe(false)
+		})
+
+		it('rejects a level 1 report whose approach is a string', () => {
+			const broken = { ...cardFactories.report[1].build(), approaches: ['Parse it with rules.'] }
+
+			expect(v.is(cardFormat('report', 1).schema, broken)).toBe(false)
+		})
+
 		it('joins the format and level instructions', () => {
 			expect(cardFormat('concept', 2).instructions).toBe(
 				`${formats.concept.instructions}\n\n${formats.concept.levels[2].instructions}`,

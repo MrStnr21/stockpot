@@ -7,6 +7,11 @@ import { learnAliases, learnSense } from '#/features/notes/server/learn'
 import { requestDeeper, type DeeperResult } from '#/features/research/server/deeper'
 import { createDeeperJob, type DeeperPayload } from '#/features/research/server/depth'
 import type { ReadyNote } from '#/features/research/server/engine-call'
+import {
+	createProgressBoard,
+	researchState,
+	type ResearchState,
+} from '#/features/research/server/ideas'
 import { researchNow, type ResearchNowResult } from '#/features/research/server/now'
 import { pendingResearchNoteIds } from '#/features/research/server/pending'
 import {
@@ -97,6 +102,9 @@ function notifyReady({ noteId }: ReadyNote) {
 	log.info('A research-now card is ready', { noteId })
 }
 
+/** The board of idea research progress; one per process, like the router. */
+export const instanceProgressBoard = createProgressBoard()
+
 function buildResearchJob(db: Db): JobDefinition<ResearchPayload> {
 	const job = createResearchJob({
 		db,
@@ -122,6 +130,7 @@ function buildResearchJob(db: Db): JobDefinition<ResearchPayload> {
 			learnSense(db, termId, sense)
 		},
 		notify: notifyReady,
+		progress: instanceProgressBoard,
 	})
 
 	return job
@@ -137,6 +146,11 @@ export async function instanceResearchJob(): Promise<JobDefinition<ResearchPaylo
 	}
 
 	return thisProcess.researchJob.job
+}
+
+/** A note's research status and progress, as `GET /api/notes/:id/research` answers; `null` if it is gone. */
+export async function instanceResearchState(noteId: number): Promise<ResearchState | null> {
+	return researchState(await instanceDb(), instanceProgressBoard, noteId)
 }
 
 function buildDeeperJob(db: Db): JobDefinition<DeeperPayload> {

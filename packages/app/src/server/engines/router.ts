@@ -122,12 +122,9 @@ export function createEngines({ db, settings, agentCommand }: EngineSetOptions):
 	}
 }
 
-export interface RouteOptions {
-	/** Defaults to the task's `defaultTimeoutMs`. */
+// The call options an engine receives as they are, plus the timeout, which defaults per task.
+export interface RouteOptions extends Pick<RunOptions, 'signal' | 'jobId' | 'onProgress'> {
 	readonly timeoutMs?: number
-	readonly signal?: AbortSignal
-	/** The job the call runs in, recorded with each engine's run. */
-	readonly jobId?: number
 }
 
 export interface CardRouteOptions extends RouteOptions {
@@ -242,11 +239,11 @@ export function createRouter({
 	/** Tries the path in turn; with none left, throws the primary's failure and its `resetsAt`. */
 	async function route<TOutput>(
 		request: RouteRequest,
-		{ timeoutMs = defaultTimeoutMs[request.task], signal, jobId }: RouteOptions,
+		{ timeoutMs = defaultTimeoutMs[request.task], signal, jobId, onProgress }: RouteOptions,
 		call: Call<TOutput>,
 	): Promise<Answer<TOutput>> {
 		const { tier, path } = resolveRoute(request, settings(), agentCommand)
-		const options: RunOptions = { tier, timeoutMs, signal, jobId }
+		const options: RunOptions = { tier, timeoutMs, signal, jobId, onProgress }
 		let primaryFailure: EngineError | null = null
 
 		for (const id of path) {

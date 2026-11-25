@@ -494,10 +494,26 @@ exports[`formats JSON Schemas derives the same JSON Schema for the report level 
     "approaches": {
       "description": "Ways to build it, each with its main trade-off.",
       "items": {
-        "description": "One approach and its main trade-off. At most 400 characters.",
-        "maxLength": 400,
-        "minLength": 1,
-        "type": "string",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "description": "The approach, named in a few words. At most 80 characters.",
+            "maxLength": 80,
+            "minLength": 1,
+            "type": "string",
+          },
+          "tradeoff": {
+            "description": "Its main trade-off against the other ways to build it. At most 400 characters.",
+            "maxLength": 400,
+            "minLength": 1,
+            "type": "string",
+          },
+        },
+        "required": [
+          "name",
+          "tradeoff",
+        ],
+        "type": "object",
       },
       "maxItems": 5,
       "minItems": 1,
@@ -541,6 +557,18 @@ exports[`formats JSON Schemas derives the same JSON Schema for the report level 
       },
       "maxItems": 5,
       "minItems": 1,
+      "type": "array",
+    },
+    "gaps": {
+      "description": "Open questions: what the research could not answer or did not reach before its time limit; empty when none.",
+      "items": {
+        "description": "One question the research could not answer. At most 300 characters.",
+        "maxLength": 300,
+        "minLength": 1,
+        "type": "string",
+      },
+      "maxItems": 6,
+      "minItems": 0,
       "type": "array",
     },
     "risks": {
@@ -609,6 +637,7 @@ exports[`formats JSON Schemas derives the same JSON Schema for the report level 
     "approaches",
     "risks",
     "firstSteps",
+    "gaps",
     "sources",
     "uncertain",
   ],

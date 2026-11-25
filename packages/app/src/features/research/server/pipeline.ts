@@ -25,6 +25,7 @@ import {
 	runAtAfterReset,
 	type ReadyNote,
 } from './engine-call'
+import { progressReporter, type ProgressBoard } from './ideas'
 import { checkSources } from './links'
 import { save } from './save'
 
@@ -64,6 +65,8 @@ export interface ResearchDependencies {
 	 */
 	readonly notify: (ready: ReadyNote) => void | Promise<void>
 	readonly now?: () => Date
+	/** Where an idea's research progress is shown while its job runs; without it none is kept. */
+	readonly progress?: ProgressBoard
 }
 
 const maxAttempts = 3
@@ -146,7 +149,13 @@ async function research(
 			return
 		}
 
-		const result = await callRouter(deps.router, task, context)
+		/* Only the research task reports steps; the callback is silent once this attempt is aborted. */
+		const onProgress =
+			task.input.task === 'research'
+				? progressReporter(deps.progress, noteId, context.signal)
+				: undefined
+
+		const result = await callRouter(deps.router, { ...task, onProgress }, context)
 		const card = await checkSources(result.output, { open: deps.openLink, signal: context.signal })
 		context.signal.throwIfAborted()
 
@@ -181,6 +190,9 @@ async function research(
 		if (!(error instanceof EngineError && settleEngineFailure(deps, payload, error))) {
 			throw error
 		}
+	} finally {
+		// Whatever way the run ended, the note is no longer being researched by it.
+		deps.progress?.clear(noteId)
 	}
 }
 
