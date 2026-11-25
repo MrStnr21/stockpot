@@ -87,6 +87,17 @@ export interface CardInput<
 
 export type EngineInput = SuggestInput | CardInput
 
+/*
+ * Where a long `research` call is, as counts only: the questions it split the work into, how many it
+ * searched and how many distinct pages it read. Never a question, a finding or a link.
+ */
+export interface ResearchProgress {
+	readonly step: 'planning' | 'searching' | 'writing'
+	readonly questions: number
+	readonly searched: number
+	readonly pages: number
+}
+
 export interface RunOptions {
 	readonly tier: Tier
 	/** The engine stops the call and fails with `timeout` after this long. */
@@ -94,6 +105,8 @@ export interface RunOptions {
 	readonly signal?: AbortSignal
 	/** The job the call runs in, recorded with its `engine_runs` row; a suggestion runs outside any job. */
 	readonly jobId?: number
+	/** Called as a `research` call advances; an engine that cannot tell its steps never calls it. */
+	readonly onProgress?: (progress: ResearchProgress) => void
 }
 
 /*

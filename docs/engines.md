@@ -71,14 +71,14 @@ feature maps each id to its schemas in
 one module per format, and passes the chosen format's schema with each call, so engines never import
 a feature.
 
-| Format       | Task       | For                                                             | Built-in category |
-| ------------ | ---------- | --------------------------------------------------------------- | ----------------- |
-| `vocabulary` | `explain`  | A word or phrase in a language the owner is learning            | English           |
-| `technology` | `explain`  | A technology or technical term                                  | Technology        |
-| `comparison` | `explain`  | A product or model in a crowded field, against its alternatives | AI                |
-| `concept`    | `explain`  | An idea from any field: a principle, a pattern, a law           | Concept           |
-| `report`     | `research` | An idea the owner might build                                   | Idea              |
-| `brief`      | `explain`  | Anything else: a short explanation with links                   | Other             |
+| Format       | Task                                                                                                                                                                                                                                                | For                                                             | Built-in category |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | ----------------- |
+| `vocabulary` | `explain`                                                                                                                                                                                                                                           | A word or phrase in a language the owner is learning            | English           |
+| `technology` | `explain`                                                                                                                                                                                                                                           | A technology or technical term                                  | Technology        |
+| `comparison` | `explain`                                                                                                                                                                                                                                           | A product or model in a crowded field, against its alternatives | AI                |
+| `concept`    | `explain`                                                                                                                                                                                                                                           | An idea from any field: a principle, a pattern, a law           | Concept           |
+| `report`     | `summary` ("In short": what and for whom); `existing` (0–8 `{ name, note }`); `approaches` (1–5 `{ name, tradeoff }`); `risks` (1–5); `firstSteps` (1–5, in order); `gaps` (0–6 open questions the research could not answer); `sources` (up to 10) |
+| `brief`      | `explain`                                                                                                                                                                                                                                           | Anything else: a short explanation with links                   | Other             |
 
 The app seeds the built-ins once, then treats them as ordinary categories and adds each category's
 extra instructions to every prompt in it, including prompts for private notes.

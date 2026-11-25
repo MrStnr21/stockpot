@@ -101,9 +101,15 @@ export const reportCardFactory = Factory.define<Card<'report', 1>>(() => ({
 	existing: [
 		{ name: 'Recipe sites', note: 'Many scale servings, but only for their own recipes.' },
 	],
-	approaches: ['Parse pasted recipes with rules: predictable, but brittle on odd formats.'],
+	approaches: [
+		{
+			name: 'Rule-based parser',
+			tradeoff: 'Predictable, but brittle on odd recipe formats.',
+		},
+	],
 	risks: ['Units that do not scale linearly, such as baking times.'],
 	firstSteps: ['Collect twenty recipes in different formats.'],
+	gaps: [],
 	sources: sourceFactory.buildList(3),
 	uncertain: true,
 }))
