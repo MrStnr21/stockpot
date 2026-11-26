@@ -51,9 +51,13 @@ Everything stockpot keeps is in one folder:
 
 ```sh
 PORT='4321'
-HOST='0.0.0.0'
+HOST='127.0.0.1'
 STOCKPOT_PUBLIC_ORIGIN='https://stockpot.example.ts.net'
 ```
+
+This example suits stockpot behind `tailscale serve`, which your phone opens over HTTPS.
+[Serve stockpot over HTTPS with Tailscale](tailscale.md) explains its `HOST` and
+`STOCKPOT_PUBLIC_ORIGIN`.
 
 The data folder is `data/` unless you set `STOCKPOT_DATA_DIR`. The file may hold secrets, such as
 the agent command and the metrics token, so it is readable by you alone (`600`); keep it that way.
