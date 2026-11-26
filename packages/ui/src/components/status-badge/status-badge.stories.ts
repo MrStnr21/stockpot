@@ -12,3 +12,7 @@ export const Statuses = {
 }
 
 export const Flags = { args: { group: 'flags' } satisfies ComponentProps<typeof StatusBadgeStory> }
+
+export const Neutral = {
+	args: { group: 'neutral' } satisfies ComponentProps<typeof StatusBadgeStory>,
+}

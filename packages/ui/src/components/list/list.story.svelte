@@ -20,6 +20,7 @@
 			| 'title-trail'
 			| 'subtitle-content'
 			| 'attached'
+			| 'current'
 	}
 
 	const { group }: Props = $props()
@@ -35,6 +36,7 @@
 		'title-trail': 'Private · flags',
 		'subtitle-content': 'Search result · marked matches',
 		attached: 'Attached gesture',
+		current: 'Current · its card is open beside the list',
 	}
 
 	const snippet = [
@@ -163,6 +165,28 @@
 				>
 					{#snippet lead()}
 						<CategoryTile color="tech" icon="tech" />
+					{/snippet}
+				</ListRow>
+			{:else if group === 'current'}
+				<ListRow title="Bun" subtitle="Seen in the stockpot README" href="#bun">
+					{#snippet lead()}
+						<CategoryTile color="tech" icon="tech" />
+					{/snippet}
+				</ListRow>
+				<ListRow
+					title="RAG"
+					subtitle="A design review for search"
+					href="#rag"
+					lead={ragTile}
+					current
+				>
+					{#snippet trail()}
+						<StatusBadge status="ready">Ready</StatusBadge>
+					{/snippet}
+				</ListRow>
+				<ListRow title="Idempotency" subtitle="Seen in a payments guide" href="#idempotency">
+					{#snippet lead()}
+						<CategoryTile color="concept" icon="concept" />
 					{/snippet}
 				</ListRow>
 			{:else}

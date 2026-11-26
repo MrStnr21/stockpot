@@ -25,6 +25,36 @@ async function openStory(page: Page, path: string) {
 	await expect(page.locator('astro-island[client="load"]:not([ssr])')).toHaveCount(1)
 }
 
+async function expectCurrentRow(page: Page) {
+	await openStory(page, story('list', 'current'))
+
+	const panel = page.locator(light)
+
+	await expect(panel.getByRole('link', { name: 'RAG' })).toHaveAttribute('aria-current', 'true')
+	await expect(panel.getByRole('link', { name: 'Bun' })).not.toHaveAttribute('aria-current')
+}
+
+async function moveAcrossSegments(page: Page) {
+	await openStory(page, story('segmented', 'states'))
+
+	const tablist = page.locator(light).getByRole('tablist').first()
+	const card = tablist.getByRole('tab', { name: 'Card' })
+	const deeper = tablist.getByRole('tab', { name: 'How it works' })
+	const handsOn = tablist.getByRole('tab', { name: 'Hands-on' })
+
+	await card.focus()
+	await page.keyboard.press('ArrowRight')
+	await expect(deeper).toBeFocused()
+	await expect(deeper).toHaveAttribute('aria-selected', 'true')
+	await expect(card).toHaveAttribute('aria-selected', 'false')
+	await expect(card).toHaveAttribute('tabindex', '-1')
+
+	await page.keyboard.press('ArrowLeft')
+	await page.keyboard.press('ArrowLeft')
+	await expect(handsOn).toBeFocused()
+	await expect(handsOn).toHaveAttribute('aria-selected', 'true')
+}
+
 test.describe('UI kit book', () => {
 	test.afterEach(async ({ page }) => {
 		const messages = await page.consoleMessages()
@@ -115,6 +145,16 @@ test.describe('UI kit book', () => {
 		const row = page.locator(light).getByRole('link', { name: 'Bun' })
 
 		await expect(row).toHaveAttribute('data-attached', 'true')
+	})
+
+	test('marks the current list row', async ({ page }) => {
+		await expectCurrentRow(page)
+	})
+
+	test('moves between segments with the arrow keys and selects the one it lands on', async ({
+		page,
+	}) => {
+		await moveAcrossSegments(page)
 	})
 
 	test('ignores a click while the button is loading', async ({ page }) => {

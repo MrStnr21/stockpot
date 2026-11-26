@@ -25,10 +25,11 @@ Vite fingerprints them, so nothing is requested from a font host.
 - `@stockpot/ui/icon` — `Icon`, `iconNames`, `categoryColors`, `IconName`, `CategoryColor`
 - `@stockpot/ui/list` — `List`, `ListRow`, `SwipeActions`, `SwipeAction`
 - `@stockpot/ui/search-field` — `SearchField`
+- `@stockpot/ui/segmented` — `Segmented`, `SegmentedItem`
 - `@stockpot/ui/sheet` — `Sheet`
 - `@stockpot/ui/skeleton` — `Skeleton`
 - `@stockpot/ui/spinner` — `Spinner`
-- `@stockpot/ui/status-badge` — `StatusBadge`
+- `@stockpot/ui/status-badge` — `StatusBadge`, `FlagBadge`, `Badge`
 - `@stockpot/ui/switch` — `Switch`, `ToggleRow`
 - `@stockpot/ui/tab-bar` — `TabBar`, `Tab`
 - `@stockpot/ui/text-field` — `TextField`

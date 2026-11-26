@@ -29,6 +29,8 @@
 		disabled?: boolean
 		loading?: boolean
 		pressed?: boolean
+		/** The row whose item is open beside the list. */
+		current?: boolean
 		onclick?: MouseEventHandler<HTMLAnchorElement | HTMLButtonElement>
 		/** Applied to the row's link or button, such as a long-press gesture. */
 		attach?: Attachment<HTMLElement>
@@ -48,6 +50,7 @@
 		disabled = false,
 		loading = false,
 		pressed = false,
+		current = false,
 		onclick,
 		attach,
 	}: Props = $props()
@@ -60,6 +63,7 @@
 		/* The list and swipe viewport clip an outward outline. */
 		'focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-focus',
 		'data-interactive:active:bg-fill data-[state=pressed]:bg-fill aria-checked:bg-accent-soft aria-checked:active:bg-accent-soft aria-checked:data-[state=pressed]:bg-accent-soft',
+		'aria-[current=true]:bg-accent-soft aria-[current=true]:active:bg-accent-soft aria-[current=true]:data-[state=pressed]:bg-accent-soft',
 		'disabled:cursor-default aria-disabled:cursor-default',
 	]
 
@@ -111,6 +115,7 @@
 			href={disabled ? undefined : href}
 			role={disabled ? 'link' : undefined}
 			aria-disabled={disabled || undefined}
+			aria-current={current ? 'true' : undefined}
 			data-interactive={!disabled || undefined}
 			data-state={state}
 			onclick={disabled ? undefined : onclick}
@@ -124,6 +129,7 @@
 			type="button"
 			role={selectable ? 'checkbox' : undefined}
 			aria-checked={selectable ? selected : undefined}
+			aria-current={current ? 'true' : undefined}
 			{disabled}
 			data-interactive={!disabled || undefined}
 			data-state={state}
