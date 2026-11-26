@@ -130,12 +130,56 @@ const pageSize = v.pipe(
 	v.maxValue(100, 'Use a number from 1 to 100.'),
 )
 
-/** The list's query string: filters, the cursor of the next page and the page size. */
+const maxSearchLength = 200
+
+/* Counted in graphemes, not UTF-16 units, so 200 emoji are 200 characters. Blank search is no
+ * search. */
+const searchText = v.pipe(
+	v.string(),
+	v.trim(),
+	v.maxGraphemes(maxSearchLength, `Use at most ${maxSearchLength} characters.`),
+	v.transform((value) => (value === '' ? undefined : value)),
+)
+
+/** The list's query string: filters, the search, the cursor of the next page and the page size. */
 export const notesQuerySchema = v.object({
 	status: v.optional(noteStatus),
 	categoryId: v.optional(rowIdText),
+	q: v.optional(searchText),
 	cursor: v.optional(cursor),
 	limit: v.optional(pageSize),
 })
 
 export type NotesQuery = v.InferOutput<typeof notesQuerySchema>
+
+/* The largest page of the list, so a full page selected fits one request, as for Research now. */
+export const maxBulkNotes = 100
+
+/** One change for several notes: a category to move them to, or the archive. */
+export type BulkChange = { readonly categoryId: number } | { readonly status: 'archived' }
+
+const bulkIds = v.pipe(
+	v.array(rowId),
+	v.minLength(1, 'Name at least one note.'),
+	v.maxLength(maxBulkNotes, `Name at most ${maxBulkNotes} notes.`),
+)
+
+const archive = v.literal('archived')
+
+/** The body of `PATCH /api/notes`: the notes, and exactly one of `categoryId` or `status`. */
+export const bulkChangeSchema = v.pipe(
+	v.object({
+		ids: bulkIds,
+		categoryId: v.optional(rowId),
+		status: v.optional(archive),
+	}),
+	v.check(
+		({ categoryId, status }) => (categoryId === undefined) !== (status === undefined),
+		'Change categoryId or status, not both.',
+	),
+	v.transform(({ ids, categoryId }) => {
+		const change: BulkChange = categoryId === undefined ? { status: 'archived' } : { categoryId }
+
+		return { ids, change }
+	}),
+)

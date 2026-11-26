@@ -1,0 +1,78 @@
+---
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 The stockpot authors
+
+/*
+ * A note on its own page, until the opened card arrives (WEB-5): the note, its category and status,
+ * and where it was seen. A missing or deleted note answers 404.
+ */
+import { Button } from '@stockpot/ui/button'
+import { CategoryChip } from '@stockpot/ui/category'
+import { EmptyState } from '@stockpot/ui/empty-state'
+import { StatusBadge } from '@stockpot/ui/status-badge'
+
+import { listCategories } from '#/features/categories/server'
+import { statusLabels } from '#/features/notes/client/row-view'
+import { getNote } from '#/features/notes/server'
+import Shell from '#/layouts/shell.astro'
+import { categoryLook } from '#/lib/category-look'
+import { pickLocale, t } from '#/lib/i18n'
+import { instanceDb } from '#/server/db/instance'
+
+// Sign-in sends a visitor on to setup while the instance has no owner.
+if (Astro.locals.owner === null) {
+	// oxlint-disable-next-line unicorn/prefer-module -- Astro runs the frontmatter as a function, and a page redirects by returning the response.
+	return Astro.redirect('/signin')
+}
+
+const locale = pickLocale(Astro.request.headers.get('accept-language'))
+
+const strings = t(locale)
+
+const db = await instanceDb()
+
+const rawId = Astro.params.id ?? ''
+
+const note = /^[1-9]\d{0,14}$/u.test(rawId) ? getNote(db, Number(rawId)) : undefined
+
+const category =
+	note === undefined || note.categoryId === null
+		? undefined
+		: listCategories(db).find(({ id }) => id === note.categoryId)
+
+const look = category === undefined ? undefined : categoryLook(category.color, category.icon)
+
+if (note === undefined) {
+	Astro.response.status = 404
+}
+---
+
+<Shell title={note?.text ?? strings.notes.missingTitle} {locale} current="notes">
+	<Button variant="ghost" size="sm" href="/notes" class="-ms-2.5 self-start">
+		{strings.notes.heading}
+	</Button>
+	{note === undefined ? (
+		<>
+			<h1 class="sr-only">{strings.notes.missingTitle}</h1>
+			<EmptyState icon="search" title={strings.notes.missingTitle}>
+				{strings.notes.missing}
+			</EmptyState>
+		</>
+	) : (
+		<>
+			<div class="flex flex-wrap items-center gap-2">
+				{category !== undefined && look !== undefined && (
+					<CategoryChip variant="label" size="sm" color={look.color} icon={look.icon}>
+						{category.name}
+					</CategoryChip>
+				)}
+				<StatusBadge status={note.status}>{statusLabels(strings.notes)[note.status]}</StatusBadge>
+			</div>
+			<h1 class="font-read text-read-display wrap-anywhere">{note.text}</h1>
+			{note.context !== null && <p class="font-ui text-body text-ink-2">{note.context}</p>}
+			<EmptyState icon="list" title={strings.notes.cardTitle}>
+				{strings.notes.card}
+			</EmptyState>
+		</>
+	)}
+</Shell>

@@ -109,6 +109,14 @@ test.describe('UI kit book', () => {
 		await expect(clear).toBeHidden()
 	})
 
+	test('applies an attachment to the list row link', async ({ page }) => {
+		await openStory(page, story('list', 'attached'))
+
+		const row = page.locator(light).getByRole('link', { name: 'Bun' })
+
+		await expect(row).toHaveAttribute('data-attached', 'true')
+	})
+
 	test('ignores a click while the button is loading', async ({ page }) => {
 		await openStory(page, story('button', 'loading'))
 

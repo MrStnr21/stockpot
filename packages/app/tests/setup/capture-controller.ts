@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
 import { drainMicrotasks } from 'bun:jsc'
+import { mock } from 'bun:test'
 import { savedNoteFactory, suggestAnswerFactory } from '#tests/factories/suggestions'
 
 import { CaptureController } from '#/features/capture/client/capture-controller.svelte'
@@ -26,6 +27,11 @@ export const captureCategories = [
 export class CaptureHarness {
 	public readonly calls: CaptureFetchCall[] = []
 
+	/** Stands in for the page event; declared before the controller, which takes it. */
+	public readonly notifyNotesChanged = mock(() => {
+		// A spec checks the calls.
+	})
+
 	public readonly controller = new CaptureController({
 		categories: captureCategories,
 		strings: en.capture,
@@ -46,6 +52,7 @@ export class CaptureHarness {
 			// No spec over this harness is signed out.
 		},
 		isOnline: () => true,
+		notifyNotesChanged: this.notifyNotesChanged,
 	})
 
 	public constructor() {

@@ -16,3 +16,13 @@ export const Selected = { args: { group: 'selected' } satisfies ComponentProps<t
 export const Disabled = { args: { group: 'disabled' } satisfies ComponentProps<typeof ListStory> }
 
 export const Loading = { args: { group: 'loading' } satisfies ComponentProps<typeof ListStory> }
+
+export const TitleTrail = {
+	args: { group: 'title-trail' } satisfies ComponentProps<typeof ListStory>,
+}
+
+export const SubtitleContent = {
+	args: { group: 'subtitle-content' } satisfies ComponentProps<typeof ListStory>,
+}
+
+export const Attached = { args: { group: 'attached' } satisfies ComponentProps<typeof ListStory> }

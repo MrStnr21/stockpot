@@ -197,6 +197,8 @@
 	--spacing-rail: 88px;
 	--spacing-sidebar: 264px;
 	--spacing-column: 680px;
+	--spacing-list: 300px;
+	--spacing-list-wide: 400px;
 	--text-body-compact: 15px;
 	--text-body-compact--line-height: 20px;
 	--toast-action-pressed-mix: 14%;

@@ -80,6 +80,26 @@ describe('CaptureController', () => {
 			expect(harness.toastTitle()).toBe('Saved: Alpha')
 		})
 
+		it('tells the page a note changed once it saved', async () => {
+			const saving = harness.controller.submit('primary')
+
+			expect(harness.notifyNotesChanged).not.toHaveBeenCalled()
+
+			harness.answerSave()
+			await saving
+
+			expect(harness.notifyNotesChanged).toHaveBeenCalledTimes(1)
+		})
+
+		it('tells the page nothing when the save fails', async () => {
+			const saving = harness.controller.submit('primary')
+
+			harness.saveCall().respond(new Response(null, { status: 500 }))
+			await saving
+
+			expect(harness.notifyNotesChanged).not.toHaveBeenCalled()
+		})
+
 		it('keeps a new draft typed while the save was on its way', async () => {
 			const saving = harness.controller.submit('primary')
 
@@ -113,6 +133,16 @@ describe('CaptureController', () => {
 
 			expect(titles).toEqual([undefined, 'Removed'])
 			expect(harness.calls).toHaveLength(1)
+			expect(harness.notifyNotesChanged).toHaveBeenCalledTimes(1)
+		})
+
+		it('tells the page nothing when the note was not removed', async () => {
+			const undoing = harness.controller.undo(9)
+
+			harness.call(0).respond(new Response(null, { status: 500 }))
+			await undoing
+
+			expect(harness.notifyNotesChanged).not.toHaveBeenCalled()
 		})
 	})
 })

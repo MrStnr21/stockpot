@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
+import { notesChangedEvent } from '#/lib/events'
+
 import {
 	createCaptureApi,
 	type CaptureApi,
@@ -30,20 +32,36 @@ export { maxTermLength, type CaptureError } from './capture-draft.svelte'
 export interface CaptureControllerOptions extends CaptureDraftOptions {
 	readonly strings: CaptureStrings
 	readonly signIn: () => void
+	/** Tells the page a note was saved or removed; by default it sends `notesChangedEvent`. */
+	readonly notifyNotesChanged?: () => void
+}
+
+function dispatchNotesChanged() {
+	// Specs and the server render have no page to tell.
+	if ('dispatchEvent' in globalThis) {
+		globalThis.dispatchEvent(new Event(notesChangedEvent))
+	}
 }
 
 /** The capture sheet's state: the draft, its save and the toast that follows. */
 export class CaptureController extends CaptureDraftState {
 	readonly #strings: CaptureStrings
 	readonly #signIn: () => void
+	readonly #notifyNotesChanged: () => void
 	readonly #api: CaptureApi
 
 	public readonly toasts = new ToastQueue()
 
-	public constructor({ strings, signIn, ...options }: CaptureControllerOptions) {
+	public constructor({
+		strings,
+		signIn,
+		notifyNotesChanged = dispatchNotesChanged,
+		...options
+	}: CaptureControllerOptions) {
 		super(options)
 		this.#strings = strings
 		this.#signIn = signIn
+		this.#notifyNotesChanged = notifyNotesChanged
 		this.#api = createCaptureApi({ fetch: options.fetch })
 	}
 
@@ -78,6 +96,10 @@ export class CaptureController extends CaptureDraftState {
 
 		if (result !== 'busy') {
 			const removed = result === 'removed'
+
+			if (removed) {
+				this.#notifyNotesChanged()
+			}
 
 			this.toasts.show(undoneToast(this.#strings, removed), removed ? removedToastMs : toastMs)
 		}
@@ -122,6 +144,8 @@ export class CaptureController extends CaptureDraftState {
 
 			return
 		}
+
+		this.#notifyNotesChanged()
 
 		if (isCurrent) {
 			this.setOpen(false)

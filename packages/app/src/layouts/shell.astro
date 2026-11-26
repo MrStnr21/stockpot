@@ -29,6 +29,11 @@ interface Props {
 	initiallyOpen?: boolean
 	/** The public offline page leaves the sheet out: it would carry the owner's categories. */
 	capture?: boolean
+	/**
+	 * `column`: one reading column. `split`: from `md`, the page fills the screen beside the rail and
+	 * draws its own columns, each scrolling on its own; phones keep the column paddings.
+	 */
+	layout?: 'column' | 'split'
 }
 
 const {
@@ -39,6 +44,7 @@ const {
 	counts = { today: null, notes: null, base: null },
 	initiallyOpen = false,
 	capture = true,
+	layout = 'column',
 } = Astro.props
 
 const strings = t(locale)
@@ -87,11 +93,14 @@ const captureCategories =
 				))}
 			</TabBar>
 		</div>
-		<main class="mx-auto flex w-full flex-col px-4 pt-[max(calc(env(safe-area-inset-top)+--spacing(3)),--spacing(6))] pb-[calc(--spacing(16)+env(safe-area-inset-bottom)+--spacing(6))] md:px-10 md:pt-14 md:pb-10 xl:px-8">
-			<div class="mx-auto flex w-full max-w-column flex-col gap-4 md:gap-5">
+		<main
+			data-layout={layout}
+			class="group/main mx-auto flex w-full flex-col px-4 pt-[max(calc(env(safe-area-inset-top)+--spacing(3)),--spacing(6))] pb-[calc(--spacing(16)+env(safe-area-inset-bottom)+--spacing(6))] md:px-10 md:pt-14 md:pb-10 xl:px-8 md:data-[layout=split]:h-dvh md:data-[layout=split]:p-0"
+		>
+			<div class="mx-auto flex w-full max-w-column flex-col gap-4 md:gap-5 md:group-data-[layout=split]/main:min-h-0 md:group-data-[layout=split]/main:max-w-none md:group-data-[layout=split]/main:flex-1 md:group-data-[layout=split]/main:gap-0">
 				<div
 					role="status"
-					class="hidden items-start gap-2.5 rounded-md bg-fill px-3.5 py-3 font-ui text-body-s text-ink-2 in-data-[connection=offline]:flex"
+					class="hidden items-start gap-2.5 rounded-md bg-fill px-3.5 py-3 font-ui text-body-s text-ink-2 in-data-[connection=offline]:flex md:group-data-[layout=split]/main:m-4"
 				>
 					<Icon name="alert" class="size-5" />
 					<span>

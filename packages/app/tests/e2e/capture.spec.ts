@@ -27,10 +27,7 @@ const listedCategory = v.object({ id: v.number(), name: v.string() })
 
 const categoryList = v.object({ categories: v.array(listedCategory) })
 
-/*
- * "The note is in the list": the notes list is WEB-4, so until then the list's own API stands in,
- * read in the page's session.
- */
+/* The saved notes with this text, read through the list's API in the page's session. */
 async function listedNotes(page: Page, text: string) {
 	const response = await page.request.get(`${origin}/api/notes?limit=100`)
 	const { notes } = v.parse(notesPage, await response.json())
@@ -45,9 +42,21 @@ async function technologyId(page: Page) {
 	return categories.find(({ name }) => name === 'Technology')?.id
 }
 
+/* The note's row in the notes list, which shows a saved note without a reload. */
+function listedRow(page: Page, text: string) {
+	return page.getByRole('main').getByRole('link', { name: text })
+}
+
 /* The sheet is an island hydrated when the browser is idle; until then N and Add do nothing new. */
 async function waitForSheet(page: Page) {
 	await expect(page.locator('astro-island[client="idle"]:not([ssr])')).toHaveCount(1)
+}
+
+/* The notes list, hydrated, so it hears about a save; and the sheet over it. */
+async function openNotes(page: Page) {
+	await page.goto(`${origin}/notes`)
+	await expect(page.locator('astro-island[client="load"]:not([ssr])')).toHaveCount(1)
+	await waitForSheet(page)
 }
 
 test.describe('capture sheet', () => {
@@ -78,8 +87,7 @@ test.describe('capture sheet', () => {
 		test.use({ viewport: { width: 1440, height: 900 } })
 
 		test.beforeEach(async ({ page }) => {
-			await page.goto(`${origin}/notes`)
-			await waitForSheet(page)
+			await openNotes(page)
 		})
 
 		test('saves the suggested category with the keyboard', async ({ page }) => {
@@ -97,6 +105,7 @@ test.describe('capture sheet', () => {
 
 			await expect(page.getByText('Saved: Kafka')).toBeVisible()
 			await expect(sheet).toBeHidden()
+			await expect(listedRow(page, 'Kafka')).toBeVisible()
 			expect(await listedNotes(page, 'Kafka')).toMatchObject([
 				{ categoryId: await technologyId(page) },
 			])
@@ -148,7 +157,7 @@ test.describe('capture sheet', () => {
 		test('saves from the Add tab and undoes the save', async ({ page }) => {
 			const sheet = page.getByRole('dialog', { name: 'New note' })
 
-			await waitForSheet(page)
+			await openNotes(page)
 			await page.getByRole('navigation').getByRole('link', { name: 'Add' }).click()
 			await sheet.getByRole('textbox', { name: 'Word, term or idea' }).fill('Idempotency')
 			await expect(sheet.getByRole('button', { name: 'Technology' })).toHaveAttribute(
@@ -158,12 +167,12 @@ test.describe('capture sheet', () => {
 			await sheet.getByRole('button', { name: 'Save', exact: true }).click()
 
 			await expect(page.getByText('Saved: Idempotency')).toBeVisible()
-			expect(await listedNotes(page, 'Idempotency')).toHaveLength(1)
+			await expect(listedRow(page, 'Idempotency')).toHaveCount(1)
 
 			await page.getByRole('button', { name: 'Undo' }).click()
 
 			await expect(page.getByText('Removed')).toBeVisible()
-			expect(await listedNotes(page, 'Idempotency')).toEqual([])
+			await expect(listedRow(page, 'Idempotency')).toHaveCount(0)
 		})
 	})
 })

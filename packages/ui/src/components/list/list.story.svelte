@@ -6,12 +6,20 @@
 	import SchemePanels from '../../book/scheme-panels.svelte'
 	import { CategoryTile } from '../category'
 	import { Icon } from '../icon'
-	import { StatusBadge } from '../status-badge'
+	import { FlagBadge, StatusBadge } from '../status-badge'
 	import ListRow from './list-row.svelte'
 	import List from './list.svelte'
 
 	interface Props {
-		group: 'in-list' | 'pressed' | 'selected' | 'disabled' | 'loading'
+		group:
+			| 'in-list'
+			| 'pressed'
+			| 'selected'
+			| 'disabled'
+			| 'loading'
+			| 'title-trail'
+			| 'subtitle-content'
+			| 'attached'
 	}
 
 	const { group }: Props = $props()
@@ -24,6 +32,24 @@
 		selected: 'Selected · multi-select',
 		disabled: 'Disabled · archived',
 		loading: 'Loading',
+		'title-trail': 'Private · flags',
+		'subtitle-content': 'Search result · marked matches',
+		attached: 'Attached gesture',
+	}
+
+	const snippet = [
+		{ text: 'A ', match: false },
+		{ text: 'kafka', match: true },
+		{ text: ' topic keeps events in order within a partition', match: false },
+	]
+
+	/* Stands in for a gesture such as a long press: it marks the row control while attached. */
+	function markAttached(node: HTMLElement): () => void {
+		node.dataset.attached = 'true'
+
+		return () => {
+			delete node.dataset.attached
+		}
 	}
 </script>
 
@@ -86,6 +112,57 @@
 					{/snippet}
 					{#snippet trail()}
 						<StatusBadge status="archived">Archived</StatusBadge>
+					{/snippet}
+				</ListRow>
+			{:else if group === 'title-trail'}
+				<ListRow title="to hedge" subtitle="to protect yourself against a loss" href="#hedge">
+					{#snippet lead()}
+						<CategoryTile color="english" icon="english" />
+					{/snippet}
+					{#snippet titleTrail()}
+						<Icon name="lock" size={16} label="Private" />
+					{/snippet}
+					{#snippet trail()}
+						<FlagBadge flag="draft">Draft</FlagBadge>
+						<StatusBadge status="ready">Ready</StatusBadge>
+					{/snippet}
+				</ListRow>
+				<ListRow title="Vector clocks" subtitle="Seen in a talk on CRDTs" href="#clocks">
+					{#snippet lead()}
+						<CategoryTile color="concept" icon="concept" />
+					{/snippet}
+					{#snippet trail()}
+						<FlagBadge flag="unsure">Unsure</FlagBadge>
+						<StatusBadge status="failed">Failed</StatusBadge>
+					{/snippet}
+				</ListRow>
+			{:else if group === 'subtitle-content'}
+				<ListRow title="Kafka" href="#kafka">
+					{#snippet lead()}
+						<CategoryTile color="tech" icon="tech" />
+					{/snippet}
+					{#snippet subtitleContent()}
+						{#each snippet as segment, index (index)}
+							{#if segment.match}
+								<mark class="rounded-xs bg-accent-soft px-px text-accent-ink">{segment.text}</mark>
+							{:else}
+								{segment.text}
+							{/if}
+						{/each}
+					{/snippet}
+					{#snippet trail()}
+						<StatusBadge status="read">Read</StatusBadge>
+					{/snippet}
+				</ListRow>
+			{:else if group === 'attached'}
+				<ListRow
+					title="Bun"
+					subtitle="Seen in the stockpot README"
+					href="#bun"
+					attach={markAttached}
+				>
+					{#snippet lead()}
+						<CategoryTile color="tech" icon="tech" />
 					{/snippet}
 				</ListRow>
 			{:else}

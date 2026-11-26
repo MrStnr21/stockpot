@@ -1,0 +1,53 @@
+---
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 The stockpot authors
+
+import { listCategories } from '#/features/categories/server'
+import NotesList from '#/features/notes/client/notes-list.svelte'
+import { countNotes } from '#/features/notes/server/counts'
+import { firstPage } from '#/features/notes/server/first-page'
+import { readFilters } from '#/features/notes/shared/filters'
+import { readTimeZone } from '#/features/settings/server'
+import Shell from '#/layouts/shell.astro'
+import { categoryLook } from '#/lib/category-look'
+import { pickLocale, t } from '#/lib/i18n'
+import { instanceDb } from '#/server/db/instance'
+
+// Sign-in sends a visitor on to setup while the instance has no owner.
+if (Astro.locals.owner === null) {
+	// oxlint-disable-next-line unicorn/prefer-module -- Astro runs the frontmatter as a function, and a page redirects by returning the response.
+	return Astro.redirect('/signin')
+}
+
+const locale = pickLocale(Astro.request.headers.get('accept-language'))
+
+const strings = t(locale)
+
+const db = await instanceDb()
+
+const categories = listCategories(db).map(({ id, name, color, icon }) => {
+	const look = categoryLook(color, icon)
+
+	return { id, name, color: look.color, icon: look.icon }
+})
+
+// A filter that does not parse, or names a category the instance lacks, is dropped: never a 400.
+const filters = readFilters(
+	Astro.url.searchParams,
+	categories.map(({ id }) => id),
+)
+---
+
+<Shell title={strings.nav.notes} {locale} current="notes" layout="split">
+	<NotesList
+		client:load
+		initial={firstPage(db, filters)}
+		counts={countNotes(db)}
+		{categories}
+		{filters}
+		timeZone={readTimeZone(db)}
+		{locale}
+		renderedAt={Date.now()}
+		strings={strings.notes}
+	/>
+</Shell>
