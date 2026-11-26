@@ -68,6 +68,7 @@ health_url() {
 	port="$(env_value PORT)"
 	case "$host" in
 	'' | 0.0.0.0 | :: | '[::]') host=localhost ;;
+	\[*\]) ;;
 	*:*) host="[$host]" ;;
 	*) ;;
 	esac

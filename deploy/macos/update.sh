@@ -97,7 +97,9 @@ else
 	partial=""
 fi
 
-ln -sfh "releases/$name" "$home/current"
+# A new link renamed over the old one, so `current` always names a release, even mid-switch.
+ln -sfh "releases/$name" "$home/current.new"
+mv -fh "$home/current.new" "$home/current"
 say "current release: $name"
 
 # 5. Restart the server on the new release, if it runs as a service.
@@ -114,6 +116,8 @@ if agent_loaded; then
 				printf '  To switch back to %s:\n' "$previous"
 				printf '    ln -sfh "releases/%s" "%s/current"\n' "$previous" "$home"
 				printf '    launchctl kickstart -k %s\n' "$service"
+				printf '  Switch back before you run another update: it keeps only the release it\n'
+				printf '  replaces, so it would remove %s.\n' "$previous"
 			fi
 			printf '  If the new release migrated the database, the copy from before the migration is\n'
 			printf '  %s/stockpot.db.pre-migration; put it back as %s explains.\n' "$db_dir" "$restore_guide"

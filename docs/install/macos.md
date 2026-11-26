@@ -132,6 +132,9 @@ launchctl kickstart -k gui/$(id -u)/local.stockpot
 Running `update.sh` with the ref of that release does the same: a release that is still in
 `releases/` is reused, not built again.
 
+Switch back before you run another update. An update keeps only the release it replaces, so an
+update run while `current` points at the release that failed would remove the one that worked.
+
 If the new release migrated the database, the old release may not open it. Put back the copy from
 before the migration, `stockpot.db.pre-migration`, as [Back up and restore the database](restore.md)
 explains for a backup.
