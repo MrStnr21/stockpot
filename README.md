@@ -54,6 +54,9 @@ data directory readable only by the account that runs stockpot, and treat its ba
 stockpot copies the database every night into `backups/` in the data directory and keeps the newest
 14; [how to restore one](docs/install/restore.md).
 
+To run stockpot on a Mac as a service that starts when you log in, with a script for updates, follow
+[Run stockpot on a Mac](docs/install/macos.md).
+
 ## First run and signing in
 
 An instance belongs to one owner. Until you create that owner, the server prints a one-time setup
