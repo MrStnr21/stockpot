@@ -7,75 +7,41 @@
  * Research happens later in a job. A delete sets `deleted_at` so the Undo toast can restore the
  * note. Deleted notes stay out of the list and answer 404 by id except when restoring them.
  */
-import { and, desc, eq, isNull, sql } from 'drizzle-orm'
+import { and, eq, isNull } from 'drizzle-orm'
 
 import { normalizeTerm } from '#/lib/normalize'
 import type { Db } from '#/server/db/client'
 import { categories, notes, terms, type NoteStatus } from '#/server/db/schema/notes'
 import { HttpError } from '#/server/http'
 
-import {
-	defaultPageSize,
-	encodeCursor,
-	maxNoteContextLength,
-	type NewNote,
-	type NoteChange,
-	type NotesQuery,
-} from './schemas'
+import { maxNoteContextLength, type NewNote, type NoteChange } from './schemas'
 import { findMergeTarget, findTermRows } from './server/history'
 import { mergeContext } from './server/merge-context'
+import { toPublicNote, type NoteRow, type PublicNote, type Queries } from './server/public-note'
 
 export {
+	bulkChangeSchema,
 	newNoteSchema,
 	noteChangeSchema,
 	noteIdSchema,
 	noteSources,
 	notesQuerySchema,
+	type BulkChange,
 	type NewNote,
 	type NoteChange,
 	type NotesQuery,
 } from './schemas'
 
-/** A note as it leaves the server. */
-export interface PublicNote {
-	readonly id: number
-	readonly text: string
-	readonly context: string | null
-	readonly url: string | null
-	readonly source: string
-	readonly categoryId: number | null
-	readonly status: NoteStatus
-	readonly private: boolean
-	readonly createdAt: Date
-	readonly updatedAt: Date
-}
+export { getNote, listNotes, selectNotes, type ListedNote, type NotesPage } from './server/list'
 
-type NoteRow = typeof notes.$inferSelect
-
-function toPublicNote(row: NoteRow): PublicNote {
-	return {
-		id: row.id,
-		text: row.text,
-		context: row.context,
-		url: row.url,
-		source: row.source,
-		categoryId: row.categoryId,
-		status: row.status,
-		private: row.isPrivate,
-		createdAt: row.createdAt,
-		updatedAt: row.updatedAt,
-	}
-}
-
-/** The database or a transaction on it: both run the same synchronous queries. */
-type Queries = Db | Parameters<Parameters<Db['transaction']>[0]>[0]
+export type { PublicNote } from './server/public-note'
 
 function notFound() {
 	return new HttpError(404, { code: 'not_found', message: 'There is no such note.' })
 }
 
 /** Answers 400 for a category that does not exist, before the foreign key could throw. */
-function requireCategory(db: Queries, categoryId: number) {
+export function requireCategory(db: Queries, categoryId: number): void {
 	const category = db
 		.select({ id: categories.id })
 		.from(categories)
@@ -183,64 +149,18 @@ export function createNote(db: Db, note: NewNote): { note: PublicNote; merged: b
 	)
 }
 
-/**
- * The list query, newest first, one row past the page so the page knows whether another follows.
- * Exported so a spec can assert that each filter reads its index: `created_at` alone, or after
- * `status` or `category_id`, with the id as the tie-break that every index already ends with.
- */
-// oxlint-disable-next-line typescript/explicit-module-boundary-types -- The Drizzle query type is long; listNotes runs it.
-export function selectNotes(db: Db, { status, categoryId, cursor, limit }: NotesQuery) {
-	const afterCursor =
-		cursor === undefined
-			? undefined
-			: sql`(${notes.createdAt}, ${notes.id}) < (${cursor.createdAt}, ${cursor.id})`
-
-	return db
-		.select()
-		.from(notes)
-		.where(
-			and(
-				isNull(notes.deletedAt),
-				status === undefined ? undefined : eq(notes.status, status),
-				categoryId === undefined ? undefined : eq(notes.categoryId, categoryId),
-				afterCursor,
-			),
-		)
-		.orderBy(desc(notes.createdAt), desc(notes.id))
-		.limit((limit ?? defaultPageSize) + 1)
-}
-
-export interface NotesPage {
-	readonly notes: PublicNote[]
-	/** Pass as `cursor` for the next page; `null` on the last one. */
-	readonly nextCursor: string | null
-}
-
-/** One page of the notes that are not deleted, newest first. */
-export function listNotes(db: Db, query: NotesQuery): NotesPage {
-	const limit = query.limit ?? defaultPageSize
-	const rows = selectNotes(db, query).all()
-	const page = rows.slice(0, limit)
-	const last = page.at(-1)
-
-	return {
-		notes: page.map((row) => toPublicNote(row)),
-		nextCursor: rows.length > limit && last !== undefined ? encodeCursor(last) : null,
-	}
-}
-
 /*
  * The statuses the owner sets, each with the statuses it may follow: read and unread, and archive.
  * `queued`, `researching` and `failed` belong to the research job (RES-1), and unarchiving is
  * "research now" (RES-3).
  */
-const ownerTransitions: Partial<Record<NoteStatus, readonly NoteStatus[]>> = {
+export const ownerTransitions: Partial<Record<NoteStatus, readonly NoteStatus[]>> = {
 	read: ['ready'],
 	ready: ['read'],
 	archived: ['new', 'ready', 'read', 'failed'],
 }
 
-function canSetStatus(from: NoteStatus, to: NoteStatus) {
+export function canSetStatus(from: NoteStatus, to: NoteStatus): boolean {
 	return ownerTransitions[to]?.includes(from) ?? false
 }
 

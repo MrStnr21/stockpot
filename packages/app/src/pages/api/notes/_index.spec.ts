@@ -22,7 +22,7 @@ const publicOrigin = 'http://127.0.0.1:4321'
 const url = `${publicOrigin}/api/notes`
 
 // A note in an answer has exactly these fields.
-const answeredNote = v.strictObject({
+const noteFields = {
 	id: v.pipe(v.number(), v.integer()),
 	text: v.string(),
 	context: v.nullable(v.string()),
@@ -33,6 +33,18 @@ const answeredNote = v.strictObject({
 	private: v.boolean(),
 	createdAt: v.pipe(v.string(), v.isoTimestamp()),
 	updatedAt: v.pipe(v.string(), v.isoTimestamp()),
+}
+
+const answeredNote = v.strictObject(noteFields)
+
+const snippetSegment = v.strictObject({ text: v.string(), match: v.boolean() })
+
+// A note in the list has the card's sense and flag too, and the snippet of a search.
+const listedNote = v.strictObject({
+	...noteFields,
+	sense: v.nullable(v.string()),
+	flag: v.nullable(v.picklist(['draft', 'unsure'])),
+	snippet: v.nullable(v.array(snippetSegment)),
 })
 
 /** The init of a POST that sends this note. */
@@ -41,8 +53,9 @@ function postBody(note: ReturnType<typeof newNoteFactory.build>) {
 }
 
 const notesPage = v.strictObject({
-	notes: v.array(answeredNote),
+	notes: v.array(listedNote),
 	nextCursor: v.nullable(v.string()),
+	total: v.nullable(v.number()),
 })
 
 describe('/api/notes', () => {
@@ -213,6 +226,7 @@ describe('/api/notes', () => {
 				'cursor: Use the nextCursor of the previous page.',
 			],
 			['a category id that is not one', 'categoryId=-1', 'categoryId: Use a positive integer.'],
+			['a search of 201 characters', `q=${'a'.repeat(201)}`, 'q: Use at most 200 characters.'],
 		])('answers 400 for %s', async (_case, search, issue) => {
 			const response = await fromWebApp(GET, {}, `${url}?${search}`)
 
@@ -232,6 +246,42 @@ describe('/api/notes', () => {
 			const response = await fromWebApp(GET, {}, `${url}?status=done`)
 
 			expect(response.status).toBe(400)
+		})
+
+		it('answers the matches of a search with their snippets and total', async () => {
+			const match = await noteRowFactory
+				.transient({ db })
+				.create({ text: 'Raft', context: 'seen in the etcd docs' })
+
+			const response = await fromWebApp(GET, {}, `${url}?q=${encodeURIComponent(' etc ')}`)
+			const page = v.parse(notesPage, await response.json())
+
+			expect([response.status, page]).toMatchObject([
+				200,
+				{
+					notes: [
+						{
+							id: match.id,
+							snippet: [
+								{ text: 'seen in the ', match: false },
+								{ text: 'etcd', match: true },
+								{ text: ' docs', match: false },
+							],
+						},
+					],
+					nextCursor: null,
+					total: 1,
+				},
+			])
+		})
+
+		it('answers 200 to a search of 200 emoji, with nothing found', async () => {
+			const response = await fromWebApp(GET, {}, `${url}?q=${encodeURIComponent('🙂'.repeat(200))}`)
+
+			expect([response.status, await response.json()]).toEqual([
+				200,
+				{ notes: [], nextCursor: null, total: 0 },
+			])
 		})
 	})
 })
