@@ -113,6 +113,24 @@ On the iPhone, with Tailscale connected:
 
 On the Mac, `tailscale serve status` lists the same address.
 
+## Turn on notifications
+
+stockpot can tell the iPhone when a Research now card is ready. On the iPhone, notifications reach
+only an app on the Home Screen (iOS 16.4 or later):
+
+1. Open the address in Safari, tap **Share**, then **Add to Home Screen**.
+2. Open stockpot from the Home Screen icon, not from Safari, and sign in.
+3. Open **Settings**, tap **Allow notifications**, then **Allow** when iOS asks.
+
+Settings then reads "On this device: the digest and Ready". Each browser and device turns them on
+for itself; on a computer, Settings → **Allow notifications** works in the browser as it is. **Turn
+off** in the same place stops them for that device.
+
+What leaves the Mac: for each notification, stockpot sends one encrypted message, padded to a fixed
+size, to the push service of the device's browser: Apple's, Google's, Mozilla's or Microsoft's. The
+push service delivers it and sees when it was sent and how big it is, but not its text. A private
+note's term never goes into a notification: it reads "a private note".
+
 ## The address is public
 
 Every HTTPS certificate is written to public Certificate Transparency logs, which anyone can search.

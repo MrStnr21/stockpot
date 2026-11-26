@@ -8,6 +8,7 @@
  */
 import { join } from 'node:path'
 
+import { vapidKeys } from '#/features/push/server/vapid'
 import { readBatchTime, readTimeZone } from '#/features/settings/server'
 import { instanceBatchJob, instanceDeeperJob, instanceResearchJob } from '#/instance'
 import { instanceAuth } from '#/server/auth'
@@ -25,6 +26,9 @@ const auth = await instanceAuth()
 auth.needsSetup()
 
 const db = await instanceDb()
+
+// Made at startup rather than by the first request that needs them, so a failure stops the server here.
+await vapidKeys(db)
 
 // An entry module, so it may hand the runner the features' jobs; server/ may not import them.
 await startRunner({

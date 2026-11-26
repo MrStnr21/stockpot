@@ -134,6 +134,14 @@ function settleEngineFailure(
 	return false
 }
 
+/* The board is cleared when the job ends, so the pages are read now. Only set when known, so a
+ * note without progress is notified with its id alone. */
+function readyNote(board: ProgressBoard | undefined, noteId: number): ReadyNote {
+	const pagesRead = board?.get(noteId)?.pages
+
+	return pagesRead === undefined ? { noteId } : { noteId, pagesRead }
+}
+
 async function research(
 	deps: ResearchDependencies,
 	payload: ResearchPayload,
@@ -184,7 +192,7 @@ async function research(
 
 		// Last, so nothing after it can throw and make a retry notify again.
 		if (payload.now === true) {
-			notifyReady(deps.notify, { noteId })
+			notifyReady(deps.notify, readyNote(deps.progress, noteId))
 		}
 	} catch (error) {
 		if (!(error instanceof EngineError && settleEngineFailure(deps, payload, error))) {

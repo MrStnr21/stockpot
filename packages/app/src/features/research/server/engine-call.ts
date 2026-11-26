@@ -15,6 +15,8 @@ import { log } from '#/server/log'
 /** A note whose card the owner asked for is saved and readable. */
 export interface ReadyNote {
 	readonly noteId: number
+	/** How many pages an idea's research read, when its engine reported progress. */
+	readonly pagesRead?: number
 }
 
 // A reset that has already passed, or passes in a moment, still waits this long before the next call.

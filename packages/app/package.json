@@ -28,6 +28,7 @@
 	"dependencies": {
 		"@astrojs/node": "^11.1.14",
 		"@astrojs/svelte": "^9.1.6",
+		"@block65/webcrypto-web-push": "2.0.0",
 		"@google/genai": "^3.6.1",
 		"@stockpot/ui": "workspace:*",
 		"@valibot/to-json-schema": "^1.8.0",

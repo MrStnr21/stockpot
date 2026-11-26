@@ -5,9 +5,12 @@
 import { Button } from '@stockpot/ui/button'
 import { EmptyState } from '@stockpot/ui/empty-state'
 
+import PushToggle from '#/features/push/client/push-toggle.svelte'
+import { vapidPublicKey } from '#/features/push/server/vapid'
 import Shell from '#/layouts/shell.astro'
 import { pickLocale, t } from '#/lib/i18n'
 import { config } from '#/server/config'
+import { instanceDb } from '#/server/db/instance'
 
 // Sign-in sends a visitor on to setup while the instance has no owner.
 if (Astro.locals.owner === null) {
@@ -18,12 +21,15 @@ if (Astro.locals.owner === null) {
 const locale = pickLocale(Astro.request.headers.get('accept-language'))
 
 const strings = t(locale)
+
+const publicKey = await vapidPublicKey(await instanceDb())
 ---
 
 <Shell title={strings.nav.settings} {locale} current="settings" heading={strings.nav.settings}>
 	<EmptyState icon="sliders" title={strings.settings.emptyTitle}>
 		{strings.settings.empty}
 	</EmptyState>
+	<PushToggle client:load {publicKey} strings={strings.push} />
 	<form method="post" action="/signout" class="flex justify-center">
 		<Button type="submit" variant="outline">
 			{strings.signOut}

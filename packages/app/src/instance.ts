@@ -6,7 +6,6 @@ import { createBatchJob } from '#/features/digest/server/batch'
 import { learnAliases, learnSense } from '#/features/notes/server/learn'
 import { requestDeeper, type DeeperResult } from '#/features/research/server/deeper'
 import { createDeeperJob, type DeeperPayload } from '#/features/research/server/depth'
-import type { ReadyNote } from '#/features/research/server/engine-call'
 import {
 	createProgressBoard,
 	researchState,
@@ -21,6 +20,7 @@ import {
 	type ResearchPayload,
 } from '#/features/research/server/pipeline'
 import { readBatchTime, readSettings, readTimeZone } from '#/features/settings/server'
+import { readyNotifier } from '#/instance-push'
 import { config } from '#/server/config'
 import type { Db } from '#/server/db/client'
 import { instanceDb } from '#/server/db/instance'
@@ -97,11 +97,6 @@ function queueAgain<Payload extends { noteId: number; now?: true }>(
 	runner.enqueue(job, payload, { runAt, priority: priorityOf(payload) })
 }
 
-// WEB-6 replaces this stub with the push feature's sender.
-function notifyReady({ noteId }: ReadyNote) {
-	log.info('A research-now card is ready', { noteId })
-}
-
 /** The board of idea research progress; one per process, like the router. */
 export const instanceProgressBoard = createProgressBoard()
 
@@ -129,7 +124,7 @@ function buildResearchJob(db: Db): JobDefinition<ResearchPayload> {
 			learnAliases(db, termId, aliases)
 			learnSense(db, termId, sense)
 		},
-		notify: notifyReady,
+		notify: readyNotifier(db),
 		progress: instanceProgressBoard,
 	})
 
@@ -173,7 +168,7 @@ function buildDeeperJob(db: Db): JobDefinition<DeeperPayload> {
 		later: (payload, runAt) => {
 			queueAgain(job, payload, runAt)
 		},
-		notify: notifyReady,
+		notify: readyNotifier(db),
 	})
 
 	return job
