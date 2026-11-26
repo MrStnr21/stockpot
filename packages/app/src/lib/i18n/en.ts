@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
+import { cardEn } from './card-en'
+
 /** The interface strings, in English: the source of truth for the keys every locale has. */
 export const en = {
 	nav: {
@@ -76,8 +78,6 @@ export const en = {
 		paneSelectedOther: '{count} notes selected',
 		paneText: 'Research them now, move them to another category, or archive them.',
 		changeCategory: 'Change category',
-		pickTitle: 'Pick a note',
-		pick: 'Its card opens here.',
 		showMore: 'Show more',
 		researchingToastOne: 'Researching 1 note',
 		researchingToastOther: 'Researching {count} notes',
@@ -92,10 +92,6 @@ export const en = {
 		selectLimitToast: 'Select up to 100 notes at a time',
 		bulkFailedToast: 'Couldn’t reach your server. Nothing changed.',
 		loadFailedToast: 'Couldn’t reach your server.',
-		cardTitle: 'The card is on its way',
-		card: 'This page will show the note’s card.',
-		missingTitle: 'There is no such note',
-		missing: 'It was deleted, or the link is wrong.',
 	},
 	base: {
 		emptyTitle: 'Base is empty',
@@ -170,6 +166,7 @@ export const en = {
 		emptyTitle: 'Add a note',
 		empty: 'Save a word, term or idea, and it comes back explained in tomorrow’s digest.',
 	},
+	card: cardEn,
 } as const
 
 /** The shape of a locale: the keys of `en` at every level, each leaf holding any string. */

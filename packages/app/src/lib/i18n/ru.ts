@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
+import { cardRu } from './card-ru'
 import type { Messages } from './en'
 
 export const ru: Messages = {
@@ -77,8 +78,6 @@ export const ru: Messages = {
 		paneSelectedOther: 'Выбрано заметок: {count}',
 		paneText: 'Изучите их сейчас, перенесите в другую категорию или отправьте в архив.',
 		changeCategory: 'Сменить категорию',
-		pickTitle: 'Выберите заметку',
-		pick: 'Здесь откроется её карточка.',
 		showMore: 'Показать ещё',
 		researchingToastOne: 'Отправлено на изучение: {count}',
 		researchingToastOther: 'Отправлено на изучение: {count}',
@@ -93,10 +92,6 @@ export const ru: Messages = {
 		selectLimitToast: 'За раз можно выбрать не больше 100 заметок',
 		bulkFailedToast: 'Не удалось связаться с сервером. Ничего не изменилось.',
 		loadFailedToast: 'Не удалось связаться с сервером.',
-		cardTitle: 'Карточка уже в пути',
-		card: 'Здесь будет карточка этой заметки.',
-		missingTitle: 'Такой заметки нет',
-		missing: 'Её удалили, или ссылка неверна.',
 	},
 	base: {
 		emptyTitle: 'База пуста',
@@ -171,4 +166,5 @@ export const ru: Messages = {
 		emptyTitle: 'Добавить заметку',
 		empty: 'Сохраните слово, термин или идею, и завтрашний дайджест объяснит их.',
 	},
+	card: cardRu,
 }

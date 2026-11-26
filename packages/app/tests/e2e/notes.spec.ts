@@ -68,10 +68,13 @@ async function holdJobRunner(page: Page) {
 	expect(deleted.ok()).toBe(true)
 }
 
-/** The list is an island loaded with the page; until it hydrates, Select and the chips do nothing. */
+/**
+ * The list and the card pane inside it are islands loaded with the page; until they hydrate, Select
+ * and the chips do nothing.
+ */
 async function openNotes(page: Page) {
 	await page.goto(`${origin}/notes`)
-	await expect(page.locator('astro-island[client="load"]:not([ssr])')).toHaveCount(1)
+	await expect(page.locator('astro-island[client="load"]:not([ssr])')).toHaveCount(2)
 }
 
 function rows(page: Page) {

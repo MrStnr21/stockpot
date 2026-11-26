@@ -6,15 +6,16 @@
 	import { Button } from '@stockpot/ui/button'
 	import { EmptyState } from '@stockpot/ui/empty-state'
 	import { List } from '@stockpot/ui/list'
-	import { onDestroy, onMount } from 'svelte'
+	import { onDestroy, onMount, type Snippet } from 'svelte'
 
-	import { notesChangedEvent } from '#/lib/events'
+	import { listenToOthers, NotesAnnouncer } from '#/lib/events'
 
 	import type { NoteFilters } from '../shared/filters'
 	import type { CountRow, NotesCategory, NotesPage, NoteRow as Row } from '../shared/types'
 	import BulkPane from './bulk-pane.svelte'
 	import CategoryMenu from './category-menu.svelte'
 	import CategoryPicker from './category-picker.svelte'
+	import { CurrentNote } from './current-note.svelte'
 	import { endsSelection, nearEnd } from './dom'
 	import NoteRow from './note-row.svelte'
 	import { NotesController } from './notes-controller.svelte'
@@ -34,10 +35,27 @@
 		locale: string
 		renderedAt: number
 		strings: NotesListStrings
+		/** The note open beside the list, from the page's `note` parameter. */
+		current?: number | null
+		/** The card pane the page puts beside the list from 768 up; kept mounted in select mode. */
+		children?: Snippet
 	}
 
-	const { initial, counts, categories, filters, timeZone, locale, renderedAt, strings }: Props =
-		$props()
+	const {
+		initial,
+		counts,
+		categories,
+		filters,
+		timeZone,
+		locale,
+		renderedAt,
+		strings,
+		current = null,
+		children,
+	}: Props = $props()
+
+	// The list already shows its own bulk changes: it never reloads on its own announcement.
+	const announcer = new NotesAnnouncer()
 
 	// The island's props are its starting state; the controller owns every change after that.
 	const controller = new NotesController({
@@ -50,9 +68,12 @@
 		renderedAt,
 		strings,
 		fetch: async (url, init) => fetch(url, init),
+		notesChanged: announcer.announce,
 	})
 
 	const byId = new Map(categories.map((category) => [category.id, category]))
+
+	const currentNote = new CurrentNote({ initial: current })
 
 	const labels = statusLabels(strings)
 
@@ -78,17 +99,11 @@
 		controller.loadMore()
 	})
 
-	function reload() {
-		controller.notesChanged()
-	}
-
-	onMount(() => {
-		globalThis.addEventListener(notesChangedEvent, reload)
-
-		return () => {
-			globalThis.removeEventListener(notesChangedEvent, reload)
-		}
-	})
+	onMount(() =>
+		listenToOthers(announcer, () => {
+			controller.notesChanged()
+		}),
+	)
 
 	onDestroy(() => {
 		controller.destroy()
@@ -118,6 +133,10 @@
 				{strings}
 				selecting={isSelecting}
 				selected={controller.selected.has(row.id)}
+				current={currentNote.current === row.id}
+				onopen={(event, id) => {
+					currentNote.click(event, id)
+				}}
 				ontoggle={(id) => {
 					controller.toggle(id)
 				}}
@@ -130,8 +149,10 @@
 {/snippet}
 
 <div class="flex flex-col gap-4 md:h-full md:min-h-0 md:flex-row md:gap-0">
+	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 	<section
 		aria-labelledby={headingId}
+		onkeydown={(event) => currentNote.keydown(event, view.rows, isSelecting)}
 		class="flex flex-col gap-4 md:w-list md:shrink-0 md:overflow-y-auto md:border-e md:border-line md:px-4 md:pt-12 md:pb-10 xl:w-list-wide xl:gap-3.5 xl:px-5 xl:pt-10"
 	>
 		<header class="flex min-h-10.5 items-end justify-between gap-3 pt-2">
@@ -254,12 +275,15 @@
 		</div>
 	</section>
 
-	<aside class="hidden md:block md:min-w-0 md:flex-1 md:overflow-y-auto md:px-5 md:pt-36 xl:px-12">
+	<aside class="hidden md:block md:min-w-0 md:flex-1 md:overflow-y-auto">
 		{#if isSelecting}
-			<BulkPane {controller} {strings} onmove={openPicker} />
-		{:else}
-			<EmptyState icon="list" title={strings.pickTitle}>{strings.pick}</EmptyState>
+			<div class="px-5 pt-36 xl:px-12">
+				<BulkPane {controller} {strings} onmove={openPicker} />
+			</div>
 		{/if}
+		<div hidden={isSelecting} class="h-full">
+			{@render children?.()}
+		</div>
 	</aside>
 </div>
 

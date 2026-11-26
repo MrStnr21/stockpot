@@ -6,7 +6,7 @@ import { faker } from '@faker-js/faker'
 import { newNoteFactory } from '#tests/factories/notes'
 import * as v from 'valibot'
 
-import { encodeCursor, newNoteSchema, notesQuerySchema } from './schemas'
+import { encodeCursor, newNoteSchema, noteChangeSchema, notesQuerySchema } from './schemas'
 
 describe('notes schemas', () => {
 	describe('newNoteSchema', () => {
@@ -42,6 +42,25 @@ describe('notes schemas', () => {
 			const query = v.parse(notesQuerySchema, { cursor: encodeCursor({ createdAt, id }) })
 
 			expect(query.cursor).toEqual({ createdAt: createdAt.getTime(), id })
+		})
+	})
+
+	describe('noteChangeSchema', () => {
+		it.each([{ kept: true }, { kept: false }, { kept: true, status: 'read' }])(
+			'takes %p',
+			(change) => {
+				expect(v.safeParse(noteChangeSchema, change).success).toBe(true)
+			},
+		)
+
+		it('refuses an empty change and names every field it takes', () => {
+			const issues = v.safeParse(noteChangeSchema, {}).issues?.map(({ message }) => message)
+
+			expect(issues).toEqual(['Change categoryId, status, deleted or kept.'])
+		})
+
+		it('refuses kept that is not a boolean', () => {
+			expect(v.safeParse(noteChangeSchema, { kept: 'yes' }).success).toBe(false)
 		})
 	})
 })

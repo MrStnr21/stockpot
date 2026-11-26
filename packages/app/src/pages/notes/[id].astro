@@ -3,17 +3,18 @@
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
 /*
- * A note on its own page, until the opened card arrives (WEB-5): the note, its category and status,
- * and where it was seen. A missing or deleted note answers 404.
+ * A note's opened card on its own page: on a phone with the actions pinned where the tab bar was,
+ * from 768 in the reading column. A missing or deleted note answers 404.
  */
 import { Button } from '@stockpot/ui/button'
-import { CategoryChip } from '@stockpot/ui/category'
 import { EmptyState } from '@stockpot/ui/empty-state'
-import { StatusBadge } from '@stockpot/ui/status-badge'
 
 import { listCategories } from '#/features/categories/server'
 import { statusLabels } from '#/features/notes/client/row-view'
-import { getNote } from '#/features/notes/server'
+import CardPage from '#/features/research/client/card-page.svelte'
+import { readCardView } from '#/features/research/server/card-view'
+import { readBatchTime, readTimeZone } from '#/features/settings/server'
+import { instanceProgressBoard } from '#/instance'
 import Shell from '#/layouts/shell.astro'
 import { categoryLook } from '#/lib/category-look'
 import { pickLocale, t } from '#/lib/i18n'
@@ -33,46 +34,47 @@ const db = await instanceDb()
 
 const rawId = Astro.params.id ?? ''
 
-const note = /^[1-9]\d{0,14}$/u.test(rawId) ? getNote(db, Number(rawId)) : undefined
+const view = /^[1-9]\d{0,14}$/u.test(rawId)
+	? readCardView(db, instanceProgressBoard, { noteId: Number(rawId), now: new Date() })
+	: null
 
-const category =
-	note === undefined || note.categoryId === null
-		? undefined
-		: listCategories(db).find(({ id }) => id === note.categoryId)
+const categories = listCategories(db).map(({ id, name, color, icon }) => {
+	const look = categoryLook(color, icon)
 
-const look = category === undefined ? undefined : categoryLook(category.color, category.icon)
+	return { id, name, color: look.color, icon: look.icon }
+})
 
-if (note === undefined) {
+if (view === null) {
 	Astro.response.status = 404
 }
 ---
 
-<Shell title={note?.text ?? strings.notes.missingTitle} {locale} current="notes">
-	<Button variant="ghost" size="sm" href="/notes" class="-ms-2.5 self-start">
-		{strings.notes.heading}
-	</Button>
-	{note === undefined ? (
+<Shell
+	title={view?.note.text ?? strings.card.missingTitle}
+	{locale}
+	current="notes"
+	tabBar={view === null}
+>
+	{view === null ? (
 		<>
-			<h1 class="sr-only">{strings.notes.missingTitle}</h1>
-			<EmptyState icon="search" title={strings.notes.missingTitle}>
-				{strings.notes.missing}
+			<Button variant="ghost" size="sm" href="/notes" class="-ms-2.5 self-start">
+				{strings.notes.heading}
+			</Button>
+			<h1 class="sr-only">{strings.card.missingTitle}</h1>
+			<EmptyState icon="search" title={strings.card.missingTitle}>
+				{strings.card.missing}
 			</EmptyState>
 		</>
 	) : (
-		<>
-			<div class="flex flex-wrap items-center gap-2">
-				{category !== undefined && look !== undefined && (
-					<CategoryChip variant="label" size="sm" color={look.color} icon={look.icon}>
-						{category.name}
-					</CategoryChip>
-				)}
-				<StatusBadge status={note.status}>{statusLabels(strings.notes)[note.status]}</StatusBadge>
-			</div>
-			<h1 class="font-read text-read-display wrap-anywhere">{note.text}</h1>
-			{note.context !== null && <p class="font-ui text-body text-ink-2">{note.context}</p>}
-			<EmptyState icon="list" title={strings.notes.cardTitle}>
-				{strings.notes.card}
-			</EmptyState>
-		</>
+		<CardPage
+			client:load
+			initial={view}
+			{categories}
+			timeZone={readTimeZone(db)}
+			batchTime={readBatchTime(db)}
+			{locale}
+			strings={strings.card}
+			statuses={statusLabels(strings.notes)}
+		/>
 	)}
 </Shell>

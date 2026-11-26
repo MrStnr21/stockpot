@@ -164,9 +164,19 @@ export function canSetStatus(from: NoteStatus, to: NoteStatus): boolean {
 	return ownerTransitions[to]?.includes(from) ?? false
 }
 
+/** When a kept note was kept: keeping it again keeps the first time, so Base keeps its order. */
+function keptAtAfter(keptAt: Date | null, kept: boolean | undefined): Date | null | undefined {
+	if (kept === undefined) {
+		return undefined
+	}
+
+	return kept ? (keptAt ?? new Date()) : null
+}
+
 /**
- * Changes a note's category or status, or restores it after a delete. A deleted note answers 404
- * unless the change restores it; a status the owner may not set from the current one answers 409.
+ * Changes a note's category or status, keeps it in Base or takes it out, or restores it after a
+ * delete. A deleted note answers 404 unless the change restores it; a status the owner may not set
+ * from the current one answers 409.
  */
 export function changeNote(db: Db, id: number, change: NoteChange): PublicNote {
 	return db.transaction((tx) => {
@@ -193,6 +203,7 @@ export function changeNote(db: Db, id: number, change: NoteChange): PublicNote {
 			.set({
 				categoryId: change.categoryId,
 				status: change.status,
+				keptAt: keptAtAfter(note.keptAt, change.kept),
 				deletedAt: isRestore ? null : undefined,
 			})
 			.where(eq(notes.id, id))

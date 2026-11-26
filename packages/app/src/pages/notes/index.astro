@@ -4,10 +4,14 @@
 
 import { listCategories } from '#/features/categories/server'
 import NotesList from '#/features/notes/client/notes-list.svelte'
+import { statusLabels } from '#/features/notes/client/row-view'
 import { countNotes } from '#/features/notes/server/counts'
 import { firstPage } from '#/features/notes/server/first-page'
 import { readFilters } from '#/features/notes/shared/filters'
-import { readTimeZone } from '#/features/settings/server'
+import CardPane from '#/features/research/client/card-pane.svelte'
+import { readCardView } from '#/features/research/server/card-view'
+import { readBatchTime, readTimeZone } from '#/features/settings/server'
+import { instanceProgressBoard } from '#/instance'
 import Shell from '#/layouts/shell.astro'
 import { categoryLook } from '#/lib/category-look'
 import { pickLocale, t } from '#/lib/i18n'
@@ -36,6 +40,13 @@ const filters = readFilters(
 	Astro.url.searchParams,
 	categories.map(({ id }) => id),
 )
+
+// The note open beside the list: a positive id of a note that exists, else none (never a 400).
+const noteParam = Astro.url.searchParams.get('note') ?? ''
+
+const opened = /^[1-9]\d{0,14}$/u.test(noteParam)
+	? readCardView(db, instanceProgressBoard, { noteId: Number(noteParam), now: new Date() })
+	: null
 ---
 
 <Shell title={strings.nav.notes} {locale} current="notes" layout="split">
@@ -49,5 +60,17 @@ const filters = readFilters(
 		{locale}
 		renderedAt={Date.now()}
 		strings={strings.notes}
-	/>
+		current={opened?.note.id ?? null}
+	>
+		<CardPane
+			client:load
+			initial={opened}
+			{categories}
+			timeZone={readTimeZone(db)}
+			batchTime={readBatchTime(db)}
+			{locale}
+			strings={strings.card}
+			statuses={statusLabels(strings.notes)}
+		/>
+	</NotesList>
 </Shell>

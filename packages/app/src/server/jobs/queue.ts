@@ -4,7 +4,7 @@
 import { and, asc, desc, eq, inArray, lte, min, sql, type SQLWrapper } from 'drizzle-orm'
 
 import type { Db } from '#/server/db/client'
-import { jobs } from '#/server/db/schema/jobs'
+import { jobs, type JobStatus } from '#/server/db/schema/jobs'
 
 /** Job priorities: a "now" job, such as research the owner asked for, overtakes the nightly batch. */
 export const priorities = { batch: 0, now: 10 } as const
@@ -41,6 +41,73 @@ export function activeJobPayloads(db: Queryable, kind: string): unknown[] {
 		.where(and(eq(jobs.kind, kind), inArray(jobs.status, ['queued', 'running'])))
 		.all()
 		.map(({ payload }) => payload)
+}
+
+const jobSummary = {
+	id: jobs.id,
+	kind: jobs.kind,
+	payload: jobs.payload,
+	priority: jobs.priority,
+	status: jobs.status,
+	runAt: jobs.runAt,
+	createdAt: jobs.createdAt,
+	attempts: jobs.attempts,
+	lastError: jobs.lastError,
+	finishedAt: jobs.finishedAt,
+}
+
+/** What `jobsOfKinds` and `newestJobForNote` read of a job: everything but its run's start time. */
+export type JobSummary = Omit<JobRow, 'startedAt' | 'updatedAt'>
+
+/**
+ * The jobs of these kinds in these statuses, in no particular order. The status filter comes first,
+ * so `jobs_queue_idx` finds the rows; a spec checks the plan.
+ */
+// oxlint-disable-next-line typescript/explicit-module-boundary-types -- The Drizzle query type is long; jobsOfKinds runs it.
+export function selectJobsOfKinds(
+	db: Queryable,
+	kinds: readonly string[],
+	statuses: readonly JobStatus[],
+) {
+	return db
+		.select(jobSummary)
+		.from(jobs)
+		.where(and(inArray(jobs.status, [...statuses]), inArray(jobs.kind, [...kinds])))
+}
+
+export function jobsOfKinds(
+	db: Queryable,
+	kinds: readonly string[],
+	statuses: readonly JobStatus[],
+): JobSummary[] {
+	if (kinds.length === 0 || statuses.length === 0) {
+		return []
+	}
+
+	return selectJobsOfKinds(db, kinds, statuses).all()
+}
+
+/**
+ * The newest job of a kind whose payload names this note, in any status. It reads the table
+ * backwards by id and stops at the first match, so the note's latest job is found without reading
+ * older rows; a spec checks the plan.
+ */
+// oxlint-disable-next-line typescript/explicit-module-boundary-types -- The Drizzle query type is long; newestJobForNote runs it.
+export function selectNewestJobForNote(db: Queryable, kind: string, noteId: number) {
+	return db
+		.select(jobSummary)
+		.from(jobs)
+		.where(and(eq(jobs.kind, kind), eq(sql`json_extract(${jobs.payload}, '$.noteId')`, noteId)))
+		.orderBy(desc(jobs.id))
+		.limit(1)
+}
+
+export function newestJobForNote(
+	db: Queryable,
+	kind: string,
+	noteId: number,
+): JobSummary | undefined {
+	return selectNewestJobForNote(db, kind, noteId).get()
 }
 
 /**

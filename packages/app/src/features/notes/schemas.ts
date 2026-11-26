@@ -66,17 +66,23 @@ const changedCategory = v.nullable(rowId)
 
 const noteStatus = v.picklist(noteStatuses)
 
-/** A change to a note; a field left out keeps its value, and `categoryId: null` clears the category. */
+const keepInBase = v.boolean()
+
+/**
+ * A change to a note; a field left out keeps its value, and `categoryId: null` clears the category.
+ * `kept` puts the note in Base or takes it out.
+ */
 export const noteChangeSchema = v.pipe(
 	v.object({
 		categoryId: v.optional(changedCategory),
 		status: v.optional(noteStatus),
 		deleted: v.optional(restore),
+		kept: v.optional(keepInBase),
 	}),
 	v.check(
-		({ categoryId, status, deleted }) =>
-			[categoryId, status, deleted].some((value) => value !== undefined),
-		'Change categoryId, status or deleted.',
+		({ categoryId, status, deleted, kept }) =>
+			[categoryId, status, deleted, kept].some((value) => value !== undefined),
+		'Change categoryId, status, deleted or kept.',
 	),
 )
 

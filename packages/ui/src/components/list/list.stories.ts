@@ -26,3 +26,5 @@ export const SubtitleContent = {
 }
 
 export const Attached = { args: { group: 'attached' } satisfies ComponentProps<typeof ListStory> }
+
+export const Current = { args: { group: 'current' } satisfies ComponentProps<typeof ListStory> }
