@@ -3,6 +3,7 @@
 
 import { $, build, CryptoHasher, file, Glob, write } from 'bun'
 import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import node from '@astrojs/node'
 import svelte from '@astrojs/svelte'
 import tailwindcss from '@tailwindcss/vite'
@@ -148,7 +149,7 @@ function serviceWorker(): AstroIntegration {
 		name: 'stockpot:service-worker',
 		hooks: {
 			'astro:build:done': async ({ dir }) => {
-				const root = dir.pathname
+				const root = fileURLToPath(dir)
 				const unused = new Set(['sw.js', 'icons/icon.svg'])
 
 				const files = await Array.fromAsync(new Glob('**/*').scan({ cwd: root }))
