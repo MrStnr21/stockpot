@@ -188,6 +188,22 @@ describe('push subscriptions', () => {
 				expect(rows(db).map(({ endpoint }) => endpoint)).toEqual(endpoints.slice(1))
 			})
 
+			it('drops the browser unseen the longest, not one that subscribed again', () => {
+				setSystemTime(new Date(Date.UTC(2026, 10, 27, 10, 0)))
+				saveSubscription(db, subscriptionFactory.build({ endpoint: endpoints[1] }), 'en')
+
+				setSystemTime(new Date(Date.UTC(2026, 10, 27, 10, 1)))
+				const newest = subscriptionFactory.build()
+				saveSubscription(db, newest, 'en')
+
+				const stored = rows(db).map(({ endpoint }) => endpoint)
+
+				expect(stored).toHaveLength(maxSubscriptions)
+				expect(stored).toContain(endpoints[1])
+				expect(stored).toContain(newest.endpoint)
+				expect(stored).not.toContain(endpoints[2])
+			})
+
 			it('keeps ten when a stored browser subscribes again', () => {
 				saveSubscription(db, subscriptionFactory.build({ endpoint: endpoints[1] }), 'en')
 

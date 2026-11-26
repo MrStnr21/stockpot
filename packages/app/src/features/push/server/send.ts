@@ -9,7 +9,7 @@
  * to notify that browser, and the keys and the JWT are secrets.
  */
 import { encryptNotification, type PushSubscription } from '@block65/webcrypto-web-push'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 
 import { pushPayload } from '#/features/push/shared/payload'
 import type { Locale } from '#/lib/i18n'
@@ -85,7 +85,11 @@ function removeRow(
 	row: SubscriptionRow,
 	{ message, status }: { message: string; status?: number },
 ) {
-	db.delete(pushSubscriptions).where(eq(pushSubscriptions.id, row.id)).run()
+	/* Only the keys that were sent: a browser that subscribed again while this request was out keeps
+	 * its id, and a late 404 or 410 must not delete its new keys. */
+	db.delete(pushSubscriptions)
+		.where(and(eq(pushSubscriptions.id, row.id), eq(pushSubscriptions.p256dh, row.p256dh)))
+		.run()
 
 	log.info(message, {
 		subscription: row.id,

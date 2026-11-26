@@ -95,7 +95,8 @@ export const removalSchema = v.object(
 
 /**
  * Stores a browser's subscription in its locale, or updates the row with the same endpoint, then drops
- * the oldest rows past the cap.
+ * the oldest rows past the cap. A browser subscribes again on every visit, and that renews its
+ * `created_at`, so the cap drops the devices unseen the longest, not one in daily use.
  */
 export function saveSubscription(db: Db, subscription: Subscription, locale: Locale): void {
 	const { endpoint, expirationTime, keys } = subscription
@@ -110,7 +111,10 @@ export function saveSubscription(db: Db, subscription: Subscription, locale: Loc
 	db.transaction((tx) => {
 		tx.insert(pushSubscriptions)
 			.values({ endpoint, ...values })
-			.onConflictDoUpdate({ target: pushSubscriptions.endpoint, set: values })
+			.onConflictDoUpdate({
+				target: pushSubscriptions.endpoint,
+				set: { ...values, createdAt: new Date() },
+			})
 			.run()
 
 		const kept = tx

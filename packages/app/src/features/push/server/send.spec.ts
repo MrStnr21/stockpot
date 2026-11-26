@@ -118,6 +118,25 @@ describe('createPushSender', () => {
 			expect(endpoints()).toEqual([kept.subscription.endpoint])
 		})
 
+		it('keeps the new keys of a browser that subscribed again while the request was out', async () => {
+			const gone = await subscribed()
+			const other = await pushClient()
+
+			const renewed = { ...other.subscription, endpoint: gone.subscription.endpoint }
+
+			const fetchMock = fakePushFetch(() => {
+				saveSubscription(db, renewed, 'en')
+
+				return new Response(null, { status: 410 })
+			})
+
+			await sender(fetchMock).send(readyKafka)
+
+			expect(db.select({ p256dh: pushSubscriptions.p256dh }).from(pushSubscriptions).all()).toEqual(
+				[{ p256dh: renewed.keys.p256dh }],
+			)
+		})
+
 		it('deletes the subscription on 404 Not Found', async () => {
 			await subscribed()
 
