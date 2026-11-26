@@ -52,10 +52,10 @@ async function waitForSheet(page: Page) {
 	await expect(page.locator('astro-island[client="idle"]:not([ssr])')).toHaveCount(1)
 }
 
-/* The notes list, hydrated, so it hears about a save; and the sheet over it. */
+/* The notes list and the card pane inside it, hydrated, so the list hears about a save; and the sheet over it. */
 async function openNotes(page: Page) {
 	await page.goto(`${origin}/notes`)
-	await expect(page.locator('astro-island[client="load"]:not([ssr])')).toHaveCount(1)
+	await expect(page.locator('astro-island[client="load"]:not([ssr])')).toHaveCount(2)
 	await waitForSheet(page)
 }
 

@@ -85,7 +85,7 @@ test.describe('notes list with 1,000 notes', () => {
 
 		await page.setViewportSize({ width: 390, height: 844 })
 		await page.goto(`${origin}/notes`)
-		await expect(page.locator('astro-island[client="load"]:not([ssr])')).toHaveCount(1)
+		await expect(page.locator('astro-island[client="load"]:not([ssr])')).toHaveCount(2)
 		await expect(rows(page)).toHaveCount(50)
 
 		await page.getByRole('button', { name: 'Show more' }).scrollIntoViewIfNeeded()
