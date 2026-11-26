@@ -57,8 +57,9 @@ bun run e2e
 CI runs the same commands. `ci.yml` runs the whole list on every pull request and every push to
 `main`, plus a gitleaks scan of the history; on `main` it also runs `bun run notices -- --check`.
 `notices.yml` regenerates the third-party notices on pull requests that change dependencies. A pull
-request can be merged only when the `ci.yml` jobs pass. Run the full list locally before you ask for
-review: it is faster than waiting for CI to find the same failure.
+request cannot be merged until the `ci.yml` jobs pass ([Review](#review) lists the rest). Run the
+full list locally before you ask for review: it is faster than waiting for CI to find the same
+failure.
 
 For a user-facing change, also try the flow in a browser at phone and desktop widths, and say in
 the pull request what you checked.
@@ -108,9 +109,10 @@ or from Dependabot, takes `[DEPS]` without a number.
   says why the change is needed, **Behaviour** what changes for a user or a contributor, **Issue**
   holds `Closes #n` so that merging closes the story, and **Checks run** ticks the checks you ran.
 - Keep a pull request to its story. Unrelated fixes get their own issue.
-- Pull requests are **squash-merged** once CI is green, so the branch's history can be as granular
-  as is useful. The squashed commit's subject is `[ID] Summary (#<PR>)`, and its body has the
-  commit shape above, ending with `Closes #<n>` instead of `Refs`.
+- Pull requests are **squash-merged** once they meet the conditions under [Review](#review), so the
+  branch's history can be as granular as is useful. The squashed commit's subject is
+  `[ID] Summary (#<PR>)`, and its body has the commit shape above, ending with `Closes #<n>` instead
+  of `Refs`.
 
 ## Review
 
@@ -119,8 +121,10 @@ Every change is reviewed against the [engineering principles](docs/principles.md
 Expect questions about measurements for anything on a budgeted path.
 
 Answer every review comment: fix what is valid, and explain what you decline. After each update,
-rerun the checks the change affects. A pull request is merged only when CI is green and every
-comment has an answer.
+rerun the checks the change affects. A pull request is merged only when its head commit has the
+three `ci.yml` jobs green and the `review/independent` status, every review thread is resolved, and
+every comment has an answer; the `main` ruleset enforces all but the last. The status records an
+independent review of that one commit, so a new push needs a new review.
 
 ## Guidelines
 
