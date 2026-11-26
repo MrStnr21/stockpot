@@ -8,7 +8,14 @@ import { jobRowFactory } from '#tests/factories/jobs'
 import { createTestDb, type TestDb } from '#tests/setup/db'
 import { sql } from 'drizzle-orm'
 
-import { activeJobPayloads, nextDueJob } from './queue'
+import {
+	activeJobPayloads,
+	jobsOfKinds,
+	newestJobForNote,
+	nextDueJob,
+	selectJobsOfKinds,
+	selectNewestJobForNote,
+} from './queue'
 
 describe('queue', () => {
 	let sqlite: Database
@@ -62,6 +69,68 @@ describe('queue', () => {
 			expect(payloads).toHaveLength(2)
 			expect(payloads).toContainEqual(queued.payload)
 			expect(payloads).toContainEqual(running.payload)
+		})
+	})
+	describe('jobsOfKinds', () => {
+		it('finds the rows through jobs_queue_idx by status', () => {
+			const query = selectJobsOfKinds(db, ['research', 'deeper'], ['queued', 'running']).getSQL()
+			const plan = db.all<{ detail: string }>(sql`EXPLAIN QUERY PLAN ${query}`)
+
+			expect(plan.map(({ detail }) => detail)).toEqual([
+				'SEARCH jobs USING INDEX jobs_queue_idx (status=?)',
+			])
+		})
+
+		it('returns the jobs of the requested kinds and statuses only', async () => {
+			const kind = `${faker.word.verb()}-${faker.string.alphanumeric(6)}`
+			const other = `${kind}-other`
+			const job = jobRowFactory.transient({ db })
+
+			const queued = await job.create({ kind, status: 'queued', payload: { noteId: 1 } })
+			const failed = await job.create({ kind: other, status: 'failed', lastError: 'Boom' })
+			await job.create({ kind, status: 'done' })
+			await job.create({ kind: `${kind}-later`, status: 'queued' })
+
+			const found = jobsOfKinds(db, [kind, other], ['queued', 'failed'])
+
+			expect(found.map(({ id }) => id).toSorted((a, b) => a - b)).toEqual(
+				[queued.id, failed.id].toSorted((a, b) => a - b),
+			)
+			expect(found.find(({ id }) => id === failed.id)).toMatchObject({
+				kind: other,
+				status: 'failed',
+				lastError: 'Boom',
+				attempts: 0,
+				finishedAt: null,
+			})
+		})
+
+		it('returns nothing for no kinds or no statuses', () => {
+			expect(jobsOfKinds(db, [], ['queued'])).toEqual([])
+			expect(jobsOfKinds(db, ['research'], [])).toEqual([])
+		})
+	})
+
+	describe('newestJobForNote', () => {
+		it('reads the table backwards by id and stops at the first match, without a sort', () => {
+			const query = selectNewestJobForNote(db, 'research', 1).getSQL()
+			const plan = db.all<{ detail: string }>(sql`EXPLAIN QUERY PLAN ${query}`)
+
+			expect(plan.map(({ detail }) => detail)).toEqual(['SCAN jobs'])
+		})
+
+		it('returns the newest job of the kind for the note, whatever its status', async () => {
+			const kind = `${faker.word.verb()}-${faker.string.alphanumeric(6)}`
+			const noteId = faker.number.int({ min: 1, max: 1_000_000 })
+			const job = jobRowFactory.transient({ db }).params({ kind })
+
+			await job.create({ payload: { noteId }, status: 'failed' })
+			const newest = await job.create({ payload: { noteId }, status: 'done' })
+			await job.create({ payload: { noteId: noteId + 1 }, status: 'failed' })
+			await job.create({ kind: `${kind}-other`, payload: { noteId }, status: 'failed' })
+
+			expect(newestJobForNote(db, kind, noteId)).toMatchObject({ id: newest.id, status: 'done' })
+			expect(newestJobForNote(db, kind, noteId + 2)).toBeUndefined()
 		})
 	})
 })
