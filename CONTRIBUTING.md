@@ -109,8 +109,8 @@ or from Dependabot, takes `[DEPS]` without a number.
   says why the change is needed, **Behaviour** what changes for a user or a contributor, **Issue**
   holds `Closes #n` so that merging closes the story, and **Checks run** ticks the checks you ran.
 - Keep a pull request to its story. Unrelated fixes get their own issue.
-- Pull requests are **squash-merged** once CI is green, so the branch's history can be as granular
-  as is useful. The squashed commit's subject is `[ID] Summary (#<PR>)`, and its body has the
+- Pull requests are **squash-merged** once they meet the conditions under [Review](#review), so the
+  branch's history can be as granular as is useful. The squashed commit's subject is `[ID] Summary (#<PR>)`, and its body has the
   commit shape above, ending with `Closes #<n>` instead of `Refs`.
 
 ## Review
