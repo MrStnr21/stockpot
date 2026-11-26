@@ -15,6 +15,7 @@ import {
 } from './list-loader'
 import { createNotesApi, type NotesApi } from './notes-api'
 import { bulkToast, errorToast, NotesToasts, type NotesStrings } from './notes-toasts.svelte'
+import { replaceFiltersUrl } from './open-note'
 import {
 	keepSelected,
 	noSelection,
@@ -48,12 +49,6 @@ export interface NotesControllerOptions {
 
 function signInPage() {
 	globalThis.location.assign('/signin')
-}
-
-function replaceUrl(search: string) {
-	const { history, location } = globalThis
-
-	history.replaceState(history.state, '', `${location.pathname}${search}${location.hash}`)
 }
 
 /** The notes list's state: rows and filters, counts, select mode, bulk actions and toasts. */
@@ -97,7 +92,7 @@ export class NotesController {
 		this.categories = options.categories
 		this.#strings = options.strings
 		this.#signIn = options.signIn ?? signInPage
-		this.#writeUrl = options.writeUrl ?? replaceUrl
+		this.#writeUrl = options.writeUrl ?? replaceFiltersUrl
 		this.#api = createNotesApi({ fetch: options.fetch })
 		this.#loader = new ListLoader({
 			api: this.#api,
