@@ -55,7 +55,8 @@ stockpot copies the database every night into `backups/` in the data directory a
 14; [how to restore one](docs/install/restore.md).
 
 To run stockpot on a Mac as a service that starts when you log in, with a script for updates, follow
-[Run stockpot on a Mac](docs/install/macos.md).
+[Run stockpot on a Mac](docs/install/macos.md). To open it from your phone over HTTPS, put it behind
+`tailscale serve`: [Serve stockpot over HTTPS with Tailscale](docs/install/tailscale.md).
 
 ## First run and signing in
 
