@@ -34,6 +34,13 @@ export function nextRowId(ids: readonly number[], from: number, key: string): nu
 	return ids[index + step] ?? null
 }
 
+/** The note a row link opens, from its `/notes/<id>` address; `null` for any other link. */
+export function noteIdOfLink(href: string | null): number | null {
+	const id = /^\/notes\/(?<id>[1-9]\d{0,14})$/u.exec(href ?? '')?.groups?.id
+
+	return id === undefined ? null : Number(id)
+}
+
 export const noteParam = 'note'
 
 /** The search with the open note set, or taken out for `null`; every other parameter stays. */

@@ -97,6 +97,10 @@ export class CardController {
 			async () => this.refresh(),
 			options,
 		)
+	}
+
+	/** Starts polling in the browser, once the card is on the page. */
+	public start(): void {
 		this.#poller.update()
 	}
 

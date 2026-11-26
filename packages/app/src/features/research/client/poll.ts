@@ -81,7 +81,7 @@ export class Poller {
 	readonly #options: PollerOptions
 	readonly #timers: PollTimers
 	readonly #visibility: PageVisibility
-	readonly #unwatch: () => void
+	#unwatch: (() => void) | null = null
 
 	#timer: TimerHandle | null = null
 	#inFlight = false
@@ -91,14 +91,16 @@ export class Poller {
 		this.#options = options
 		this.#timers = options.timers ?? windowTimers
 		this.#visibility = options.visibility ?? documentVisibility
-		this.#unwatch = this.#visibility.watch(() => {
-			this.#visibilityChanged()
-		})
 	}
 
 	/** Plans the next look from the card on screen; call it whenever the card changes. */
 	public update(): void {
 		this.#clear()
+
+		// Watched from the first plan on, which only a browser makes: the server renders without a page.
+		this.#unwatch ??= this.#visibility.watch(() => {
+			this.#visibilityChanged()
+		})
 
 		const delay = this.#options.delay()
 
@@ -115,7 +117,7 @@ export class Poller {
 	public stop(): void {
 		this.#stopped = true
 		this.#clear()
-		this.#unwatch()
+		this.#unwatch?.()
 	}
 
 	async #look() {

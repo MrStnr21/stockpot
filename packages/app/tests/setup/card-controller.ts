@@ -98,6 +98,7 @@ export class CardHarness {
 			},
 			...options,
 		})
+		this.controller.start()
 	}
 
 	public toast(): string | undefined {

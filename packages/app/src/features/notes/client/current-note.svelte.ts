@@ -8,7 +8,7 @@
  */
 import { noteOpened } from '#/lib/events'
 
-import { nextRowId, opensInPane, withNote, type RowClick } from './open-note'
+import { nextRowId, noteIdOfLink, opensInPane, withNote, type RowClick } from './open-note'
 
 export interface CurrentNoteOptions {
 	/** The note the page opened from its URL. */
@@ -96,5 +96,29 @@ export class CurrentNote {
 		this.current = id
 		this.#writeUrl(id)
 		this.#announce(id)
+	}
+
+	/**
+	 * A key down in the list: an arrow key on a focused row link opens the next row and moves the
+	 * focus to it. Nothing happens while a dialog is open.
+	 */
+	public keydown(
+		event: KeyboardEvent,
+		rows: readonly { readonly id: number }[],
+		selecting: boolean,
+	): void {
+		const link = event.target instanceof Element ? event.target.closest('a') : null
+		const from = noteIdOfLink(link?.getAttribute('href') ?? null)
+
+		if (from === null || document.querySelector('dialog[open]') !== null) {
+			return
+		}
+
+		const ids = rows.map(({ id }) => id)
+		const next = this.key(event, { ids, from, selecting })
+
+		if (next !== null && event.currentTarget instanceof Element) {
+			event.currentTarget.querySelector<HTMLElement>(`a[href="/notes/${next}"]`)?.focus()
+		}
 	}
 }

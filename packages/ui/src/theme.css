@@ -203,6 +203,9 @@
 	--spacing-list-wide: 400px;
 	/* One row of Google Search suggestions under a card's sources. */
 	--spacing-suggestions: 3.5rem;
+	/* An opened card lays its comparison out as a table from this width of its own (the boards' 560 px). */
+	--container-card-wide: 560px;
+	--spacing-compare-name: 120px;
 	--text-body-compact: 15px;
 	--text-body-compact--line-height: 20px;
 	--toast-action-pressed-mix: 14%;

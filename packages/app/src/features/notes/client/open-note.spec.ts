@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from 'bun:test'
 
-import { keepNote, nextRowId, opensInPane, withNote } from './open-note'
+import { keepNote, nextRowId, noteIdOfLink, opensInPane, withNote } from './open-note'
 
 const plain = { button: 0, metaKey: false, ctrlKey: false, shiftKey: false, altKey: false }
 
@@ -63,5 +63,18 @@ describe('open note', () => {
 			expect(keepNote('?status=read', '?status=ready')).toBe('?status=read')
 			expect(keepNote('?status=read', '?note=abc')).toBe('?status=read')
 		})
+	})
+
+	describe('noteIdOfLink', () => {
+		it('reads the note of a row link', () => {
+			expect(noteIdOfLink('/notes/42')).toBe(42)
+		})
+
+		it.each([null, '/notes', '/notes/0', '/notes/4x', '/today', 'https://example.com/notes/4'])(
+			'reads %p as no note',
+			(href) => {
+				expect(noteIdOfLink(href)).toBeNull()
+			},
+		)
 	})
 })

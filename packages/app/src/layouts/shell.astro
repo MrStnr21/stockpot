@@ -34,6 +34,8 @@ interface Props {
 	 * draws its own columns, each scrolling on its own; phones keep the column paddings.
 	 */
 	layout?: 'column' | 'split'
+	/** The phone tab bar; an opened card draws its own action bar in its place. */
+	tabBar?: boolean
 }
 
 const {
@@ -45,6 +47,7 @@ const {
 	initiallyOpen = false,
 	capture = true,
 	layout = 'column',
+	tabBar = true,
 } = Astro.props
 
 const strings = t(locale)
@@ -78,21 +81,23 @@ const captureCategories =
 	<div class="min-h-dvh md:pl-rail xl:pl-sidebar">
 		<SideRail label={strings.nav.label} {current} {counts} strings={strings.nav} />
 		<Sidebar {current} {counts} {strings} sourceUrl={config.sourceUrl} />
-		<div class="fixed inset-x-0 bottom-0 z-5 md:hidden">
-			<TabBar label={strings.nav.label}>
-				{navItems.map((item) => (
-					<Tab
-						href={item.href}
-						icon={item.icon}
-						current={item.key === current}
-						add={item.key === 'add'}
-						badge={item.key === 'today' ? counts.today : null}
-					>
-						{strings.nav[item.key]}
-					</Tab>
-				))}
-			</TabBar>
-		</div>
+		{tabBar && (
+			<div class="fixed inset-x-0 bottom-0 z-5 md:hidden">
+				<TabBar label={strings.nav.label}>
+					{navItems.map((item) => (
+						<Tab
+							href={item.href}
+							icon={item.icon}
+							current={item.key === current}
+							add={item.key === 'add'}
+							badge={item.key === 'today' ? counts.today : null}
+						>
+							{strings.nav[item.key]}
+						</Tab>
+					))}
+				</TabBar>
+			</div>
+		)}
 		<main
 			data-layout={layout}
 			class="group/main mx-auto flex w-full flex-col px-4 pt-[max(calc(env(safe-area-inset-top)+--spacing(3)),--spacing(6))] pb-[calc(--spacing(16)+env(safe-area-inset-bottom)+--spacing(6))] md:px-10 md:pt-14 md:pb-10 xl:px-8 md:data-[layout=split]:h-dvh md:data-[layout=split]:p-0"

@@ -20,12 +20,26 @@
 		/** Select mode: a tap toggles the row instead of opening the note. */
 		selecting: boolean
 		selected: boolean
+		/** Its card is open beside the list. */
+		current: boolean
 		ontoggle: (id: number) => void
 		onpress: (id: number) => void
+		/** A click on the row's link outside select mode. */
+		onopen: (event: MouseEvent & { currentTarget: EventTarget }, id: number) => void
 	}
 
-	const { row, view, statusLabels, strings, selecting, selected, ontoggle, onpress }: Props =
-		$props()
+	const {
+		row,
+		view,
+		statusLabels,
+		strings,
+		selecting,
+		selected,
+		current,
+		ontoggle,
+		onpress,
+		onopen,
+	}: Props = $props()
 
 	const press = longPress(() => {
 		onpress(row.id)
@@ -67,10 +81,13 @@
 	href={`/notes/${row.id}`}
 	selectable={selecting}
 	{selected}
+	current={current && !selecting}
 	onclick={selecting
 		? () => {
 				ontoggle(row.id)
 			}
-		: undefined}
+		: (event) => {
+				onopen(event, row.id)
+			}}
 	attach={press}
 />
