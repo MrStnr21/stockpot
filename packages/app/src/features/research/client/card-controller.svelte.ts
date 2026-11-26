@@ -12,6 +12,7 @@ import type { CardView } from '../shared/card-view'
 import { sendAction, type ActionKind, type ActionOutcome, type CardAction } from './card-actions'
 import { createCardApi, type CardApi, type CardResult, type JsonFetch } from './card-api'
 import { cardLayout, type CardLayout, type Depth, type NotionState } from './card-panel'
+import { CardLoads, refetches, settlement, type GoneState } from './card-settle'
 import type { CardStrings } from './card-text'
 import { CardToasts } from './card-toasts.svelte'
 import { cardPoller, type CardPollerOptions, type Poller } from './poll'
@@ -20,10 +21,13 @@ export type CardState =
 	/** The pane before a note is picked. */
 	| { readonly kind: 'empty' }
 	| { readonly kind: 'card'; readonly view: CardView }
-	/** Deleted from this card or elsewhere; Undo only brings back what this card deleted. */
-	| { readonly kind: 'deleted'; readonly view: CardView; readonly canUndo: boolean }
-	/** There is no such note, or it was deleted before the card could show it. */
-	| { readonly kind: 'missing' }
+	/**
+	 * `deleted`: from this card or elsewhere; Undo only brings back what this card deleted.
+	 * `missing`: there is no such note, or it was deleted before the card could show it.
+	 */
+	| GoneState
+	/** The pane could not load the card of note `id`, which the list marks current: it offers Try again. */
+	| { readonly kind: 'unreachable'; readonly id: number }
 
 export interface CardControllerOptions extends CardPollerOptions {
 	/** The card the server rendered, or `null` for an empty pane. */
@@ -66,19 +70,19 @@ export class CardController {
 	declare public readonly canAct: boolean
 
 	readonly #api: CardApi
+	readonly #loads: CardLoads
 	readonly #strings: CardStrings
 	readonly #signIn: () => void
 	readonly #notesChanged: () => void
 	readonly #poller: Poller
 
 	#noteId: number | null
-	#sequence = 0
-	#request: AbortController | null = null
 
 	public constructor(options: CardControllerOptions) {
 		const notion = options.notion ?? 'off'
 
 		this.#api = createCardApi({ fetch: options.fetch })
+		this.#loads = new CardLoads(this.#api)
 		this.#strings = options.strings
 		this.#signIn = options.signIn ?? signInPage
 		this.#notesChanged = options.notesChanged ?? announceNotesChanged
@@ -108,9 +112,14 @@ export class CardController {
 		this.picked = depth
 	}
 
-	/** The pane shows another note's card; picking the note on screen again does nothing. */
+	/**
+	 * The pane shows another note's card. Picking the note on screen, or the one on its way, again
+	 * does nothing; after its card failed to load, it tries again.
+	 */
 	public async open(id: number): Promise<void> {
-		if (id === this.#noteId && this.state.kind !== 'empty') {
+		const { kind } = this.state
+
+		if (id === this.#noteId && (this.loading || (kind !== 'empty' && kind !== 'unreachable'))) {
 			return
 		}
 
@@ -122,15 +131,31 @@ export class CardController {
 
 		if (result !== null) {
 			this.loading = false
-			this.#show(result, { quiet: false })
+
+			// The list and the URL already name this note: the old card must not stay with dead buttons.
+			if (result.kind === 'failed') {
+				this.state = { kind: 'unreachable', id }
+			} else {
+				this.#show(result, { quiet: false })
+			}
 		}
 	}
 
-	/** Polling: the card on screen again, quietly. An action's own fetch takes precedence. */
+	/** Try again on a card that failed to load. */
+	public async retry(): Promise<void> {
+		if (this.state.kind === 'unreachable') {
+			await this.open(this.state.id)
+		}
+	}
+
+	/**
+	 * Polling, or notes changed elsewhere on the page: the card on screen again, quietly. An action's
+	 * own fetch takes precedence, and a deleted card keeps its panel and its Undo.
+	 */
 	public async refresh(): Promise<void> {
 		const id = this.#noteId
 
-		if (id === null || this.running !== null || this.loading) {
+		if (id === null || this.state.kind !== 'card' || this.running !== null || this.loading) {
 			return
 		}
 
@@ -154,14 +179,14 @@ export class CardController {
 		}
 
 		this.running = action.kind
+		// A poll on its way would answer from before the action: a 404 would take Undo away, a 200
+		// would bring back a deleted card.
+		this.#loads.cancel()
 
 		try {
 			const outcome = await sendAction(this.#api, view, { action, strings: this.#strings })
 
-			// The pane moved on to another note meanwhile: this answer is no longer the card's.
-			if (this.#noteId === view.note.id) {
-				await this.#settle(view, outcome)
-			}
+			await this.#settle(view, outcome)
 		} finally {
 			this.running = null
 			this.#poller.update()
@@ -170,8 +195,7 @@ export class CardController {
 
 	public destroy(): void {
 		this.#poller.stop()
-		this.#sequence += 1
-		this.#request?.abort()
+		this.#loads.cancel()
 		this.toasts.destroy()
 	}
 
@@ -186,88 +210,40 @@ export class CardController {
 		return state.kind === 'card' ? state.view : null
 	}
 
+	/** The pane may have moved on meanwhile: then only the list hears of it, and the card stays. */
 	async #settle(view: CardView, outcome: ActionOutcome) {
-		switch (outcome.kind) {
-			case 'done':
-			case 'conflict': {
-				await this.#refetch(view.note.id)
+		const { id } = view.note
 
-				if (outcome.kind === 'conflict') {
-					this.toasts.show(this.#strings.conflictToast)
-				} else {
-					this.picked = outcome.depth ?? this.picked
-					this.#toast(outcome.toast)
-					this.#notesChanged()
-				}
+		if (refetches(outcome) && this.#noteId === id) {
+			const result = await this.#load(id)
 
-				break
+			if (result !== null) {
+				this.#show(result, { quiet: false })
 			}
+		}
 
-			case 'deleted': {
-				this.state = { kind: 'deleted', view, canUndo: outcome.canUndo }
-				this.#notesChanged()
+		const onScreen = this.#noteId === id
+		const settled = settlement(view, outcome, { onScreen, strings: this.#strings })
 
-				break
-			}
+		this.state = settled.state ?? this.state
+		this.picked = settled.depth ?? this.picked
 
-			case 'missing': {
-				this.state = { kind: 'missing' }
-				this.#notesChanged()
+		if (settled.toast !== null) {
+			this.toasts.show(settled.toast.title, settled.toast.tone)
+		}
 
-				break
-			}
+		if (settled.notesChanged) {
+			this.#notesChanged()
+		}
 
-			case 'signIn': {
-				this.#signIn()
-
-				break
-			}
-
-			case 'error': {
-				this.toasts.show(outcome.toast, 'error')
-
-				break
-			}
-
-			default: {
-				throw new Error('An action ended in a way the card does not know.')
-			}
+		if (settled.signIn) {
+			this.#signIn()
 		}
 	}
 
-	#toast(title: string | null) {
-		if (title !== null) {
-			this.toasts.show(title)
-		}
-	}
-
-	async #refetch(id: number) {
-		const result = await this.#load(id)
-
-		if (result !== null) {
-			this.#show(result, { quiet: false })
-		}
-	}
-
-	/** The card of `id`, or `null` when a newer request replaced this one. */
+	/** The card of `id`, or `null` when a newer request replaced this one or the pane moved on. */
 	async #load(id: number): Promise<CardResult<CardView> | null> {
-		this.#sequence += 1
-
-		const sequence = this.#sequence
-		const request = new AbortController()
-
-		this.#request?.abort()
-		this.#request = request
-
-		const result = await this.#api.card(id, request.signal)
-
-		if (sequence !== this.#sequence || id !== this.#noteId) {
-			return null
-		}
-
-		this.#request = null
-
-		return result
+		return this.#loads.load(id, () => id === this.#noteId)
 	}
 
 	#show(result: CardResult<CardView>, { quiet }: { quiet: boolean }) {

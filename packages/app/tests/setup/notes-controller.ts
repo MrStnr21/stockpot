@@ -41,6 +41,9 @@ export class NotesHarness {
 
 	public signIns = 0
 
+	/** How often the list told the page its notes changed. */
+	public notesChanged = 0
+
 	public readonly controller: NotesController
 
 	public constructor(options: Partial<NotesControllerOptions> = {}) {
@@ -65,6 +68,9 @@ export class NotesHarness {
 			},
 			writeUrl: (search) => {
 				this.urls.push(search)
+			},
+			notesChanged: () => {
+				this.notesChanged += 1
 			},
 			now: () => notesRenderedAt,
 			...options,

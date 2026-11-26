@@ -193,10 +193,18 @@ export function canArchive(view: CardView): boolean {
 	return ['new', 'ready', 'read', 'failed'].includes(view.note.status)
 }
 
+/** The frame loads nothing on its own: inline styles and `data:` images only, until a link is tapped. */
+const suggestionsPolicy = "default-src 'none'; style-src 'unsafe-inline'; img-src data:"
+
 /*
- * Google's Search Suggestions as the frame's document, unmodified after two tags: links open a new
- * tab, and no page they open learns this instance's address.
+ * Google's Search Suggestions as the frame's document, unmodified after three tags: nothing loads
+ * from elsewhere before a tap, links open a new tab, and no page they open learns this instance's
+ * address.
  */
 export function suggestionsDocument(html: string): string {
-	return `<base target="_blank"><meta name="referrer" content="no-referrer">${html}`
+	return [
+		`<meta http-equiv="Content-Security-Policy" content="${suggestionsPolicy}">`,
+		'<base target="_blank"><meta name="referrer" content="no-referrer">',
+		html,
+	].join('')
 }

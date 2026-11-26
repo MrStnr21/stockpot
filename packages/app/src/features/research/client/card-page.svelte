@@ -6,11 +6,12 @@
 	import { Button, IconButton } from '@stockpot/ui/button'
 	import { onDestroy, onMount } from 'svelte'
 
+	import { NotesAnnouncer } from '#/lib/events'
 	import type { CardMessages } from '#/lib/i18n/card-en'
 
 	import type { CardView } from '../shared/card-view'
 	import { CardController } from './card-controller.svelte'
-	import { connectCard, NotesAnnouncer } from './card-island'
+	import { connectCard } from './card-island'
 	import { canArchive } from './card-screen'
 	import MoreSheet from './more-sheet.svelte'
 	import OpenedCard from './opened-card.svelte'

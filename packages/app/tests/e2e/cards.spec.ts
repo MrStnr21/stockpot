@@ -159,6 +159,25 @@ test.describe('opened cards', () => {
 		await expect(rowLink(page, 'Idempotency')).toBeFocused()
 	})
 
+	test('offers Try again in the pane when a picked card fails to load at 1440 px', async ({
+		page,
+	}) => {
+		await page.setViewportSize({ width: 1440, height: 900 })
+		await openPane(page, '')
+
+		const cardUrl = `${origin}/api/notes/${ids.get('03')}/card`
+		const pane = page.locator('main aside')
+
+		await page.route(cardUrl, async (route) => route.abort())
+		await rowLink(page, 'Ollama').click()
+		await expect(pane.getByRole('heading', { name: 'Couldn’t open this card' })).toBeVisible()
+		await expect(rowLink(page, 'Ollama')).toHaveAttribute('aria-current', 'true')
+
+		await page.unroute(cardUrl)
+		await rowLink(page, 'Ollama').click()
+		await expect(pane.getByRole('heading', { level: 2 })).toHaveText('Ollama')
+	})
+
 	test('gives a private English note no YouGlish link', async ({ page }) => {
 		await page.setViewportSize({ width: 390, height: 844 })
 		await openCard(page, ids.get('private'))

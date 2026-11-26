@@ -97,6 +97,9 @@
 			onundo={() => {
 				run({ kind: 'undo' })
 			}}
+			onretry={() => {
+				controller.retry().catch(() => null)
+			}}
 		/>
 	{/if}
 </div>

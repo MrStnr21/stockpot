@@ -5,11 +5,12 @@
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte'
 
+	import { NotesAnnouncer } from '#/lib/events'
 	import type { CardMessages } from '#/lib/i18n/card-en'
 
 	import type { CardView } from '../shared/card-view'
 	import { CardController } from './card-controller.svelte'
-	import { connectCard, NotesAnnouncer } from './card-island'
+	import { connectCard } from './card-island'
 	import OpenedCard from './opened-card.svelte'
 
 	interface Props {

@@ -6,7 +6,7 @@
  * category, the newest card of each depth level, the jobs that write them, and an idea's progress.
  * Four reads on one handle, each through an index (a spec checks the plans).
  */
-import { and, eq, isNull } from 'drizzle-orm'
+import { and, eq, isNull, sql } from 'drizzle-orm'
 import * as v from 'valibot'
 
 import type { Block } from '#/features/research/shared/blocks'
@@ -64,7 +64,8 @@ export function selectNoteCards(db: Db, noteId: number) {
 			depth: explanations.depth,
 			language: explanations.language,
 			body: explanations.body,
-			sources: explanations.sources,
+			// As stored text: SQLite takes any text here (unlike `body`), and a row that is not JSON must not throw.
+			sources: sql<string>`${explanations.sources}`,
 			searchSuggestions: explanations.searchSuggestions,
 			isUncertain: explanations.isUncertain,
 			isDraft: explanations.isDraft,
@@ -124,7 +125,12 @@ const storedSource = v.fallback(v.nullable(cardSourceSchema), null)
 const storedSources = v.fallback(v.array(storedSource), [])
 
 function sourcesOf(row: CardRow): CardSource[] {
-	return v.parse(storedSources, row.sources).filter((source) => source !== null)
+	try {
+		return v.parse(storedSources, JSON.parse(row.sources)).filter((source) => source !== null)
+	} catch {
+		// Text that is not JSON at all reads as no sources, like any other odd value.
+		return []
+	}
 }
 
 function levelCard(row: CardRow, blocks: Block[] | null, job: JobView | null): LevelCard {

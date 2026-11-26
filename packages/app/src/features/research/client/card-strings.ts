@@ -76,5 +76,6 @@ export interface CardStrings {
 	readonly failedToast: string
 	readonly loadFailedToast: string
 	readonly conflictToast: string
+	readonly deletedToast: string
 	readonly jobsUnavailableToast: string
 }

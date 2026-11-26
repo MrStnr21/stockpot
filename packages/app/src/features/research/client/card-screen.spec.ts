@@ -117,9 +117,15 @@ describe('card screen', () => {
 		]).toEqual([true, false, false])
 	})
 
-	it('opens suggestion links in a new tab and sends no referrer', () => {
-		expect(suggestionsDocument('<a href="https://google.com/search?q=x">x</a>')).toBe(
-			'<base target="_blank"><meta name="referrer" content="no-referrer"><a href="https://google.com/search?q=x">x</a>',
+	it('loads nothing before a tap, opens suggestion links in a new tab and sends no referrer', () => {
+		const html = '<style>.chip{color:red}</style><a href="https://google.com/search?q=x">x</a>'
+
+		expect(suggestionsDocument(html)).toBe(
+			[
+				'<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'; img-src data:">',
+				'<base target="_blank"><meta name="referrer" content="no-referrer">',
+				html,
+			].join(''),
 		)
 	})
 })

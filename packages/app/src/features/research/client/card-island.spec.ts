@@ -5,9 +5,9 @@ import { afterEach, beforeEach, describe, expect, it, jest } from 'bun:test'
 import { cardView, levelCard, levels } from '#tests/factories/card-views'
 import { CardHarness } from '#tests/setup/card-controller'
 
-import { noteOpened, notesChangedEvent } from '#/lib/events'
+import { noteOpened, NotesAnnouncer, notesChangedEvent } from '#/lib/events'
 
-import { connectCard, NotesAnnouncer } from './card-island'
+import { connectCard } from './card-island'
 
 describe('card island', () => {
 	let harness: CardHarness

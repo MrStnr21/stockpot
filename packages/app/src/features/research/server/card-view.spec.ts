@@ -182,6 +182,16 @@ describe('readCardView', () => {
 		])
 	})
 
+	it('reads stored sources that are not JSON as no sources, and the card as usual', async () => {
+		const { id } = card(1)
+
+		sqlite.run("UPDATE explanations SET sources = 'oops' WHERE id = ?", [id])
+
+		const level = read()?.levels[0].card
+
+		expect([level?.sources, level?.blocks?.[0]?.kind]).toEqual([[], 'text'])
+	})
+
 	it('shows the newest card of each depth, and the higher id at the same time', async () => {
 		card(1, { isDraft: true, createdAt: new Date('2026-11-18T06:30:00Z') })
 		card(1, { engine: 'openai-compatible' })

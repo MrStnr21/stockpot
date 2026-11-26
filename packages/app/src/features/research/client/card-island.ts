@@ -6,28 +6,9 @@
  * looks again when another island changes notes; it does not answer its own announcement, which
  * follows a fetch of its own. In the pane it also follows the note the list opens.
  */
-import { noteOpenedEvent, notesChangedEvent, openedNoteId } from '#/lib/events'
+import { listenToOthers, noteOpenedEvent, openedNoteId, type NotesAnnouncer } from '#/lib/events'
 
 import type { CardController } from './card-controller.svelte'
-
-/** Announces `notesChangedEvent` and remembers, for the length of the dispatch, that it is its own. */
-export class NotesAnnouncer {
-	#own = false
-
-	public readonly announce = (): void => {
-		this.#own = true
-
-		try {
-			globalThis.dispatchEvent(new Event(notesChangedEvent))
-		} finally {
-			this.#own = false
-		}
-	}
-
-	public isOwn(): boolean {
-		return this.#own
-	}
-}
 
 export interface CardIslandOptions {
 	readonly controller: CardController
@@ -38,12 +19,6 @@ export interface CardIslandOptions {
 
 /** Starts the card's polling and listens on the page for it; returns the cleanup. */
 export function connectCard({ controller, announcer, followsList }: CardIslandOptions): () => void {
-	function notesChanged() {
-		if (!announcer.isOwn()) {
-			controller.refresh().catch(() => null)
-		}
-	}
-
 	function opened(event: Event) {
 		const id = openedNoteId(event)
 
@@ -53,14 +28,17 @@ export function connectCard({ controller, announcer, followsList }: CardIslandOp
 	}
 
 	controller.start()
-	globalThis.addEventListener(notesChangedEvent, notesChanged)
+
+	const stopListening = listenToOthers(announcer, () => {
+		controller.refresh().catch(() => null)
+	})
 
 	if (followsList) {
 		globalThis.addEventListener(noteOpenedEvent, opened)
 	}
 
 	return () => {
-		globalThis.removeEventListener(notesChangedEvent, notesChanged)
+		stopListening()
 		globalThis.removeEventListener(noteOpenedEvent, opened)
 	}
 }

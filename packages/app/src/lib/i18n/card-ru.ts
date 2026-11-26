@@ -51,6 +51,8 @@ export const cardRu: CardMessages = {
 	missing: 'Её удалили, или ссылка неверна.',
 	pickTitle: 'Выберите заметку',
 	pick: 'Здесь откроется её карточка.',
+	unreachableTitle: 'Не удалось открыть карточку',
+	unreachable: 'Сервер не ответил. Ничего не изменилось.',
 	headingTranslation: 'Перевод',
 	headingExamples: 'Примеры',
 	headingModelSentences: 'Фразы для образца',
@@ -161,5 +163,6 @@ export const cardRu: CardMessages = {
 	failedToast: 'Сервер недоступен. Ничего не изменилось.',
 	loadFailedToast: 'Сервер недоступен.',
 	conflictToast: 'Заметка изменилась в другом месте. Показываю последнюю версию.',
+	deletedToast: 'Заметка удалена',
 	jobsUnavailableToast: 'Исследование сейчас не запустить. Попробуйте чуть позже.',
 }

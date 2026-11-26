@@ -81,5 +81,6 @@ export const cardStrings: CardStrings = {
 	failedToast: 'Couldn’t reach your server. Nothing changed.',
 	loadFailedToast: 'Couldn’t reach your server.',
 	conflictToast: 'This note changed elsewhere. Showing the latest.',
+	deletedToast: 'Note deleted',
 	jobsUnavailableToast: 'Research can’t start right now. Try again in a moment.',
 }

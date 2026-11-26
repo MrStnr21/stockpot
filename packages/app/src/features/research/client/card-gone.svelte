@@ -17,9 +17,10 @@
 		backLink: boolean
 		busy: boolean
 		onundo: () => void
+		onretry: () => void
 	}
 
-	const { state, strings, backLink, busy, onundo }: Props = $props()
+	const { state, strings, backLink, busy, onundo, onretry }: Props = $props()
 </script>
 
 {#if state.kind === 'deleted'}
@@ -34,6 +35,13 @@
 					<Button variant="ghost" href="/notes">{strings.backToNotes}</Button>
 				{/if}
 			</div>
+		{/snippet}
+	</EmptyState>
+{:else if state.kind === 'unreachable'}
+	<EmptyState icon="alert" title={strings.unreachableTitle}>
+		{strings.unreachable}
+		{#snippet action()}
+			<Button onclick={onretry}>{strings.tryAgain}</Button>
 		{/snippet}
 	</EmptyState>
 {:else if state.kind === 'missing'}

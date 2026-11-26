@@ -7,7 +7,7 @@ import { explanationRowFactory } from '#tests/factories/explanations'
 import { noteRowFactory } from '#tests/factories/notes'
 import { sendThroughMiddleware, signedInInstance, type SignedInInstance } from '#tests/setup/auth'
 import { createTestDb, type TestDb } from '#tests/setup/db'
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import * as v from 'valibot'
 
 import { cardViewSchema } from '#/features/research/shared/card-view'
@@ -79,6 +79,15 @@ describe('GET /api/notes/:id/card', () => {
 			blocks: [{ kind: 'text', heading: 'explanation' }],
 			sources: [{ title: 'A page', url: 'https://example.com/page' }],
 		})
+	})
+
+	it('answers 200 without the sources when the stored sources are not JSON', async () => {
+		db.run(sql`UPDATE explanations SET sources = 'oops' WHERE note_id = ${noteId}`)
+
+		const response = await send()
+		const view = v.parse(cardViewSchema, await response.json())
+
+		expect([response.status, view.levels[0].card?.sources]).toEqual([200, []])
 	})
 
 	it('takes a device token too', async () => {

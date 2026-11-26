@@ -95,9 +95,9 @@ describe('CardController polling and the pane', () => {
 			harness.requests.call(1).fail(new TypeError('Failed to fetch'))
 			harness.controller.run({ kind: 'got' }).catch(() => null)
 
-			expect([harness.requests.calls.length, harness.toast()]).toEqual([
+			expect([harness.requests.calls.length, harness.controller.state]).toEqual([
 				2,
-				'Couldn’t reach your server.',
+				{ kind: 'unreachable', id: 4 },
 			])
 		})
 	})

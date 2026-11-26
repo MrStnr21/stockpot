@@ -63,7 +63,7 @@ export class CurrentNote {
 		this.#writeUrl = options.writeUrl ?? replaceUrl
 	}
 
-	/** A click on a row link; Enter on the current row opens nothing new. */
+	/** A click on a row link; on the current row the pane opens nothing new unless its card failed to load. */
 	public click(event: RowClick & Cancelable, id: number): void {
 		if (!opensInPane(event, this.#isWide())) {
 			return
@@ -88,13 +88,16 @@ export class CurrentNote {
 		return next
 	}
 
+	/**
+	 * The current row is announced again with the URL left as it is: the pane ignores a note it
+	 * shows, and loads it again after its card failed to load.
+	 */
 	public open(id: number): void {
-		if (id === this.current) {
-			return
+		if (id !== this.current) {
+			this.current = id
+			this.#writeUrl(id)
 		}
 
-		this.current = id
-		this.#writeUrl(id)
 		this.#announce(id)
 	}
 

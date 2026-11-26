@@ -133,6 +133,20 @@ describe('NotesController', () => {
 			expect(harness.controller.view.rows.map(({ categoryId }) => categoryId)).toEqual([2, 2, 2])
 		})
 
+		it.each([['research'], ['archive']] as const)(
+			'tells the page once its notes changed after %s, without reloading the list',
+			async (kind) => {
+				const running = harness.controller.run({ kind })
+
+				harness.requests.call(0).answer({ results: [] })
+				await running
+
+				const reloads = harness.requests.to('/api/notes').filter(({ method }) => method === 'GET')
+
+				expect([harness.notesChanged, reloads]).toEqual([1, []])
+			},
+		)
+
 		it.each<[string, (call: NotesFetchCall) => void]>([
 			[
 				'a 500',
@@ -167,7 +181,7 @@ describe('NotesController', () => {
 			expect(harness.controller.view.rows).toEqual(rows)
 			expect(harness.controller.selection.ids).toEqual(ids(rows))
 			expect(harness.toast()).toBe('Couldn’t reach your server. Nothing changed.')
-			expect(harness.requests.calls).toHaveLength(1)
+			expect([harness.requests.calls.length, harness.notesChanged]).toEqual([1, 0])
 		})
 
 		it('sends a 401 to the sign-in page', async () => {

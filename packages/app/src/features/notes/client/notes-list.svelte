@@ -8,7 +8,7 @@
 	import { List } from '@stockpot/ui/list'
 	import { onDestroy, onMount, type Snippet } from 'svelte'
 
-	import { notesChangedEvent } from '#/lib/events'
+	import { listenToOthers, NotesAnnouncer } from '#/lib/events'
 
 	import type { NoteFilters } from '../shared/filters'
 	import type { CountRow, NotesCategory, NotesPage, NoteRow as Row } from '../shared/types'
@@ -54,6 +54,9 @@
 		children,
 	}: Props = $props()
 
+	// The list already shows its own bulk changes: it never reloads on its own announcement.
+	const announcer = new NotesAnnouncer()
+
 	// The island's props are its starting state; the controller owns every change after that.
 	const controller = new NotesController({
 		initial,
@@ -65,6 +68,7 @@
 		renderedAt,
 		strings,
 		fetch: async (url, init) => fetch(url, init),
+		notesChanged: announcer.announce,
 	})
 
 	const byId = new Map(categories.map((category) => [category.id, category]))
@@ -95,17 +99,11 @@
 		controller.loadMore()
 	})
 
-	function reload() {
-		controller.notesChanged()
-	}
-
-	onMount(() => {
-		globalThis.addEventListener(notesChangedEvent, reload)
-
-		return () => {
-			globalThis.removeEventListener(notesChangedEvent, reload)
-		}
-	})
+	onMount(() =>
+		listenToOthers(announcer, () => {
+			controller.notesChanged()
+		}),
+	)
 
 	onDestroy(() => {
 		controller.destroy()

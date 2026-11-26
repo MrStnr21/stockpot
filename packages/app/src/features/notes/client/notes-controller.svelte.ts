@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
+import { notesChangedEvent } from '#/lib/events'
+
 import { facetCounts, type Facets } from '../shared/facets'
 import { filtersSearch, sameFilters, type NoteFilters } from '../shared/filters'
 import type { CountRow, JsonFetch, NotesCategory, NotesPage, NoteStatus } from '../shared/types'
@@ -44,11 +46,17 @@ export interface NotesControllerOptions {
 	readonly signIn?: () => void
 	/** Puts the filters into the page's URL, so a reload renders the same view. */
 	readonly writeUrl?: (search: string) => void
+	/** Tells the page a bulk action changed notes; by default it sends `notesChangedEvent`. */
+	readonly notesChanged?: () => void
 	readonly now?: () => number
 }
 
 function signInPage() {
 	globalThis.location.assign('/signin')
+}
+
+function announceNotesChanged() {
+	globalThis.dispatchEvent(new Event(notesChangedEvent))
 }
 
 /** The notes list's state: rows and filters, counts, select mode, bulk actions and toasts. */
@@ -84,6 +92,7 @@ export class NotesController {
 	readonly #strings: NotesStrings
 	readonly #signIn: () => void
 	readonly #writeUrl: (search: string) => void
+	readonly #notesChanged: () => void
 
 	#countsSequence = 0
 	#countsController: AbortController | null = null
@@ -93,6 +102,7 @@ export class NotesController {
 		this.#strings = options.strings
 		this.#signIn = options.signIn ?? signInPage
 		this.#writeUrl = options.writeUrl ?? replaceFiltersUrl
+		this.#notesChanged = options.notesChanged ?? announceNotesChanged
 		this.#api = createNotesApi({ fetch: options.fetch })
 		this.#loader = new ListLoader({
 			api: this.#api,
@@ -256,6 +266,8 @@ export class NotesController {
 		this.selection = keepSelected(this.selection, keep)
 		this.toasts.show(bulkToast(this.#strings, summary, category?.name ?? ''))
 		this.refreshCounts().catch(() => null)
+		// The rows above already show the answer; an opened card beside them looks again.
+		this.#notesChanged()
 	}
 
 	#select({ selection, isRefused }: SelectOutcome) {

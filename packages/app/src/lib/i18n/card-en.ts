@@ -49,6 +49,8 @@ export const cardEn = {
 	missing: 'It was deleted, or the link is wrong.',
 	pickTitle: 'Pick a note',
 	pick: 'Its card opens here.',
+	unreachableTitle: 'Couldn’t open this card',
+	unreachable: 'Your server didn’t answer. Nothing changed.',
 	headingTranslation: 'Translation',
 	headingExamples: 'Examples',
 	headingModelSentences: 'Sentences to reuse',
@@ -159,6 +161,7 @@ export const cardEn = {
 	failedToast: 'Couldn’t reach your server. Nothing changed.',
 	loadFailedToast: 'Couldn’t reach your server.',
 	conflictToast: 'This note changed elsewhere. Showing the latest.',
+	deletedToast: 'Note deleted',
 	jobsUnavailableToast: 'Research can’t start right now. Try again in a moment.',
 } as const
 

@@ -3,9 +3,36 @@
 
 import { describe, expect, it } from 'bun:test'
 
-import { noteOpened, noteOpenedEvent, openedNoteId } from './events'
+import {
+	listenToOthers,
+	noteOpened,
+	noteOpenedEvent,
+	NotesAnnouncer,
+	notesChangedEvent,
+	openedNoteId,
+} from './events'
 
 describe('events', () => {
+	describe('listenToOthers', () => {
+		it("hears another island's announcement, not its own, until stopped", () => {
+			const own = new NotesAnnouncer()
+			const other = new NotesAnnouncer()
+			let heard = 0
+
+			const stop = listenToOthers(own, () => {
+				heard += 1
+			})
+
+			own.announce()
+			other.announce()
+			globalThis.dispatchEvent(new Event(notesChangedEvent))
+			stop()
+			other.announce()
+
+			expect(heard).toBe(2)
+		})
+	})
+
 	describe('openedNoteId', () => {
 		it('reads the id of a note-opened event', () => {
 			expect(openedNoteId(noteOpened(42))).toBe(42)

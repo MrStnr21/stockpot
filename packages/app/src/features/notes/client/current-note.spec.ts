@@ -46,10 +46,10 @@ describe('CurrentNote', () => {
 		expect([current.current, urls, announced, prevented]).toEqual([8, [8], [8], 1])
 	})
 
-	it('opens nothing new for the current row, and keeps the link from navigating', () => {
+	it('tells the pane of the current row again, keeps the URL and the link from navigating', () => {
 		current.click(cancelable(plain), 5)
 
-		expect([announced, prevented]).toEqual([[], 1])
+		expect([current.current, urls, announced, prevented]).toEqual([5, [], [5], 1])
 	})
 
 	it('lets a narrow screen and a modified click follow the link', () => {
