@@ -3,8 +3,16 @@
 
 /*
  * The service worker. Built by the `serviceWorker` integration in astro.config.ts, which defines
- * PRECACHE and VERSION and writes the bundle to dist/client/sw.js; the rules are in lib/offline/.
+ * PRECACHE and VERSION and writes the bundle to dist/client/sw.js; the rules are in lib/offline/,
+ * and those of notifications in features/push/shared/.
  */
+import {
+	createPushWorker,
+	type ClickedNotification,
+	type PushDataLike,
+	type ShownNotification,
+	type WindowClientLike,
+} from '#/features/push/shared/worker'
 import { createWorker } from '#/lib/offline/worker'
 
 declare const PRECACHE: readonly string[]
@@ -21,6 +29,14 @@ interface FetchEvent extends ExtendableEvent {
 	respondWith: (response: Promise<Response>) => void
 }
 
+interface PushEvent extends ExtendableEvent {
+	readonly data: PushDataLike | null
+}
+
+interface NotificationEvent extends ExtendableEvent {
+	readonly notification: ClickedNotification
+}
+
 declare global {
 	function addEventListener(
 		type: 'install' | 'activate',
@@ -29,11 +45,28 @@ declare global {
 
 	function addEventListener(type: 'fetch', listener: (event: FetchEvent) => void): void
 
+	function addEventListener(type: 'push', listener: (event: PushEvent) => void): void
+
+	function addEventListener(
+		type: 'notificationclick',
+		listener: (event: NotificationEvent) => void,
+	): void
+
 	var skipWaiting: () => Promise<void>
 
-	var clients: { claim: () => Promise<void> }
+	var clients: {
+		claim: () => Promise<void>
+		matchAll: (options: {
+			type: 'window'
+			includeUncontrolled: boolean
+		}) => Promise<readonly WindowClientLike[]>
+		openWindow: (url: string) => Promise<object | null>
+	}
 
-	var registration: { update: () => Promise<void> }
+	var registration: {
+		update: () => Promise<void>
+		showNotification: (title: string, options: ShownNotification) => Promise<void>
+	}
 }
 
 // A page that has not answered in this many milliseconds is replaced by its stored copy.
@@ -75,4 +108,22 @@ addEventListener('fetch', (event) => {
 			}),
 		)
 	}
+})
+
+const push = createPushWorker({
+	origin: location.origin,
+	showNotification: async (title, options) =>
+		globalThis.registration.showNotification(title, options),
+	// A window opened before this worker took over is listed too; the click opens a new one for it.
+	windows: async () => globalThis.clients.matchAll({ type: 'window', includeUncontrolled: true }),
+	openWindow: async (url) => globalThis.clients.openWindow(url),
+})
+
+// Always waited for and always shows one: a push that shows nothing costs the permission on Safari.
+addEventListener('push', (event) => {
+	event.waitUntil(push.push(event.data))
+})
+
+addEventListener('notificationclick', (event) => {
+	event.waitUntil(push.click(event.notification))
 })
