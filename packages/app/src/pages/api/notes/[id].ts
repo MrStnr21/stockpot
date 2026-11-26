@@ -21,7 +21,7 @@ function noteId(params: NoteContext['params']) {
 	return id.output
 }
 
-/** Changes a note's category or status, or restores it with `deleted: false`. */
+/** Changes a note's category or status, keeps it in Base with `kept`, or restores it with `deleted: false`. */
 export const PATCH = route.authorized<NoteContext>(async ({ request, params }) => {
 	const id = noteId(params)
 	const change = await readJson(request, noteChangeSchema)

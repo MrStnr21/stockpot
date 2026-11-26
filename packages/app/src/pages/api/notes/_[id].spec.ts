@@ -10,8 +10,10 @@ import {
 	type SignedInInstance,
 } from '#tests/setup/auth'
 import { createTestDb, type TestDb } from '#tests/setup/db'
+import { eq } from 'drizzle-orm'
 
 import * as instance from '#/server/db/instance'
+import { notes } from '#/server/db/schema/notes'
 
 import { DELETE, PATCH } from './[id]'
 
@@ -73,6 +75,14 @@ describe('/api/notes/:id', () => {
 		)
 	}
 
+	function keptAtOf() {
+		return db
+			.select({ keptAt: notes.keptAt })
+			.from(notes)
+			.where(eq(notes.id, Number(id)))
+			.get()?.keptAt
+	}
+
 	async function patch(sent: Sent) {
 		return send(PATCH, 'PATCH', sent)
 	}
@@ -114,7 +124,8 @@ describe('/api/notes/:id', () => {
 		})
 
 		it.each([
-			['an empty change', {}, 'body: Change categoryId, status or deleted.'],
+			['an empty change', {}, 'body: Change categoryId, status, deleted or kept.'],
+			['kept: "yes"', { kept: 'yes' }, 'kept: Invalid type: Expected boolean but received "yes"'],
 			[
 				'deleted: true',
 				{ deleted: true },
@@ -133,6 +144,21 @@ describe('/api/notes/:id', () => {
 					},
 				},
 			])
+		})
+
+		it('keeps a note in Base and takes it out again', async () => {
+			const kept = await patch({ body: { kept: true } })
+			const keptAt = keptAtOf()
+			const again = await patch({ body: { kept: true } })
+
+			expect(keptAt).toBeInstanceOf(Date)
+			expect([kept.status, again.status, keptAtOf()]).toEqual([200, 200, keptAt])
+			expect([await statusOf(patch({ body: { kept: false } })), keptAtOf()]).toEqual([200, null])
+		})
+
+		it('answers 404 to keeping a deleted note and leaves it out of Base', async () => {
+			expect(await statusOf(remove())).toBe(204)
+			expect([await statusOf(patch({ body: { kept: true } })), keptAtOf()]).toEqual([404, null])
 		})
 
 		it('answers 400 to a status that does not exist', async () => {
