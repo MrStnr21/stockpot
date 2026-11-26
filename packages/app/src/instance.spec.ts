@@ -11,12 +11,15 @@ import { termRowFactory } from '#tests/factories/terms'
 import { createTestDb } from '#tests/setup/db'
 import { storeCard } from '#tests/setup/deeper'
 import { advanceBy, advanceTo, jobRows } from '#tests/setup/jobs'
+import { pushClient, pushRequest, stubGlobalFetch } from '#tests/setup/push'
 import { eq } from 'drizzle-orm'
 
+import { saveSubscription } from '#/features/push/server/subscriptions'
 import * as instance from '#/server/db/instance'
 import { explanations } from '#/server/db/schema/explanations'
 import { jobs } from '#/server/db/schema/jobs'
 import { notes } from '#/server/db/schema/notes'
+import { pushSubscriptions } from '#/server/db/schema/push'
 import { parseOutput } from '#/server/engines/contract'
 import * as engines from '#/server/engines/router'
 import { startRunner, stopRunner } from '#/server/jobs/runner'
@@ -37,8 +40,6 @@ const { db } = await createTestDb()
 const start = new Date('2026-11-21T06:00:00Z')
 
 const batchTime = '2026-11-21T06:30:00Z'
-
-const readyMessage = 'A research-now card is ready'
 
 const reset = new Date('2026-11-21T07:30:00Z')
 
@@ -95,7 +96,6 @@ describe('instance', () => {
 
 	describe('nightly batch', () => {
 		let runner: Runner
-		let info: ReturnType<typeof spyOn<typeof log, 'info'>>
 		let categoryId: number
 		let calls: string[]
 		let inFlight: number
@@ -108,6 +108,7 @@ describe('instance', () => {
 			// The services keep their database and router across runner restarts.
 			db.delete(jobs).run()
 			db.delete(notes).run()
+			db.delete(pushSubscriptions).run()
 			calls = []
 			inFlight = 0
 			peakInFlight = 0
@@ -116,7 +117,7 @@ describe('instance', () => {
 
 			const card = briefCardFactory.build({ sources: [] })
 
-			info = spyOn(log, 'info').mockImplementation(() => {
+			spyOn(log, 'info').mockImplementation(() => {
 				// Keep the expected messages out of the test log.
 			})
 			spyOn(instance, 'instanceDb').mockResolvedValue(db)
@@ -210,7 +211,18 @@ describe('instance', () => {
 			expect(calls).toEqual([note.text, note.text])
 		})
 
-		it('runs a research-now job ahead of the remaining batch jobs', async () => {
+		it('runs a research-now job ahead of the remaining batch jobs and pushes only its card', async () => {
+			const browser = await pushClient()
+
+			saveSubscription(db, browser.subscription, 'en')
+			const sent = Promise.withResolvers<null>()
+
+			const pushes = stubGlobalFetch(() => {
+				sent.resolve(null)
+
+				return new Response(null, { status: 201 })
+			})
+
 			const first = await saveNote()
 			const second = await saveNote()
 			const third = await saveNote()
@@ -236,12 +248,23 @@ describe('instance', () => {
 			await runner.idle()
 
 			expect(calls).toEqual([first.text, urgent.text, second.text, third.text])
-			expect(info.mock.calls.filter(([message]) => message === readyMessage)).toEqual([
-				[readyMessage, { noteId: urgentId }],
-			])
+			// The notification goes out after the job, which does not wait for it.
+			await sent.promise
+
+			expect(pushes).toHaveBeenCalledTimes(1)
+			const shown = await browser.decrypt(pushRequest(pushes).body)
+
+			expect(JSON.parse(shown)).toMatchObject({
+				notification: { title: `Ready: ${urgent.text}`, tag: `ready-${urgentId}` },
+			})
 		})
 
 		it('writes a deeper level at once and requeues its draft at the reset', async () => {
+			// The Ready notification reads the card view, where this sample level 1 does not fit its format.
+			spyOn(log, 'warn').mockImplementation(() => {
+				// Keep the expected warning out of the test log.
+			})
+
 			const note = await saveNote()
 
 			db.update(notes).set({ status: 'read' }).where(eq(notes.id, note.id)).run()

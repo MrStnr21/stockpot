@@ -176,6 +176,28 @@ describe('/api/push/subscriptions', () => {
 			expect([response.status, echoed, rows()]).toEqual([400, [], []])
 		})
 
+		it('answers 400 to a p256dh of 65 bytes from 0x04 that is off the curve, and does not repeat it', async () => {
+			const point = Uint8Array.fromBase64(subscriptionFactory.build().keys.p256dh, {
+				alphabet: 'base64url',
+			})
+
+			// The point's y no longer fits its x; the length and first byte still pass the schema.
+			point[64] = (point[64] + 1) % 256
+
+			const p256dh = point.toBase64({ alphabet: 'base64url', omitPadding: true })
+			const response = await subscribe(changedSubscription({ keys: { p256dh } }))
+			const answer = await response.text()
+
+			expect([response.status, answer.includes(p256dh), rows()]).toEqual([400, false, []])
+			expect(JSON.parse(answer)).toEqual({
+				error: {
+					code: 'invalid_body',
+					message: 'The body does not match what this route accepts.',
+					issues: ["keys.p256dh: Use the browser's key: a P-256 point as base64url."],
+				},
+			})
+		})
+
 		it('answers 413 to a body over 4 KiB', async () => {
 			const body = JSON.stringify({ ...subscriptionFactory.build(), padding: 'a'.repeat(4096) })
 			const response = await send(POST, { method: 'POST', body })

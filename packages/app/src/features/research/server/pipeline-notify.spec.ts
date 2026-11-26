@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
 import { afterEach, beforeEach, describe, expect, it, jest, spyOn } from 'bun:test'
+import { categoryRowFactory } from '#tests/factories/categories'
 import { noteRowFactory } from '#tests/factories/notes'
 import { advanceBy, advanceTo, jobRows } from '#tests/setup/jobs'
 import { limitedUntil, startResearch, type ResearchHarness } from '#tests/setup/research'
@@ -9,9 +10,17 @@ import { limitedUntil, startResearch, type ResearchHarness } from '#tests/setup/
 import { EngineError } from '#/server/engines/contract'
 import { log } from '#/server/log'
 
+import { createProgressBoard } from './ideas'
+
 const start = new Date('2026-11-20T10:00:00Z')
 
 const inAnHour = new Date('2026-11-20T11:00:00Z')
+
+async function ideaNote(db: ResearchHarness['db']) {
+	const category = await categoryRowFactory.transient({ db }).create({ format: 'report' })
+
+	return noteRowFactory.transient({ db }).create({ categoryId: category.id })
+}
 
 describe('research job notify', () => {
 	let harness: ResearchHarness
@@ -47,6 +56,34 @@ describe('research job notify', () => {
 		expect(harness.cardsOf(note.id)).toMatchObject([{ isDraft: false }])
 		expect(harness.notify).toHaveBeenCalledTimes(1)
 		expect(harness.notify).toHaveBeenCalledWith({ noteId: note.id })
+	})
+
+	describe('for an idea', () => {
+		beforeEach(async () => {
+			await harness.runner.stop()
+			harness = await startResearch(createProgressBoard())
+		})
+
+		it('passes the pages its engine reported reading', async () => {
+			const note = await ideaNote(harness.db)
+
+			harness.gemini.during = ({ onProgress }) => {
+				onProgress?.({ step: 'writing', questions: 3, searched: 3, pages: 12 })
+			}
+
+			await harness.research([note.id])
+
+			expect(harness.notify).toHaveBeenCalledTimes(1)
+			expect(harness.notify).toHaveBeenCalledWith({ noteId: note.id, pagesRead: 12 })
+		})
+
+		it('passes no pages when its engine reported no progress', async () => {
+			const note = await ideaNote(harness.db)
+
+			await harness.research([note.id])
+
+			expect(harness.notify).toHaveBeenCalledWith({ noteId: note.id })
+		})
 	})
 
 	it('does not notify for a batch job', async () => {

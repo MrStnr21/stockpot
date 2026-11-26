@@ -6,7 +6,7 @@
  * Crypto in the spec, and the decryption a browser does on a push (RFC 8291), so a spec can read what
  * the server sent; and a fake push service that answers the sender's requests.
  */
-import { mock, type Mock } from 'bun:test'
+import { mock, spyOn, type Mock } from 'bun:test'
 import { subscriptionFactory } from '#tests/factories/push'
 
 import type { PushFetch } from '#/features/push/server/send'
@@ -133,6 +133,24 @@ export function fakePushFetch(
 
 		return answered
 	})
+}
+
+/**
+ * Answers the process's own `fetch` with `fakePushFetch(answer)`, for code that builds its sender
+ * without one, so no request leaves the spec; `mock.restore()` puts `fetch` back.
+ */
+export function stubGlobalFetch(answer?: (url: string) => PushAnswer): Mock<PushFetch> {
+	const fake = fakePushFetch(answer)
+
+	async function stub(input: string | URL | Request, init?: RequestInit) {
+		return fake(input instanceof Request ? input.url : input.toString(), init ?? {})
+	}
+
+	spyOn(globalThis, 'fetch').mockImplementation(
+		Object.assign(stub, { preconnect: globalThis.fetch.preconnect }),
+	)
+
+	return fake
 }
 
 export interface PushRequest {

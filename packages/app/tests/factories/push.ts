@@ -22,15 +22,28 @@ const endpoints = [
 	(id: string) => `https://wns2-par02p.notify.windows.com/w/?token=${id}`,
 ]
 
+async function curvePoint() {
+	const pair = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, [
+		'deriveBits',
+	])
+
+	return toBase64Url(new Uint8Array(await crypto.subtle.exportKey('raw', pair.publicKey)))
+}
+
+/* Web Crypto makes keys asynchronously and a factory builds synchronously, so a few real points are
+ * made once; consecutive builds take different ones. */
+const curvePoints = await Promise.all(Array.from({ length: 8 }, curvePoint))
+
 /**
- * `PushSubscription.toJSON()` as a browser sends it. The keys have the right lengths but are random
- * bytes, not a real P-256 point: enough for validation, not for encryption.
+ * `PushSubscription.toJSON()` as a browser sends it. `p256dh` is a real P-256 point, as the route
+ * accepts no other, but its private key is gone: enough to subscribe, not to read a push. A spec
+ * that decrypts uses `pushClient()`.
  */
 export const subscriptionFactory = Factory.define<Subscription>(({ sequence }) => ({
 	endpoint: faker.helpers.arrayElement(endpoints)(`${sequence}${faker.string.alphanumeric(40)}`),
 	expirationTime: null,
 	keys: {
-		p256dh: toBase64Url(Uint8Array.of(0x04, ...randomBytes(64))),
+		p256dh: curvePoints[sequence % curvePoints.length] ?? '',
 		auth: toBase64Url(randomBytes(16)),
 	},
 }))

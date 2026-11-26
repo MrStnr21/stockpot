@@ -14,6 +14,7 @@ import * as v from 'valibot'
 import { pushSubscriptions } from '#/server/db/schema/push'
 
 import {
+	checkSubscriptionKey,
 	maxSubscriptions,
 	removalSchema,
 	removeSubscription,
@@ -83,6 +84,32 @@ describe('push subscriptions', () => {
 					messages.includes(value),
 				),
 			).toEqual([])
+		})
+	})
+
+	describe('checkSubscriptionKey', () => {
+		it("accepts a browser's P-256 key", async () => {
+			const checked = checkSubscriptionKey(subscriptionFactory.build())
+
+			expect(await checked.then(() => 'accepted')).toBe('accepted')
+		})
+
+		it.each([
+			['all zeros', new Uint8Array(64)],
+			['x equal to y', new Uint8Array(64).fill(1)],
+		])('refuses a point off the curve (%s) that passes the schema', async (_case, coordinates) => {
+			const p256dh = toBase64Url(Uint8Array.of(0x04, ...coordinates))
+			const subscription = subscriptionFactory.build({ keys: { p256dh } })
+
+			expect(v.is(subscriptionSchema, subscription)).toBe(true)
+			const checked = checkSubscriptionKey(subscription)
+
+			expect(
+				await checked.then(
+					() => 'accepted',
+					() => 'refused',
+				),
+			).toBe('refused')
 		})
 	})
 

@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
 import {
+	checkSubscriptionKey,
 	removalSchema,
 	removeSubscription,
 	saveSubscription,
@@ -20,6 +21,8 @@ const maxBodyBytes = 4096
 /** Subscribes this browser, or renews its subscription, in the language it asks for. */
 export const POST = route.session<RouteContext>(async ({ request }) => {
 	const subscription = await readJson(request, subscriptionSchema, maxBodyBytes)
+
+	await checkSubscriptionKey(subscription)
 
 	saveSubscription(
 		await instanceDb(),

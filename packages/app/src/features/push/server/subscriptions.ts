@@ -11,6 +11,7 @@ import * as v from 'valibot'
 import type { Locale } from '#/lib/i18n'
 import type { Db } from '#/server/db/client'
 import { pushSubscriptions } from '#/server/db/schema/push'
+import { HttpError } from '#/server/http'
 
 import { isAllowedEndpoint, maxEndpointLength } from './endpoints'
 
@@ -63,6 +64,27 @@ export const subscriptionSchema = v.object(
 )
 
 export type Subscription = v.InferOutput<typeof subscriptionSchema>
+
+const curve = { name: 'ECDH', namedCurve: 'P-256' } as const
+
+/**
+ * Refuses a `p256dh` that is not a point on P-256 with a 400, as `readJson` refuses the rest. The
+ * schema checks only its length and first byte; Web Crypto checks the curve, asynchronously. A key off
+ * the curve would fail every send, and no push service would answer 404 or 410 to get it deleted.
+ */
+export async function checkSubscriptionKey({ keys }: Subscription): Promise<void> {
+	try {
+		const point = Uint8Array.fromBase64(keys.p256dh, { alphabet: 'base64url' })
+
+		await crypto.subtle.importKey('raw', point, curve, true, [])
+	} catch {
+		throw new HttpError(400, {
+			code: 'invalid_body',
+			message: 'The body does not match what this route accepts.',
+			issues: ["keys.p256dh: Use the browser's key: a P-256 point as base64url."],
+		})
+	}
+}
 
 export const removalSchema = v.object(
 	{
