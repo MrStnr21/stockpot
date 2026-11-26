@@ -5,7 +5,14 @@ import { afterEach, beforeEach, describe, expect, it, jest } from 'bun:test'
 import { cardView, jobView, levelCard, levels, type LevelParts } from '#tests/factories/card-views'
 import { FakeVisibility } from '#tests/setup/page-visibility'
 
-import { cardPoller, pollDelay, Poller, researchingPollMs, waitingPollMs } from './poll'
+import {
+	cardPoller,
+	longestTimerMs,
+	pollDelay,
+	Poller,
+	researchingPollMs,
+	waitingPollMs,
+} from './poll'
 
 const ready = { card: levelCard('brief', 1) }
 
@@ -14,6 +21,12 @@ const now = Date.parse('2026-11-19T07:00:00Z')
 const due = '2026-11-19T06:31:00.000Z'
 
 const later = '2026-11-19T22:30:00.000Z'
+
+const untilLater = Date.parse(later) - now
+
+const inAMoment = { job: jobView({ runAt: '2026-11-19T07:00:01.000Z' }) }
+
+const nextYear = { job: jobView({ runAt: '2027-11-19T07:00:00.000Z' }) }
 
 const writing = { job: jobView({ state: 'researching', runAt: due }) }
 
@@ -45,10 +58,12 @@ describe('poll', () => {
 			['a level being written', readCard(ready, writing), researchingPollMs],
 			['a queued note with a due job', queuedDue, waitingPollMs],
 			['a level asked for now and due', readCard(ready, askedNow), waitingPollMs],
-			['a queued note whose job waits for tonight', queuedTonight, null],
+			['a queued note whose job waits for tonight', queuedTonight, untilLater],
 			['a queued note without a job', queuedNote, null],
-			['a level that waits for tonight', readCard(ready, tonight), null],
-			['a level that waits for a limit to reset', readCard(ready, afterReset), null],
+			['a level that waits for tonight', readCard(ready, tonight), untilLater],
+			['a level that waits for a limit to reset', readCard(ready, afterReset), untilLater],
+			['a job due in a moment', readCard(ready, inAMoment), waitingPollMs],
+			['a job due in a year', readCard(ready, nextYear), longestTimerMs],
 			['a settled card', readCard(ready), null],
 			['a new note', cardView('brief'), null],
 		])('waits for %s: %p', (_case, view, delay) => {
@@ -185,11 +200,15 @@ describe('poll', () => {
 			jest.useRealTimers()
 		})
 
-		it('sets no timer for a job that waits for tonight', () => {
+		it('looks once when a job that waits for tonight comes due, and not before', () => {
 			watch(queuedTonight)
-			jest.advanceTimersByTime(waitingPollMs * 100)
+			jest.advanceTimersByTime(untilLater - 1)
 
-			expect([jest.getTimerCount(), looks]).toEqual([0, 0])
+			expect(looks).toBe(0)
+
+			jest.advanceTimersByTime(1)
+
+			expect(looks).toBe(1)
 		})
 
 		it('looks every 10 s while a job is due', () => {
@@ -215,7 +234,7 @@ describe('poll', () => {
 			visibility.set(true)
 			visibility.set(false)
 
-			expect([looks, jest.getTimerCount()]).toEqual([1, 0])
+			expect(looks).toBe(1)
 		})
 
 		it('does not look on being shown for a settled card', () => {

@@ -4,14 +4,18 @@
 /*
  * Keeps an opened card current while its research runs (WEB-5 decision 4): every 3 s while an engine
  * writes, every 10 s while a job is due and waits for the worker. A job that waits for tonight's run
- * or for a limit to reset is not polled for: the card catches up when the page is shown again or after
- * an action. A hidden tab polls nothing; one request at a time.
+ * or for a limit to reset gets one look when its time comes, and the usual rhythm after that; the
+ * card also catches up when the page is shown again or after an action. A hidden tab polls nothing;
+ * one request at a time.
  */
 import type { CardView, JobView } from '../shared/card-view'
 
 export const researchingPollMs = 3000
 
 export const waitingPollMs = 10_000
+
+/** A timer longer than this fires at once (a signed 32-bit count of milliseconds). */
+export const longestTimerMs = 2_147_483_647
 
 function jobsOf(view: CardView): JobView[] {
 	return view.levels.flatMap(({ job }) => (job === null ? [] : [job]))
@@ -25,7 +29,14 @@ export function pollDelay(view: CardView, now: number): number | null {
 		return researchingPollMs
 	}
 
-	return jobs.some(({ runAt }) => Date.parse(runAt) <= now) ? waitingPollMs : null
+	if (jobs.length === 0) {
+		return null
+	}
+
+	const next = Math.min(...jobs.map(({ runAt }) => Date.parse(runAt)))
+
+	// A job that waits is looked at once when it comes due, never sooner than the waiting rhythm.
+	return Math.min(Math.max(next - now, waitingPollMs), longestTimerMs)
 }
 
 /** Whether the card may still change by itself: worth a look when the page is shown again. */
