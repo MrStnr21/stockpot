@@ -108,3 +108,22 @@ export function seedCards(dataDir: string): Map<string, number> {
 		db.close()
 	}
 }
+
+/** The id of the built-in category with this card format, such as `report` for Idea. */
+export function categoryIdOf(dataDir: string, format: string): number {
+	const db = new Database(`${dataDir}/stockpot.db`)
+
+	try {
+		const row = db
+			.query<{ id: number }, [string]>('SELECT id FROM categories WHERE format = ?1 ORDER BY id')
+			.get(format)
+
+		if (row === null) {
+			throw new Error(`No category has the ${format} format.`)
+		}
+
+		return row.id
+	} finally {
+		db.close()
+	}
+}
