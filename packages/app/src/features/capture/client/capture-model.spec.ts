@@ -47,6 +47,24 @@ describe('capture model', () => {
 			expect(panelFor(suggestAnswerFactory.build(params), initialSelection)).toBe(panel)
 		})
 
+		it.each([
+			['saved', 'saved'],
+			['seen', 'seen'],
+		] as const)('leaves the chips for a %s term without a category or a suggestion', (state) => {
+			const match = historyMatchFactory.build({ state, categoryId: null })
+			const answer = suggestAnswerFactory.build({ history: [match], categories: [] })
+
+			expect(panelFor(answer, initialSelection)).toBeNull()
+		})
+
+		it('shows a saved term without a category when a category is suggested', () => {
+			const match = historyMatchFactory.build({ state: 'saved', categoryId: null })
+			const answer = suggestAnswerFactory.build({ history: [match], categories: [3] })
+
+			expect(panelFor(answer, initialSelection)).toBe('saved')
+			expect(followAnswer(initialSelection, answer).categoryId).toBe(3)
+		})
+
 		it('shows nothing before an answer', () => {
 			expect(panelFor(null, initialSelection)).toBeNull()
 		})

@@ -234,6 +234,7 @@
 				? strings.privateOn.replace('{term}', controller.term.trim())
 				: strings.privateOff}
 			checked={controller.isPrivate}
+			disabled={controller.isSaving}
 			onchange={(checked) => {
 				controller.isPrivate = checked
 				controller.privateChanged()

@@ -60,6 +60,16 @@ export function historyMatch(
 	return answer.history.find((match) => match.state === state) ?? null
 }
 
+/*
+ * A history panel has no chips, so it shows only when it brings a category to save with: the
+ * match's own, or else a suggested one. A term without a category falls back to the chips.
+ */
+function pickableMatch(answer: SuggestAnswer, state: 'saved' | 'seen') {
+	const match = historyMatch(answer, state)
+
+	return match !== null && (match.categoryId !== null || answer.categories.length > 0)
+}
+
 /**
  * A saved note the capture would merge into comes first, then a choice of meanings, then a term
  * shown before. "None of these" leaves the plain chips, so it hides the seen panel too.
@@ -69,7 +79,7 @@ export function panelFor(answer: SuggestAnswer | null, selection: Selection): Pa
 		return null
 	}
 
-	if (historyMatch(answer, 'saved') !== null) {
+	if (pickableMatch(answer, 'saved')) {
 		return 'saved'
 	}
 
@@ -77,7 +87,7 @@ export function panelFor(answer: SuggestAnswer | null, selection: Selection): Pa
 		return selection.sensesDismissed ? null : 'senses'
 	}
 
-	if (historyMatch(answer, 'seen') !== null && !selection.seenDismissed) {
+	if (pickableMatch(answer, 'seen') && !selection.seenDismissed) {
 		return 'seen'
 	}
 
