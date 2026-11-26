@@ -183,6 +183,16 @@ export const en = {
 		digestTitleMany: 'Digest: {count} notes, ~{minutes} min',
 		digestTitleOther: 'Digest: {count} notes, ~{minutes} min',
 		digestMore: '{terms} and {count} more',
+		settingsTitle: 'Notifications',
+		settingsOff: 'Get the digest and Ready on this device.',
+		settingsOn: 'On this device: the digest and Ready',
+		settingsAllow: 'Allow notifications',
+		settingsTurnOff: 'Turn off',
+		settingsHomeScreen: 'On iPhone, notifications only reach apps on the Home Screen.',
+		settingsUnsupported: 'This browser cannot show notifications.',
+		settingsBlocked:
+			'Notifications are blocked for this site. Allow them in the browser or system settings.',
+		settingsFailed: 'Notifications could not be changed. Try again.',
 	},
 	card: cardEn,
 } as const

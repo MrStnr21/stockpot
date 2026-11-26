@@ -183,6 +183,16 @@ export const ru: Messages = {
 		digestTitleMany: 'Дайджест: {count} заметок, ~{minutes} мин',
 		digestTitleOther: 'Дайджест: {count} заметки, ~{minutes} мин',
 		digestMore: '{terms} и ещё {count}',
+		settingsTitle: 'Уведомления',
+		settingsOff: 'Получайте дайджест и «Готово» на этом устройстве.',
+		settingsOn: 'На этом устройстве: дайджест и «Готово»',
+		settingsAllow: 'Разрешить уведомления',
+		settingsTurnOff: 'Выключить',
+		settingsHomeScreen: 'На iPhone уведомления приходят только в приложения на экране «Домой».',
+		settingsUnsupported: 'Этот браузер не умеет показывать уведомления.',
+		settingsBlocked:
+			'Уведомления для этого сайта запрещены. Разрешите их в настройках браузера или системы.',
+		settingsFailed: 'Не удалось изменить уведомления. Попробуйте ещё раз.',
 	},
 	card: cardRu,
 }
