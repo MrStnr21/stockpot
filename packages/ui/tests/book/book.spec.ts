@@ -79,6 +79,7 @@ test.describe('UI kit book', () => {
 
 		await opener.click()
 		await expect(modal).toHaveAccessibleName('New note')
+		await expect(modal.getByRole('textbox', { name: 'Word, term or idea' })).toBeFocused()
 		await page.keyboard.press('Escape')
 		await expect(dialog).toHaveJSProperty('open', false)
 		await expect(dialog).toBeHidden()

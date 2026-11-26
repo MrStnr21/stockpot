@@ -4,7 +4,7 @@
 -->
 <script lang="ts">
 	import SchemePanels from '../../book/scheme-panels.svelte'
-	import { Button } from '../button'
+	import { Button, IconButton } from '../button'
 	import { CategoryChip } from '../category'
 	import { ToggleRow } from '../switch'
 	import { TextField } from '../text-field'
@@ -52,15 +52,13 @@
 	<div class="w-full max-w-89.5 space-y-4">
 		{#if group === 'capture'}
 			<p class="text-caption text-ink-3">Default · capture</p>
-			<Sheet open inline title="New note" closeLabel="Close">
-				<TextField label="Word, term or idea" value="SABR" size="lg" focused />
-				<div class="flex flex-col gap-0.5">
-					<TextField label="Where you saw it" placeholder="Context or a link, optional" />
-					<div class="flex flex-wrap gap-2">
-						<Button variant="outline" size="sm" icon="clipboard">Paste</Button>
-						<Button variant="outline" size="sm" icon="link">Add link</Button>
-					</div>
-				</div>
+			<Sheet open inline title="New note" closeLabel="Close" closeHint="esc">
+				<TextField label="Word, term or idea" value="SABR" size="lg" hideLabel focused />
+				<TextField label="Where you saw it" placeholder="Where you saw it, or a link" hideLabel>
+					{#snippet trailing()}
+						<IconButton icon="link" label="Paste a link" variant="plain" />
+					{/snippet}
+				</TextField>
 				{@render categories(true)}
 				<ToggleRow icon="lock" title="Private" description="The engine gets only the term" />
 				{#snippet footer()}

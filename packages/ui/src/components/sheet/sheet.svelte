@@ -10,6 +10,8 @@
 	interface Props {
 		title: string
 		closeLabel: string
+		/** A keyboard hint drawn next to the close button from `md` up, such as `esc`. */
+		closeHint?: string | null
 		children: Snippet
 		footer?: Snippet
 		open?: boolean
@@ -20,6 +22,7 @@
 	let {
 		title,
 		closeLabel,
+		closeHint,
 		children,
 		footer,
 		open = $bindable(false),
@@ -88,7 +91,17 @@
 		></span>
 		<header class="flex items-center justify-between gap-3">
 			<h2 id={titleId} class="min-w-0 text-title-m wrap-break-word">{title}</h2>
-			<IconButton icon="x" label={closeLabel} onclick={dismiss} />
+			<div class="flex items-center gap-2">
+				{#if closeHint}
+					<kbd
+						aria-hidden="true"
+						class="hidden h-5 items-center rounded-xs bg-current/14 px-1.5 font-ui text-caption text-ink-3 md:pointer-fine:inline-flex"
+					>
+						{closeHint}
+					</kbd>
+				{/if}
+				<IconButton icon="x" label={closeLabel} onclick={dismiss} />
+			</div>
 		</header>
 		{@render children()}
 		{#if footer}
@@ -115,7 +128,7 @@
 		onpointerdown={handlePointerDown}
 		onclick={handleBackdropClick}
 		class={[
-			'group/sheet fixed inset-x-0 top-auto bottom-0 m-0 h-fit max-h-dvh w-full max-w-none overflow-x-hidden overflow-y-auto rounded-t-xl bg-surface text-ink shadow-(--shadow-sheet) md:inset-0 md:m-auto md:max-w-sheet-max md:rounded-xl',
+			'group/sheet fixed inset-x-0 top-auto bottom-0 m-0 h-fit max-h-dvh w-full max-w-none overflow-x-hidden overflow-y-auto rounded-t-xl bg-surface text-ink shadow-(--shadow-sheet) md:inset-0 md:mx-auto md:mt-24 md:mb-auto md:max-h-[calc(100dvh-(--spacing(48)))] md:max-w-sheet-max md:rounded-xl xl:mt-28 xl:max-h-[calc(100dvh-(--spacing(56)))]',
 			'opacity-0 transition-[display,overlay,opacity,translate] transition-discrete duration-(--duration-base) ease-enter open:opacity-100 motion-reduce:transition-[display,overlay,opacity] starting:open:opacity-0',
 			'motion-safe:translate-y-full motion-safe:open:translate-y-0 md:motion-safe:translate-y-4 motion-safe:starting:open:translate-y-full md:motion-safe:starting:open:translate-y-4',
 			'backdrop:bg-scrim backdrop:opacity-0 backdrop:transition-[display,overlay,opacity] backdrop:transition-discrete backdrop:duration-(--duration-base) backdrop:ease-enter open:backdrop:opacity-100 starting:open:backdrop:opacity-0',

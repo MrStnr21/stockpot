@@ -11,8 +11,17 @@
 </script>
 
 <Button onclick={() => (open = true)}>Open sheet</Button>
-<Sheet bind:open title="New note" closeLabel="Close">
-	<TextField label="Word, term or idea" size="lg" />
+<Sheet bind:open title="New note" closeLabel="Close" closeHint="esc">
+	<TextField
+		label="Word, term or idea"
+		placeholder="Word, term or idea"
+		size="lg"
+		hideLabel
+		autofocus
+		autocapitalize="off"
+		enterkeyhint="done"
+		spellcheck="false"
+	/>
 	{#snippet footer()}
 		<Button variant="tonal" onclick={() => (open = false)}>Cancel</Button>
 		<Button onclick={() => (open = false)}>Save</Button>

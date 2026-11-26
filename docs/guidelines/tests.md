@@ -13,7 +13,9 @@ bun run e2e                                # Playwright, from the repository roo
 
 Unit tests use `bun:test`. In the app, `bunfig.toml` finds specs in `src/` and next to the helpers
 in `tests/`, leaves `tests/e2e/` to Playwright, and preloads `tests/setup/faker.ts`, which seeds
-Faker once so that generated data, and any failure it causes, repeats exactly. Import the shared
+Faker once so that generated data, and any failure it causes, repeats exactly. It also preloads
+`tests/setup/svelte-modules.ts`, which compiles `.svelte.ts` modules with the Svelte compiler, so a
+spec can import a class that uses runes, such as the capture sheet's controller. Import the shared
 helpers through the `#tests/` alias, such as `#tests/setup/db`.
 
 ## Spec files

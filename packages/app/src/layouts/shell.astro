@@ -7,10 +7,14 @@ import { Tab, TabBar } from '@stockpot/ui/tab-bar'
 
 import SideRail from '#/components/side-rail.astro'
 import Sidebar from '#/components/sidebar.astro'
+import CaptureSheet from '#/features/capture/client/capture-sheet.svelte'
+import { listCategories } from '#/features/categories/server'
 import Layout from '#/layouts/layout.astro'
+import { categoryLook } from '#/lib/category-look'
 import { t, type Locale } from '#/lib/i18n'
 import { navItems, type NavCounts, type NavKey } from '#/lib/nav'
 import { config } from '#/server/config'
+import { instanceDb } from '#/server/db/instance'
 
 interface Props {
 	/** The page's name, ahead of "stockpot" in the document title. */
@@ -21,6 +25,10 @@ interface Props {
 	/** The visible page heading; leave it out when the page draws its own. */
 	heading?: string
 	counts?: NavCounts
+	/** Opens the capture sheet once the page runs, as on `/add`. */
+	initiallyOpen?: boolean
+	/** The public offline page leaves the sheet out: it would carry the owner's categories. */
+	capture?: boolean
 }
 
 const {
@@ -29,12 +37,35 @@ const {
 	current,
 	heading,
 	counts = { today: null, notes: null, base: null },
+	initiallyOpen = false,
+	capture = true,
 } = Astro.props
 
 const strings = t(locale)
 
 // The strings depend on the request's Accept-Language, so a shared cache must keep one copy per value.
 Astro.response.headers.append('Vary', 'Accept-Language')
+
+function captureCategory({
+	id,
+	name,
+	color,
+	icon,
+}: {
+	id: number
+	name: string
+	color: string
+	icon: string
+}) {
+	const look = categoryLook(color, icon)
+
+	return { id, name, color: look.color, icon: look.icon }
+}
+
+const captureCategories =
+	capture && Astro.locals.owner !== null
+		? listCategories(await instanceDb()).map((category) => captureCategory(category))
+		: null
 ---
 
 <Layout title={`${title} · stockpot`} lang={locale}>
@@ -71,5 +102,13 @@ Astro.response.headers.append('Vary', 'Accept-Language')
 				<slot />
 			</div>
 		</main>
+		{captureCategories !== null && (
+			<CaptureSheet
+				client:idle
+				categories={captureCategories}
+				strings={strings.capture}
+				{initiallyOpen}
+			/>
+		)}
 	</div>
 </Layout>

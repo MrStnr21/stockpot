@@ -14,3 +14,7 @@ export const Capture = {
 export const Multiline = {
 	args: { group: 'multiline' } satisfies ComponentProps<typeof TextFieldStory>,
 }
+
+export const Trailing = {
+	args: { group: 'trailing' } satisfies ComponentProps<typeof TextFieldStory>,
+}
