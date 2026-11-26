@@ -24,6 +24,7 @@ const schemaTables = [
 	'note_search',
 	'notes',
 	'owner',
+	'push_keys',
 	'push_subscriptions',
 	'sessions',
 	'settings',
@@ -77,6 +78,22 @@ describe('migrations', () => {
 			expect(() => sqlite.run("INSERT INTO owner (id, password_hash) VALUES (2, 'hash')")).toThrow(
 				/CHECK constraint failed: owner_single_row/u,
 			)
+		})
+
+		it('keep the instance to one Web Push key pair', () => {
+			expect(() =>
+				sqlite.run(
+					"INSERT INTO push_keys (id, public_key, private_key) VALUES (2, 'public', 'private')",
+				),
+			).toThrow(/CHECK constraint failed: push_keys_single_row/u)
+		})
+
+		it('give a subscription without a locale English', () => {
+			sqlite.run(
+				"INSERT INTO push_subscriptions (endpoint, p256dh, auth) VALUES ('https://fcm.googleapis.com/fcm/send/a', 'key', 'secret')",
+			)
+
+			expect(sqlite.query('SELECT locale FROM push_subscriptions').values()).toEqual([['en']])
 		})
 	})
 
