@@ -6,7 +6,14 @@
 	import type { ComponentProps } from 'svelte'
 
 	import SchemePanels from '../../book/scheme-panels.svelte'
+	import FlagBadge from './flag-badge.svelte'
 	import StatusBadge from './status-badge.svelte'
+
+	interface Props {
+		group: 'statuses' | 'flags'
+	}
+
+	const { group }: Props = $props()
 
 	const statuses = [
 		['new', 'New'],
@@ -15,13 +22,25 @@
 		['ready', 'Ready'],
 		['read', 'Read'],
 		['archived', 'Archived'],
+		['failed', 'Failed'],
 	] as const satisfies readonly (readonly [ComponentProps<typeof StatusBadge>['status'], string])[]
+
+	const flags = [
+		['draft', 'Draft'],
+		['unsure', 'Unsure'],
+	] as const satisfies readonly (readonly [ComponentProps<typeof FlagBadge>['flag'], string])[]
 </script>
 
 <SchemePanels>
 	<ul class="flex flex-wrap items-center gap-2.5">
-		{#each statuses as [status, label] (status)}
-			<li><StatusBadge {status}>{label}</StatusBadge></li>
-		{/each}
+		{#if group === 'statuses'}
+			{#each statuses as [status, label] (status)}
+				<li><StatusBadge {status}>{label}</StatusBadge></li>
+			{/each}
+		{:else}
+			{#each flags as [flag, label] (flag)}
+				<li><FlagBadge {flag}>{label}</FlagBadge></li>
+			{/each}
+		{/if}
 	</ul>
 </SchemePanels>

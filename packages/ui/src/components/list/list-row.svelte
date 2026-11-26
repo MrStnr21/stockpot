@@ -4,6 +4,7 @@
 -->
 <script lang="ts">
 	import type { Snippet } from 'svelte'
+	import type { Attachment } from 'svelte/attachments'
 	import type { MouseEventHandler } from 'svelte/elements'
 
 	import { Icon } from '../icon'
@@ -12,6 +13,10 @@
 	interface Props {
 		title: string
 		subtitle?: string | null
+		/** Drawn in place of `subtitle`, with the same one-line truncation (such as text with marks). */
+		subtitleContent?: Snippet
+		/** Drawn inline after the title, such as a lock icon with its own label. */
+		titleTrail?: Snippet
 		/** Decorative only, such as a CategoryTile. */
 		lead?: Snippet
 		/** Decorative only (a time, a count, a chevron): the row itself is the one control. */
@@ -25,11 +30,15 @@
 		loading?: boolean
 		pressed?: boolean
 		onclick?: MouseEventHandler<HTMLAnchorElement | HTMLButtonElement>
+		/** Applied to the row's link or button, such as a long-press gesture. */
+		attach?: Attachment<HTMLElement>
 	}
 
 	const {
 		title,
 		subtitle,
+		subtitleContent,
+		titleTrail,
 		lead,
 		trail,
 		swipe,
@@ -40,6 +49,7 @@
 		loading = false,
 		pressed = false,
 		onclick,
+		attach,
 	}: Props = $props()
 
 	const rowClasses = 'flex min-h-17 w-full items-center gap-3 bg-surface px-3.5 py-3'
@@ -72,9 +82,13 @@
 		<span
 			class="text-list-title wrap-anywhere group-disabled/row:text-ink-3 group-aria-disabled/row:text-ink-3"
 		>
-			{title}
+			{title}{#if titleTrail}<span class="ms-1.5 inline-flex align-middle text-ink-3">
+					{@render titleTrail()}
+				</span>{/if}
 		</span>
-		{#if subtitle}
+		{#if subtitleContent}
+			<span class="truncate text-body-s text-ink-2">{@render subtitleContent()}</span>
+		{:else if subtitle}
 			<span class="truncate text-body-s text-ink-2">{subtitle}</span>
 		{/if}
 	</span>
@@ -101,6 +115,7 @@
 			data-state={state}
 			onclick={disabled ? undefined : onclick}
 			class={[rowClasses, controlClasses]}
+			{@attach attach}
 		>
 			{@render content()}
 		</a>
@@ -114,6 +129,7 @@
 			data-state={state}
 			{onclick}
 			class={[rowClasses, controlClasses]}
+			{@attach attach}
 		>
 			{@render content()}
 		</button>
