@@ -24,9 +24,23 @@
 		locale: string
 		strings: CardMessages
 		statuses: Readonly<Record<CardView['note']['status'], string>>
+		/** Where the back chevron leads: the list the card was opened from. */
+		backHref?: '/notes' | '/base'
+		/** The back chevron's text, naming that list; by default `strings.back`. */
+		backLabel?: string
 	}
 
-	const { initial, categories, timeZone, batchTime, locale, strings, statuses }: Props = $props()
+	const {
+		initial,
+		categories,
+		timeZone,
+		batchTime,
+		locale,
+		strings,
+		statuses,
+		backHref = '/notes',
+		backLabel,
+	}: Props = $props()
 
 	const announcer = new NotesAnnouncer()
 
@@ -54,8 +68,8 @@
 </script>
 
 <div class="-mx-2 -mt-2 flex h-11 items-center justify-between">
-	<Button variant="ghost" size="sm" icon="chevron" href="/notes" class="[&_svg]:rotate-180">
-		{strings.back}
+	<Button variant="ghost" size="sm" icon="chevron" href={backHref} class="[&_svg]:rotate-180">
+		{backLabel ?? strings.back}
 	</Button>
 	{#if view !== null}
 		<IconButton

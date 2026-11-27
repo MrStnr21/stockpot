@@ -158,6 +158,32 @@ export const notesQuerySchema = v.object({
 
 export type NotesQuery = v.InferOutput<typeof notesQuerySchema>
 
+/** A category id, or `none` for the notes without a category, which it reads as `null`. */
+const baseCategory = v.pipe(
+	v.string(),
+	v.regex(/^(?:none|[1-9]\d{0,14})$/u, 'Use a positive integer or none.'),
+	v.transform((value) => (value === 'none' ? null : Number(value))),
+)
+
+/**
+ * Base's query string: one category's kept notes or a search across all of them, never both and
+ * never neither, so every answer is one bounded page.
+ */
+export const baseNotesQuerySchema = v.pipe(
+	v.object({
+		categoryId: v.optional(baseCategory),
+		q: v.optional(searchText),
+		cursor: v.optional(cursor),
+		limit: v.optional(pageSize),
+	}),
+	v.check(
+		({ categoryId, q }) => (categoryId === undefined) !== (q === undefined),
+		'Send exactly one of categoryId or q.',
+	),
+)
+
+export type BaseNotesQuery = v.InferOutput<typeof baseNotesQuerySchema>
+
 /* The largest page of the list, so a full page selected fits one request, as for Research now. */
 export const maxBulkNotes = 100
 

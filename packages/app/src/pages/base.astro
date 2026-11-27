@@ -2,10 +2,20 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
-import { EmptyState } from '@stockpot/ui/empty-state'
-
+import { listCategories } from '#/features/categories/server'
+import BaseList from '#/features/notes/client/base-list.svelte'
+import { statusLabels } from '#/features/notes/client/row-view'
+import { readBase } from '#/features/notes/server/base'
+import { toNoteRow } from '#/features/notes/server/first-page'
+import type { BaseOverview } from '#/features/notes/shared/types'
+import CardPane from '#/features/research/client/card-pane.svelte'
+import { readCardView } from '#/features/research/server/card-view'
+import { readBatchTime, readTimeZone } from '#/features/settings/server'
+import { instanceProgressBoard } from '#/instance'
 import Shell from '#/layouts/shell.astro'
+import { categoryLook } from '#/lib/category-look'
 import { pickLocale, t } from '#/lib/i18n'
+import { instanceDb } from '#/server/db/instance'
 
 // Sign-in sends a visitor on to setup while the instance has no owner.
 if (Astro.locals.owner === null) {
@@ -16,10 +26,53 @@ if (Astro.locals.owner === null) {
 const locale = pickLocale(Astro.request.headers.get('accept-language'))
 
 const strings = t(locale)
+
+const db = await instanceDb()
+
+const categories = listCategories(db).map(({ id, name, color, icon }) => {
+	const look = categoryLook(color, icon)
+
+	return { id, name, color: look.color, icon: look.icon }
+})
+
+// The overview as `GET /api/base` sends it, with the dates as ISO strings.
+const base = readBase(db)
+
+const overview: BaseOverview = {
+	total: base.total,
+	groups: base.groups.map(({ categoryId, count, notes }) => ({
+		categoryId,
+		count,
+		notes: notes.map((note) => toNoteRow(note)),
+	})),
+}
+
+// The note open beside the list: a positive id of a note that exists, else none (never a 400).
+const noteParam = Astro.url.searchParams.get('note') ?? ''
+
+const opened = /^[1-9]\d{0,14}$/u.test(noteParam)
+	? readCardView(db, instanceProgressBoard, { noteId: Number(noteParam), now: new Date() })
+	: null
 ---
 
-<Shell title={strings.nav.base} {locale} current="base" heading={strings.nav.base}>
-	<EmptyState icon="bookmark" title={strings.base.emptyTitle}>
-		{strings.base.empty}
-	</EmptyState>
+<Shell title={strings.nav.base} {locale} current="base" layout="split">
+	<BaseList
+		client:load
+		initial={overview}
+		{categories}
+		strings={strings.base}
+		notesStrings={strings.notes}
+		current={opened?.note.id ?? null}
+	>
+		<CardPane
+			client:load
+			initial={opened}
+			{categories}
+			timeZone={readTimeZone(db)}
+			batchTime={readBatchTime(db)}
+			{locale}
+			strings={strings.card}
+			statuses={statusLabels(strings.notes)}
+		/>
+	</BaseList>
 </Shell>

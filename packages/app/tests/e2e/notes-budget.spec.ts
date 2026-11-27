@@ -50,7 +50,7 @@ function rows(page: Page) {
 	return page.getByRole('main').getByRole('listitem')
 }
 
-test.describe('notes list with 1,000 notes', () => {
+test.describe('notes list and Base with 1,000 notes', () => {
 	let stopServer: (() => Promise<void>) | null = null
 	let searchPath: string | null = null
 
@@ -59,19 +59,20 @@ test.describe('notes list with 1,000 notes', () => {
 
 		stopServer = server.stop
 		await createOwner(page, server.code, password)
-		searchPath = `/notes?q=${seedNotes(server.dataDir, noteCount)}`
+		searchPath = `/notes?q=${seedNotes(server.dataDir, noteCount, { keptEvery: 3 })}`
 	})
 
 	test.afterEach(async () => {
 		await stopServer?.()
 	})
 
-	test('renders the page under 200 ms and pages through it at 390 px', async ({ page }) => {
+	test('renders the pages under 200 ms and pages through the list at 390 px', async ({ page }) => {
 		const search = searchPath ?? ''
 
 		const timings = [
 			{ name: '/notes', ...(await timePage(page, '/notes')) },
 			{ name: search, ...(await timePage(page, search)) },
+			{ name: '/base', ...(await timePage(page, '/base')) },
 		]
 
 		for (const { name, statuses, median, p95 } of timings) {

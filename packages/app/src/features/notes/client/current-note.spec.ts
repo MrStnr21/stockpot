@@ -81,4 +81,10 @@ describe('CurrentNote', () => {
 
 		expect([keys, announced, prevented]).toEqual([[null, null, null], [], 0])
 	})
+
+	it('focuses the row links of its own list', () => {
+		const base = new CurrentNote({ initial: null, from: 'base' })
+
+		expect([current.linkOf(8), base.linkOf(8)]).toEqual(['/notes/8', '/notes/8?from=base'])
+	})
 })

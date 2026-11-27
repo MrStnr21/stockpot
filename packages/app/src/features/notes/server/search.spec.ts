@@ -6,8 +6,10 @@ import { categoryRowFactory } from '#tests/factories/categories'
 import { explanationRowFactory } from '#tests/factories/explanations'
 import { noteRowFactory } from '#tests/factories/notes'
 import { createTestDb, type TestDb } from '#tests/setup/db'
-import { sql } from 'drizzle-orm'
+import { asc, sql, type SQL } from 'drizzle-orm'
 import * as v from 'valibot'
+
+import { notes as notesTable } from '#/server/db/schema/notes'
 
 import { notesQuerySchema, type NotesQuery } from '../schemas'
 import { listNotes, noteFilters } from './list'
@@ -213,6 +215,30 @@ describe('note search', () => {
 			await noteAt(0)
 
 			expect(search('🙂🙂')).toEqual({ notes: [], nextCursor: null, total: 0 })
+		})
+	})
+
+	describe('selectMatches with orderBy', () => {
+		it('orders the matches as asked, newest created first by default', async () => {
+			const { db } = await createTestDb()
+			const notes = noteRowFactory.transient({ db })
+			const older = await notes.create({ text: 'Kafka', createdAt: capturedAt })
+
+			const newer = await notes.create({
+				text: 'Kafka',
+				createdAt: new Date(capturedAt.getTime() + 60_000),
+			})
+
+			function ids(orderBy?: SQL[]) {
+				return selectMatches(db, { match: '"kafka"*', where: undefined, limit: 10, orderBy })
+					.all()
+					.map(({ note }) => note.id)
+			}
+
+			expect([ids(), ids([asc(notesTable.createdAt)])]).toEqual([
+				[newer.id, older.id],
+				[older.id, newer.id],
+			])
 		})
 	})
 

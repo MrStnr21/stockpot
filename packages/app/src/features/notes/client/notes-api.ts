@@ -54,7 +54,7 @@ const isoDate = v.pipe(v.string(), v.isoTimestamp())
 
 const segment = v.object({ text: v.string(), match: v.boolean() })
 
-const noteRowSchema = v.object({
+export const noteRowSchema = v.object({
 	id,
 	text: v.string(),
 	context: v.nullable(v.string()),
@@ -70,7 +70,7 @@ const noteRowSchema = v.object({
 	snippet: v.nullable(v.array(segment)),
 }) satisfies v.GenericSchema<unknown, NoteRow>
 
-const pageSchema = v.object({
+export const pageSchema = v.object({
 	notes: v.array(noteRowSchema),
 	nextCursor: v.nullable(v.string()),
 	total: v.nullable(count),
@@ -106,7 +106,7 @@ const changeSchema = v.pipe(
 	v.transform(({ results }) => results),
 ) satisfies v.GenericSchema<unknown, readonly ChangeResult[]>
 
-async function request<T>(
+export async function request<T>(
 	send: () => Promise<Response>,
 	schema: v.GenericSchema<unknown, T>,
 ): Promise<ApiResult<T>> {

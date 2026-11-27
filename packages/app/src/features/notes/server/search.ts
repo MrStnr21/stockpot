@@ -98,10 +98,17 @@ export interface MatchQuery {
 	/** The list's other conditions: live notes, filters and the cursor. */
 	readonly where: SQL | undefined
 	readonly limit: number
+	/** Newest created first unless given; Base passes the kept time. */
+	readonly orderBy?: SQL[]
 }
 
+const newestCreated = [desc(notes.createdAt), desc(notes.id)]
+
 // oxlint-disable-next-line typescript/explicit-module-boundary-types -- The Drizzle query type is long; listNotes runs it.
-export function selectMatches(db: Db, { match, where, limit }: MatchQuery) {
+export function selectMatches(
+	db: Db,
+	{ match, where, limit, orderBy = newestCreated }: MatchQuery,
+) {
 	return db
 		.select({
 			note: notes,
@@ -110,12 +117,15 @@ export function selectMatches(db: Db, { match, where, limit }: MatchQuery) {
 		.from(noteSearch)
 		.crossJoin(notes)
 		.where(and(matches(match), where))
-		.orderBy(desc(notes.createdAt), desc(notes.id))
+		.orderBy(...orderBy)
 		.limit(limit)
 }
 
 /** How many notes match under the filters, on every page. */
-export function countMatches(db: Db, { match, where }: Omit<MatchQuery, 'limit'>): number {
+export function countMatches(
+	db: Db,
+	{ match, where }: Omit<MatchQuery, 'limit' | 'orderBy'>,
+): number {
 	const row = db
 		.select({ total: count() })
 		.from(noteSearch)
