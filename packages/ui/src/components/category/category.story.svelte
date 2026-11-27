@@ -54,6 +54,7 @@
 							{names[color]}
 						</CategoryChip>
 					{:else}
+						<CategoryTile {color} icon={color} size="sm" />
 						<CategoryTile {color} icon={color} />
 						<CategoryTile {color} icon={color} size="lg" />
 					{/if}

@@ -9,7 +9,7 @@
 	interface Props {
 		color: CategoryColor
 		icon: IconName
-		size?: 'md' | 'lg'
+		size?: 'sm' | 'md' | 'lg'
 	}
 
 	const { color, icon, size = 'md' }: Props = $props()
@@ -20,8 +20,11 @@
 	data-size={size}
 	class={[
 		categoryColorClasses,
-		'group/category inline-grid size-10 flex-none place-items-center rounded-sm bg-(--c-soft) text-(color:--c) data-[size=lg]:size-14 data-[size=lg]:rounded-md',
+		'group/category inline-grid size-10 flex-none place-items-center rounded-sm bg-(--c-soft) text-(color:--c) data-[size=lg]:size-14 data-[size=lg]:rounded-md data-[size=sm]:size-7 data-[size=sm]:rounded-xs',
 	]}
 >
-	<Icon name={icon} class="size-5 group-data-[size=lg]/category:size-7" />
+	<Icon
+		name={icon}
+		class="size-5 group-data-[size=lg]/category:size-7 group-data-[size=sm]/category:size-4"
+	/>
 </span>
