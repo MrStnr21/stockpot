@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
 import { cardEn } from './card-en'
+import { settingsEn, type Widen } from './settings-en'
 
 /** The interface strings, in English: the source of truth for the keys every locale has. */
 export const en = {
@@ -110,10 +111,7 @@ export const en = {
 		noResultsTitle: 'Nothing matches “{query}”',
 		noResults: 'Search covers the cards you kept. Check the spelling.',
 	},
-	settings: {
-		emptyTitle: 'Settings are on their way',
-		empty: 'Nothing to change here yet.',
-	},
+	settings: settingsEn,
 	capture: {
 		title: 'New note',
 		close: 'Close',
@@ -214,5 +212,3 @@ export const en = {
 export type Messages = {
 	[Key in keyof typeof en]: (typeof en)[Key] extends string ? string : Widen<(typeof en)[Key]>
 }
-
-type Widen<Section> = { [Key in keyof Section]: string }

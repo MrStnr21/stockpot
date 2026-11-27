@@ -5,6 +5,7 @@ import { faker } from '@faker-js/faker'
 import { Factory } from 'fishery'
 
 import type { Settings } from '#/features/settings/server'
+import type { PublicSettings } from '#/features/settings/shared/types'
 
 function models() {
 	return {
@@ -48,4 +49,29 @@ export const configuredSettingsFactory = Factory.define<Settings>(() => ({
 		categories: { '3': { engine: 'agent-command', tier: 'deep' } },
 		fallbackOrder: ['agent-command', 'gemini', 'openai-compatible'],
 	},
+}))
+
+/** Settings as `GET /api/settings` answers: no key, each engine's key as its state. */
+export const publicSettingsFactory = Factory.define<PublicSettings>(() => ({
+	digest: {
+		time: '08:30',
+		batchTime: '06:30',
+		limit: faker.number.int({ min: 1, max: 50 }),
+		timeZone: 'Europe/Berlin',
+	},
+	cardLanguage: 'en',
+	engines: {
+		'agent-command': { command: 'not set' },
+		gemini: {
+			apiKey: 'set',
+			models: models(),
+			limits: {
+				fast: { perMinute: null, perDay: null },
+				standard: { perMinute: null, perDay: null },
+				deep: { perMinute: null, perDay: null },
+			},
+		},
+		'openai-compatible': { baseUrl: null, apiKey: 'not set', models: models() },
+	},
+	routing: { categories: {}, fallbackOrder: ['gemini', 'openai-compatible', 'agent-command'] },
 }))

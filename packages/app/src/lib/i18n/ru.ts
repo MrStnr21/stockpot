@@ -3,6 +3,7 @@
 
 import { cardRu } from './card-ru'
 import type { Messages } from './en'
+import { settingsRu } from './settings-ru'
 
 export const ru: Messages = {
 	nav: {
@@ -111,10 +112,7 @@ export const ru: Messages = {
 		noResultsTitle: 'По запросу «{query}» ничего нет',
 		noResults: 'Поиск идёт по сохранённым карточкам. Проверьте написание.',
 	},
-	settings: {
-		emptyTitle: 'Настройки скоро появятся',
-		empty: 'Менять здесь пока нечего.',
-	},
+	settings: settingsRu,
 	capture: {
 		title: 'Новая заметка',
 		close: 'Закрыть',

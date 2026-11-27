@@ -5,7 +5,7 @@
  * The shapes the settings API answers with, shared by the server, the settings pages and the client.
  * Engine keys appear only as their state: `PublicSettings` has no field that could hold one.
  */
-import type { PublicEngines, Routing } from '#/server/engines/settings'
+import type { EngineId, PublicEngines, Routing } from '#/server/engines/settings'
 
 export type { EngineTestResult } from '#/server/engines/probe'
 
@@ -52,3 +52,40 @@ export interface CategoryRow {
 	readonly position: number
 	readonly noteCount: number
 }
+
+/** The model ID behind each tier, as a change names them: `null` clears one. */
+export interface ModelsChange {
+	readonly fast?: string | null
+	readonly standard?: string | null
+	readonly deep?: string | null
+}
+
+/**
+ * What `PATCH /api/settings` takes (`settingsChangeSchema`): at least one section, every field
+ * optional. A key is write-only: a string replaces it and `null` clears it.
+ */
+export interface SettingsChange {
+	readonly digest?: Partial<PublicDigest>
+	readonly cardLanguage?: string
+	readonly engines?: {
+		readonly gemini?: { readonly apiKey?: string | null; readonly models?: ModelsChange }
+		readonly 'openai-compatible'?: {
+			readonly baseUrl?: string | null
+			readonly apiKey?: string | null
+			readonly models?: ModelsChange
+		}
+	}
+	readonly routing?: { readonly fallbackOrder: readonly EngineId[] }
+}
+
+/** A category's own fields, as `POST /api/categories` takes them. */
+export interface CategoryFields {
+	readonly name: string
+	readonly icon: string
+	readonly color: string
+	readonly format: string
+	readonly instructions: string
+}
+
+/** A category as `POST` and `PATCH /api/categories` answer: its fields, without the note count. */
+export type CategoryRecord = Omit<CategoryRow, 'noteCount'>

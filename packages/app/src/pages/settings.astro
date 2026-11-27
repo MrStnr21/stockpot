@@ -3,7 +3,6 @@
 // SPDX-FileCopyrightText: 2026 The stockpot authors
 
 import { Button } from '@stockpot/ui/button'
-import { EmptyState } from '@stockpot/ui/empty-state'
 
 import PushToggle from '#/features/push/client/push-toggle.svelte'
 import { vapidPublicKey } from '#/features/push/server/vapid'
@@ -26,9 +25,6 @@ const publicKey = await vapidPublicKey(await instanceDb())
 ---
 
 <Shell title={strings.nav.settings} {locale} current="settings" heading={strings.nav.settings}>
-	<EmptyState icon="sliders" title={strings.settings.emptyTitle}>
-		{strings.settings.empty}
-	</EmptyState>
 	<PushToggle client:load {publicKey} strings={strings.push} />
 	<form method="post" action="/signout" class="flex justify-center">
 		<Button type="submit" variant="outline">
