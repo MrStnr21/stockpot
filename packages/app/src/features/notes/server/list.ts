@@ -71,7 +71,8 @@ export function selectNotes(db: Db, query: NotesQuery) {
 		.limit((query.limit ?? defaultPageSize) + 1)
 }
 
-interface Found {
+/** A note a query found, with its search snippet when a search found it. */
+export interface Found {
 	readonly row: NoteRow
 	readonly snippet: SnippetSegment[] | null
 }
@@ -83,25 +84,28 @@ interface FoundRows {
 	readonly total: number | null
 }
 
-function toPage(db: Db, { found, limit, total }: FoundRows): NotesPage {
-	const page = found.slice(0, limit)
-	const last = page.at(-1)
-
+/** The notes as a list row shows them, with their cards' sense and flag read in one query. */
+export function toListed(db: Db, found: readonly Found[]): ListedNote[] {
 	const cards = cardFacts(
 		db,
-		page.map(({ row }) => row.id),
+		found.map(({ row }) => row.id),
 	)
 
-	const listed = page.map(({ row, snippet }) =>
+	return found.map(({ row, snippet }) =>
 		Object.assign(toPublicNote(row), {
 			sense: cards.get(row.id)?.sense ?? null,
 			flag: cards.get(row.id)?.flag ?? null,
 			snippet,
 		}),
 	)
+}
+
+function toPage(db: Db, { found, limit, total }: FoundRows): NotesPage {
+	const page = found.slice(0, limit)
+	const last = page.at(-1)
 
 	return {
-		notes: listed,
+		notes: toListed(db, page),
 		nextCursor: found.length > limit && last !== undefined ? encodeCursor(last.row) : null,
 		total,
 	}

@@ -6,7 +6,13 @@ import { faker } from '@faker-js/faker'
 import { newNoteFactory } from '#tests/factories/notes'
 import * as v from 'valibot'
 
-import { encodeCursor, newNoteSchema, noteChangeSchema, notesQuerySchema } from './schemas'
+import {
+	baseNotesQuerySchema,
+	encodeCursor,
+	newNoteSchema,
+	noteChangeSchema,
+	notesQuerySchema,
+} from './schemas'
 
 describe('notes schemas', () => {
 	describe('newNoteSchema', () => {
@@ -42,6 +48,27 @@ describe('notes schemas', () => {
 			const query = v.parse(notesQuerySchema, { cursor: encodeCursor({ createdAt, id }) })
 
 			expect(query.cursor).toEqual({ createdAt: createdAt.getTime(), id })
+		})
+	})
+
+	describe('baseNotesQuerySchema', () => {
+		it.each([
+			['a category', { categoryId: '7' }, { categoryId: 7 }],
+			['the uncategorized notes', { categoryId: 'none' }, { categoryId: null }],
+			['a search with a page size', { q: ' run ', limit: '100' }, { q: 'run', limit: 100 }],
+		])('takes %s', (_case, params, query) => {
+			expect(v.parse(baseNotesQuerySchema, params)).toEqual(query)
+		})
+
+		it.each([
+			['both a category and a search', { categoryId: '7', q: 'run' }],
+			['neither a category nor a search', {}],
+			['only a blank search', { q: '   ' }],
+			['a category that is not an id', { categoryId: 'all' }],
+			['a page over 100', { q: 'run', limit: '101' }],
+			['a cursor it did not make', { categoryId: 'none', cursor: 'not-a-cursor' }],
+		])('refuses %s', (_case, params) => {
+			expect(v.safeParse(baseNotesQuerySchema, params).success).toBe(false)
 		})
 	})
 
