@@ -35,13 +35,13 @@ function marked(items: readonly string[], current: string) {
 	return items.includes(current) ? [current] : []
 }
 
+/* From 768 px Settings has its own section list beside the Digest pane, so only the main one is counted. */
 async function expectNavigation(page: Page, items: readonly string[], current: string) {
-	const navigation = page.getByRole('navigation')
+	const navigation = page.getByRole('navigation', { name: 'Main', exact: true })
 
 	await expect(navigation).toHaveCount(1)
 	await expect(navigation.getByRole('link')).toHaveText(items)
 	await expect(navigation.locator('[aria-current="page"]')).toHaveText(marked(items, current))
-	await expect(page.getByRole('heading', { level: 1 })).toHaveText(current)
 }
 
 test.describe('app shell', () => {
@@ -70,11 +70,15 @@ test.describe('app shell', () => {
 
 		for (const { width, height, items } of widths) {
 			for (const { path, current } of pages) {
+				// From 768 px, /settings opens its Digest section beside the section list.
+				const heading = path === '/settings' && width >= 768 ? 'Digest' : current
+
 				test(`shows one navigation on ${path} at ${width} px`, async ({ page }) => {
 					await page.setViewportSize({ width, height })
 					await page.goto(`${origin}${path}`)
 
 					await expectNavigation(page, items, current)
+					await expect(page.getByRole('heading', { level: 1 })).toHaveText(heading)
 				})
 			}
 
@@ -90,6 +94,7 @@ test.describe('app shell', () => {
 				await page.keyboard.press('Escape')
 				await expect(sheet).toBeHidden()
 				await expectNavigation(page, items, add.current)
+				await expect(page.getByRole('heading', { level: 1 })).toHaveText(add.current)
 			})
 		}
 

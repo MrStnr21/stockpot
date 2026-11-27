@@ -1,0 +1,74 @@
+---
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 The stockpot authors
+
+/* The category editor page for `new.astro` and `[id].astro`; the underscore keeps Astro from serving it. */
+
+import { Button } from '@stockpot/ui/button'
+import { EmptyState } from '@stockpot/ui/empty-state'
+
+import CategoryEditor from '#/features/settings/client/category-editor.svelte'
+import SettingsFrame from '#/features/settings/client/settings-frame.astro'
+import type { CategoryEditorData } from '#/features/settings/server/category-editor'
+import { readSettingsOverview } from '#/features/settings/server/overview'
+import Shell from '#/layouts/shell.astro'
+import { pickLocale, t } from '#/lib/i18n'
+import { instanceDb } from '#/server/db/instance'
+
+interface Props {
+	/** `null` when there is no such category: the page has set the 404. */
+	editor: CategoryEditorData | null
+}
+
+const { editor } = Astro.props
+
+const locale = pickLocale(Astro.request.headers.get('accept-language'))
+
+const strings = t(locale)
+
+const s = strings.settings
+
+const db = await instanceDb()
+
+const { attention } = readSettingsOverview(db, new Date())
+
+let title = s.editor.missingTitle
+
+if (editor !== null) {
+	title = editor.id === null ? s.editor.newTitle : editor.initial.name
+}
+---
+
+<!-- DES-5 390-03/04 and 1440-02: the editor, with "‹ Categories" at every width. -->
+<Shell {title} {locale} current="settings" layout="split">
+	<SettingsFrame section="categories" {strings} {attention}>
+		{editor === null ? (
+			<>
+				<Button variant="ghost" size="sm" href="/settings/categories" class="-ms-2.5 self-start">
+					{s.categories.title}
+				</Button>
+				<h1 class="sr-only">{s.editor.missingTitle}</h1>
+				<EmptyState icon="tag" title={s.editor.missingTitle}>
+					{s.editor.missing}
+				</EmptyState>
+			</>
+		) : (
+			<CategoryEditor
+				client:load
+				id={editor.id}
+				initial={editor.initial}
+				noteCount={editor.noteCount}
+				others={editor.others}
+				defaultEngine={editor.defaultEngine}
+				configured={editor.configured}
+				strings={{
+					categories: s.categories,
+					editor: s.editor,
+					formats: s.formats,
+					engines: s.engines,
+					errors: s.errors,
+				}}
+			/>
+		)}
+	</SettingsFrame>
+</Shell>

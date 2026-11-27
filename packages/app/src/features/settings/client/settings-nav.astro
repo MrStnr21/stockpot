@@ -1,0 +1,27 @@
+---
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 The stockpot authors
+
+import type { Messages } from '#/lib/i18n/en'
+
+import SettingsNavList from './settings-nav-list.svelte'
+import type { SettingsSection } from './settings-sections'
+
+interface Props {
+	section: SettingsSection
+	strings: Messages
+	/** Draws the dot on Engines. */
+	attention: boolean
+}
+
+const { section, strings, attention } = Astro.props
+---
+
+<!-- DES-5 `.set-nav`: 260 px at 768, 300 px from 1440, beside the open section. -->
+<nav
+	aria-label={strings.settings.sections.label}
+	class="hidden md:flex md:w-65 md:shrink-0 md:flex-col md:gap-3.5 md:overflow-y-auto md:border-e md:border-line md:px-3.5 md:pt-12 md:pb-10 xl:w-list xl:px-5 xl:pt-10"
+>
+	<p class="pt-2 font-ui text-title-l">{strings.nav.settings}</p>
+	<SettingsNavList {section} {attention} names={strings.settings.sections} />
+</nav>

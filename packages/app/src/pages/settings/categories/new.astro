@@ -1,0 +1,22 @@
+---
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 The stockpot authors
+
+import { listCategories } from '#/features/categories/server'
+import { readCategoryEditor } from '#/features/settings/server/category-editor'
+import { instanceDb } from '#/server/db/instance'
+
+import EditorPage from './_editor-page.astro'
+
+// Sign-in sends a visitor on to setup while the instance has no owner.
+if (Astro.locals.owner === null) {
+	// oxlint-disable-next-line unicorn/prefer-module -- Astro runs the frontmatter as a function, and a page redirects by returning the response.
+	return Astro.redirect('/signin')
+}
+
+const db = await instanceDb()
+
+const editor = readCategoryEditor(db, listCategories(db), null)
+---
+
+<EditorPage {editor} />

@@ -1,0 +1,32 @@
+---
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 The stockpot authors
+
+import { listCategories } from '#/features/categories/server'
+import { readCategoryEditor } from '#/features/settings/server/category-editor'
+import { instanceDb } from '#/server/db/instance'
+
+import EditorPage from './_editor-page.astro'
+
+// Sign-in sends a visitor on to setup while the instance has no owner.
+if (Astro.locals.owner === null) {
+	// oxlint-disable-next-line unicorn/prefer-module -- Astro runs the frontmatter as a function, and a page redirects by returning the response.
+	return Astro.redirect('/signin')
+}
+
+const rawId = Astro.params.id ?? ''
+
+const db = await instanceDb()
+
+// Anything but a positive id finds no category: the page answers 404, never 400.
+const editor = /^[1-9]\d{0,14}$/u.test(rawId)
+	? readCategoryEditor(db, listCategories(db), Number(rawId))
+	: null
+
+// The status is set here: a component renders after the page has started its answer.
+if (editor === null) {
+	Astro.response.status = 404
+}
+---
+
+<EditorPage {editor} />

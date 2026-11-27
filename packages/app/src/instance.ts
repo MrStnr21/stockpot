@@ -20,11 +20,10 @@ import {
 	type ResearchPayload,
 } from '#/features/research/server/pipeline'
 import { readBatchTime, readSettings, readTimeZone } from '#/features/settings/server'
+import { instanceRouter } from '#/instance-engines'
 import { readyNotifier } from '#/instance-push'
-import { config } from '#/server/config'
 import type { Db } from '#/server/db/client'
 import { instanceDb } from '#/server/db/instance'
-import { createRouter, type Router } from '#/server/engines/router'
 import { HttpError } from '#/server/http'
 import { nextDailyRun, parseTimeOfDay } from '#/server/jobs/daily'
 import { currentRunner } from '#/server/jobs/runner'
@@ -33,7 +32,7 @@ import { openLink } from '#/server/links/open-link'
 import { log } from '#/server/log'
 
 /*
- * The process's shared services that are built from features: the router reads the settings feature,
+ * The process's shared services that are built from features: the router lives in instance-engines.ts,
  * the suggester belongs to capture, and the jobs compose digest, research, notes and settings.
  * server/ may not import features, so they live in this entry module, opened on first use like the database.
  * One router keeps each engine and Gemini's usage counters once per process; one suggester keeps one
@@ -41,7 +40,6 @@ import { log } from '#/server/log'
  */
 
 interface ProcessServices {
-	router?: Promise<Router>
 	suggester?: Suggester
 	researchJob?: { db: Db; job: JobDefinition<ResearchPayload> }
 	deeperJob?: { db: Db; job: JobDefinition<DeeperPayload> }
@@ -50,21 +48,7 @@ interface ProcessServices {
 
 const thisProcess: ProcessServices = {}
 
-export async function instanceRouter(): Promise<Router> {
-	thisProcess.router ??= instanceDb().then((db) =>
-		createRouter({
-			db,
-			settings: () => {
-				const { engines, routing } = readSettings(db)
-
-				return { engines, routing }
-			},
-			agentCommand: config.agentCommand,
-		}),
-	)
-
-	return thisProcess.router
-}
+export { instanceRouter } from '#/instance-engines'
 
 export async function instanceSuggester(): Promise<Suggester> {
 	thisProcess.suggester ??= createSuggester({

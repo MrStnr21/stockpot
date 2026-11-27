@@ -25,7 +25,7 @@ test.describe('owner account', () => {
 		try {
 			await createOwner(page, server.code, password)
 
-			await page.goto(`${origin}/settings`)
+			await page.goto(`${origin}/settings/account`)
 			await page.getByRole('button', { name: 'Sign out' }).click()
 			await expect(page).toHaveURL(`${origin}/signin`)
 

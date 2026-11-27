@@ -28,9 +28,10 @@ import {
 	routingPatchSchema,
 	routingSchema,
 	toPublicEngines,
-	type PublicEngines,
 } from '#/server/engines/settings'
 import { log } from '#/server/log'
+
+import type { PublicSettings } from './shared/types'
 
 /** The runtime's spelling of a zone, such as `Europe/Berlin` for `europe/berlin`; throws on an unknown one. */
 function canonicalTimeZone(value: string) {
@@ -76,12 +77,12 @@ const timeZone = v.pipe(
 	v.transform(canonicalTimeZone),
 )
 
-const languageCode = v.pipe(
+export const languageCode = v.pipe(
 	v.string(),
 	v.regex(/^[a-z]{2}$/u, 'Use a two-letter ISO 639-1 code, such as en'),
 )
 
-const digestSchema = v.object({
+export const digestSchema = v.object({
 	/** When the morning digest arrives, as HH:MM in `timeZone`. */
 	time: clockTime,
 	/** When the nightly batch starts, as HH:MM in `timeZone`. */
@@ -189,14 +190,17 @@ export function readSettings(db: Queries): Settings {
 }
 
 /**
- * Applies a validated patch and stores the sections it touches. Reading, merging and writing share
- * one synchronous transaction, so two patches to the same section cannot drop each other's fields.
- * A stored section that no longer validates counts as its defaults here, so a patch can repair it;
- * a section the patch leaves out is not written.
+ * Applies a patch built from the current settings and stores the sections it touches. Reading,
+ * merging and writing share one synchronous transaction, so two changes to the same section cannot
+ * drop each other's fields, even to part of a section that is replaced whole. A stored section that
+ * no longer validates counts as its defaults here, so a patch can repair it; a section the patch
+ * leaves out is not written.
  */
-export function updateSettings(db: Db, patch: SettingsPatch): Settings {
+export function updateSettingsWith(db: Db, build: (current: Settings) => SettingsPatch): Settings {
 	return db.transaction((tx) => {
-		const next = applyPatch(applyPatch(defaultSettings(), readStored(tx).sections), patch)
+		const current = applyPatch(defaultSettings(), readStored(tx).sections)
+		const patch = build(current)
+		const next = applyPatch(current, patch)
 
 		const rows = sectionKeys.flatMap((key) =>
 			patch[key] === undefined ? [] : [{ key, value: next[key] }],
@@ -214,6 +218,11 @@ export function updateSettings(db: Db, patch: SettingsPatch): Settings {
 
 		return next
 	})
+}
+
+/** Applies a validated patch, as `updateSettingsWith` does. */
+export function updateSettings(db: Db, patch: SettingsPatch): Settings {
+	return updateSettingsWith(db, () => patch)
 }
 
 /** SQLite may reuse a deleted category's id, so clear its override in the deletion transaction. */
@@ -247,14 +256,6 @@ export function readTimeZone(db: Db): string {
 
 export function readBatchTime(db: Db): string {
 	return readScheduleSetting(db, 'batchTime')
-}
-
-/** Settings as they may leave the server: every key and the agent command reduced to its state. */
-export interface PublicSettings {
-	digest: Settings['digest']
-	cardLanguage: string
-	engines: PublicEngines
-	routing: Settings['routing']
 }
 
 /** The one serializer for settings sent to a client. */

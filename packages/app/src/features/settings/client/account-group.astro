@@ -1,0 +1,27 @@
+---
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 The stockpot authors
+
+import type { Messages } from '#/lib/i18n/en'
+
+import SettingsGroup from './settings-group.svelte'
+
+interface Props {
+	strings: Messages
+	head?: string
+	class?: string
+}
+
+const { strings, head, class: className } = Astro.props
+---
+
+<SettingsGroup {head} class={className}>
+	<form method="post" action="/signout">
+		<button
+			type="submit"
+			class="flex min-h-13 w-full cursor-pointer items-center bg-surface px-3.5 py-2 text-start font-ui text-body/5.5 font-semibold text-danger-ink outline-focus focus-visible:outline-2 focus-visible:-outline-offset-4 active:bg-fill"
+		>
+			{strings.signOut}
+		</button>
+	</form>
+</SettingsGroup>
