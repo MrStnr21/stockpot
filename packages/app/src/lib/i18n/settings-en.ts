@@ -39,6 +39,7 @@ export const settingsEn = {
 		new: 'New',
 		newCategory: 'New category',
 		row: '{format} format · {count} notes',
+		rowOne: '{format} format · 1 note',
 		move: 'Move {name}',
 		position: '{name}, position {n} of {total}',
 	},

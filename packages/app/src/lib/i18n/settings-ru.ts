@@ -41,6 +41,7 @@ export const settingsRu: SettingsMessages = {
 		new: 'Новая',
 		newCategory: 'Новая категория',
 		row: 'Формат: {format} · заметок: {count}',
+		rowOne: 'Формат: {format} · заметок: 1',
 		move: 'Переместить «{name}»',
 		position: '{name}, место {n} из {total}',
 	},
