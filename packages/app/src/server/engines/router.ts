@@ -55,7 +55,7 @@ export interface Route {
 }
 
 /** The tier column of the routing table, keyed by task and format. */
-function defaultTier(task: Task, format: string): Tier {
+export function defaultTier(task: Task, format: string): Tier {
 	if (task === 'suggest') {
 		return 'fast'
 	}
