@@ -1,0 +1,70 @@
+---
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 The stockpot authors
+
+import DevicesSection from '#/features/settings/client/devices-section.svelte'
+import SettingsFrame from '#/features/settings/client/settings-frame.astro'
+import SettingsGroup from '#/features/settings/client/settings-group.svelte'
+import ShortcutCard from '#/features/settings/client/shortcut-card.svelte'
+import { readSettingsOverview } from '#/features/settings/server/overview'
+import { shortcutInstallUrl } from '#/features/settings/shared/links'
+import type { DeviceRow } from '#/features/settings/shared/types'
+import Shell from '#/layouts/shell.astro'
+import { pickLocale, t } from '#/lib/i18n'
+import { instanceAuth } from '#/server/auth'
+import { instanceDb } from '#/server/db/instance'
+
+// Sign-in sends a visitor on to setup while the instance has no owner.
+if (Astro.locals.owner === null) {
+	// oxlint-disable-next-line unicorn/prefer-module -- Astro runs the frontmatter as a function, and a page redirects by returning the response.
+	return Astro.redirect('/signin')
+}
+
+const locale = pickLocale(Astro.request.headers.get('accept-language'))
+
+const strings = t(locale)
+
+const s = strings.settings
+
+const db = await instanceDb()
+
+const now = new Date()
+
+const { settings, attention } = readSettingsOverview(db, now)
+
+const auth = await instanceAuth()
+
+// The rows as `GET /api/devices` lists them: a masked hint, never a token or its hash.
+const devices: DeviceRow[] = auth.devices
+	.list()
+	.map(({ id, name, hint, createdAt, lastUsedAt }) => ({
+		id,
+		name,
+		hint,
+		createdAt: createdAt.toISOString(),
+		lastUsedAt: lastUsedAt?.toISOString() ?? null,
+	}))
+---
+
+<!-- DES-5 390-08 and 768/1440-04: the Shortcut, then each device with a Revoke. -->
+<Shell title={s.devices.title} {locale} current="settings" layout="split">
+	<SettingsFrame
+		section="devices"
+		{strings}
+		{attention}
+		back={{ href: '/settings', label: strings.nav.settings }}
+	>
+		<h1 class="font-ui text-title-l md:pt-2">{s.devices.title}</h1>
+		<SettingsGroup head={s.shortcut.head} card={false}>
+			<ShortcutCard installUrl={shortcutInstallUrl} strings={s.shortcut} />
+		</SettingsGroup>
+		<DevicesSection
+			client:load
+			{devices}
+			now={now.toISOString()}
+			{locale}
+			timeZone={settings.digest.timeZone}
+			strings={{ devices: s.devices, when: s.when, errors: s.errors, keys: s.keys }}
+		/>
+	</SettingsFrame>
+</Shell>

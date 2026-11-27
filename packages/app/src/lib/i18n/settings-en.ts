@@ -251,6 +251,7 @@ export const settingsEn = {
 		deleteFailed: 'Could not delete. Try again',
 		orderFailed: 'Could not save the order. Try again',
 		testFailed: 'Could not run the test. Try again',
+		revokeFailed: 'Could not revoke. Try again',
 		copyFailed: 'Could not copy. Select the token and copy it',
 	},
 	when: {

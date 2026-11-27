@@ -1,0 +1,69 @@
+---
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 The stockpot authors
+
+import { Icon } from '@stockpot/ui/icon'
+import { Badge } from '@stockpot/ui/status-badge'
+
+import SettingsFrame from '#/features/settings/client/settings-frame.astro'
+import { readSettingsOverview } from '#/features/settings/server/overview'
+import Shell from '#/layouts/shell.astro'
+import { pickLocale, t } from '#/lib/i18n'
+import { instanceDb } from '#/server/db/instance'
+
+// Sign-in sends a visitor on to setup while the instance has no owner.
+if (Astro.locals.owner === null) {
+	// oxlint-disable-next-line unicorn/prefer-module -- Astro runs the frontmatter as a function, and a page redirects by returning the response.
+	return Astro.redirect('/signin')
+}
+
+const locale = pickLocale(Astro.request.headers.get('accept-language'))
+
+const strings = t(locale)
+
+const s = strings.settings.integrations
+
+const db = await instanceDb()
+
+const { attention } = readSettingsOverview(db, new Date())
+
+// Each arrives in a later version (M10); until then the cards only say what they will do.
+const integrations = [
+	{ key: 'notion', icon: 'book', name: s.notion, text: s.notionText },
+	{ key: 'telegram', icon: 'send', name: s.telegram, text: s.telegramText },
+	{ key: 'mcp', icon: 'terminal', name: s.mcp, text: s.mcpText },
+	{ key: 'quick-action', icon: 'laptop', name: s.quickAction, text: s.quickActionText },
+] as const
+---
+
+<!-- DES-5 390-10: the integrations to come, none available yet. -->
+<Shell title={s.title} {locale} current="settings" layout="split">
+	<SettingsFrame
+		section="integrations"
+		{strings}
+		{attention}
+		back={{ href: '/settings', label: strings.nav.settings }}
+	>
+		<h1 class="font-ui text-title-l md:pt-2">{s.title}</h1>
+		<p class="-mt-2 font-ui text-body-compact text-ink-2">{s.intro}</p>
+		<div class="flex flex-col gap-3">
+			{integrations.map(({ key, icon, name, text }) => (
+				<article
+					aria-labelledby={`integration-${key}`}
+					class="flex flex-col gap-2.5 rounded-lg border border-line bg-surface px-4 py-3.5 font-ui"
+				>
+					<div class="flex items-center gap-2.5">
+						<span class="grid size-9 shrink-0 place-items-center rounded-xs bg-fill text-ink-2">
+							<Icon name={icon} class="size-5" />
+						</span>
+						<h2 id={`integration-${key}`} class="min-w-0 flex-1 text-title-s">
+							{name}
+						</h2>
+						<Badge>{s.notAvailable}</Badge>
+					</div>
+					<p class="text-body-compact text-ink-2">{text}</p>
+				</article>
+			))}
+		</div>
+	</SettingsFrame>
+</Shell>
