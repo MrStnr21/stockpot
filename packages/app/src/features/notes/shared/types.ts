@@ -3,8 +3,8 @@
 
 /*
  * The notes list's own narrow shapes of what `GET /api/notes`, `GET /api/notes/counts`,
- * `PATCH /api/notes` and `POST /api/notes/research` send, so the browser bundle never depends on the
- * server modules that build them. Dates arrive as ISO strings, as JSON carries them.
+ * `PATCH /api/notes`, `POST /api/notes/research` and `GET /api/base*` send, so the browser bundle
+ * never depends on the server modules that build them. Dates arrive as ISO strings, as JSON carries them.
  */
 import type { CategoryColor, IconName } from '@stockpot/ui/icon'
 
@@ -64,6 +64,22 @@ export interface NotesPage {
 	readonly nextCursor: string | null
 	/** Only with a search: how many notes match under the filters. */
 	readonly total: number | null
+}
+
+/** One category's kept notes in Base; `categoryId: null` holds the uncategorized ones. */
+export interface BaseGroup {
+	readonly categoryId: number | null
+	/** Every kept note of the group, not only the previewed ones. */
+	readonly count: number
+	/** The group's most recently kept notes. */
+	readonly notes: readonly NoteRow[]
+}
+
+/** Base's overview: the kept notes by category, in the owner's order, the uncategorized ones last. */
+export interface BaseOverview {
+	/** Every kept note. */
+	readonly total: number
+	readonly groups: readonly BaseGroup[]
 }
 
 /** How many live notes share a category and a status. */
