@@ -47,6 +47,8 @@ export const settingsRu: SettingsMessages = {
 	},
 	editor: {
 		newTitle: 'Новая категория',
+		missingTitle: 'Такой категории нет',
+		missing: 'Возможно, её удалили. В списке есть все категории.',
 		save: 'Сохранить',
 		name: 'Название',
 		nameTaken: 'Категория с таким названием уже есть',
@@ -67,6 +69,8 @@ export const settingsRu: SettingsMessages = {
 		deleteTitle: 'Удалить «{name}»?',
 		deleteText:
 			'Заметок в ней: {count}. Они перейдут в категорию, которую вы выберете, а их карточки останутся.',
+		deleteTextOne:
+			'Заметок в ней: 1. Она перейдёт в категорию, которую вы выберете, а её карточка останется.',
 		deleteEmpty: 'В ней нет заметок.',
 		moveTo: 'Перенести заметки в',
 		deleteAndMove: 'Удалить и перенести',

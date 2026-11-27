@@ -45,6 +45,8 @@ export const settingsEn = {
 	},
 	editor: {
 		newTitle: 'New category',
+		missingTitle: 'There is no such category',
+		missing: 'It may have been deleted. The list has every category there is.',
 		save: 'Save',
 		name: 'Name',
 		nameTaken: 'A category already has that name',
@@ -64,6 +66,7 @@ export const settingsEn = {
 		delete: 'Delete category',
 		deleteTitle: 'Delete “{name}”?',
 		deleteText: '{count} notes use it. They move to the category you pick, and their cards stay.',
+		deleteTextOne: '1 note uses it. It moves to the category you pick, and its card stays.',
 		deleteEmpty: 'No notes use it.',
 		moveTo: 'Move notes to',
 		deleteAndMove: 'Delete and move',

@@ -58,3 +58,28 @@ export function positionText(
 		.replaceAll('{n}', String(index + 1))
 		.replaceAll('{total}', String(total))
 }
+
+const arrowSteps = new Map([
+	['ArrowRight', 1],
+	['ArrowDown', 1],
+	['ArrowLeft', -1],
+	['ArrowUp', -1],
+])
+
+/**
+ * Where an arrow key takes the choice in a radio group of `count` (WAI-ARIA radio group): the next
+ * one for right or down, the previous for left or up, wrapping at the ends; `null` for other keys.
+ */
+export function radioTarget(index: number, key: string, count: number): number | null {
+	const step = arrowSteps.get(key)
+
+	if (key === 'Home') {
+		return 0
+	}
+
+	if (key === 'End') {
+		return count - 1
+	}
+
+	return step === undefined ? null : (index + step + count) % count
+}

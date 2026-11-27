@@ -6,7 +6,7 @@ import { describe, expect, it } from 'bun:test'
 import { en } from '#/lib/i18n/en'
 import { ru } from '#/lib/i18n/ru'
 
-import { categorySubtitle, formatOptions, positionText } from './category-view'
+import { categorySubtitle, formatOptions, positionText, radioTarget } from './category-view'
 
 describe('category view', () => {
 	describe('categorySubtitle', () => {
@@ -55,6 +55,21 @@ describe('category view', () => {
 			expect(positionText(en.settings.categories.position, 'Cooking', { index: 0, total: 7 })).toBe(
 				'Cooking, position 1 of 7',
 			)
+		})
+	})
+
+	describe('radioTarget', () => {
+		it.each([
+			[0, 'ArrowRight', 1],
+			[0, 'ArrowDown', 1],
+			[17, 'ArrowRight', 0],
+			[0, 'ArrowLeft', 17],
+			[5, 'ArrowUp', 4],
+			[9, 'Home', 0],
+			[9, 'End', 17],
+			[9, 'Enter', null],
+		])('takes %i with %s to %p', (index, key, expected) => {
+			expect(radioTarget(index, key, 18)).toBe(expected)
 		})
 	})
 })
