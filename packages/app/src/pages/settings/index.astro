@@ -1,0 +1,82 @@
+---
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 The stockpot authors
+
+import { listCategories } from '#/features/categories/server'
+import PushToggle from '#/features/push/client/push-toggle.svelte'
+import { vapidPublicKey } from '#/features/push/server/vapid'
+import AboutGroup from '#/features/settings/client/about-group.astro'
+import AccountGroup from '#/features/settings/client/account-group.astro'
+import AppGroup from '#/features/settings/client/app-group.astro'
+import DigestSection from '#/features/settings/client/digest-section.svelte'
+import { engineSummary } from '#/features/settings/client/engine-view'
+import SettingRow from '#/features/settings/client/setting-row.svelte'
+import SettingsFrame from '#/features/settings/client/settings-frame.astro'
+import SettingsGroup from '#/features/settings/client/settings-group.svelte'
+import { readSettingsOverview } from '#/features/settings/server/overview'
+import Shell from '#/layouts/shell.astro'
+import { pickLocale, t } from '#/lib/i18n'
+import { instanceAuth } from '#/server/auth'
+import { instanceDb } from '#/server/db/instance'
+
+// Sign-in sends a visitor on to setup while the instance has no owner.
+if (Astro.locals.owner === null) {
+	// oxlint-disable-next-line unicorn/prefer-module -- Astro runs the frontmatter as a function, and a page redirects by returning the response.
+	return Astro.redirect('/signin')
+}
+
+const locale = pickLocale(Astro.request.headers.get('accept-language'))
+
+const strings = t(locale)
+
+const s = strings.settings
+
+const db = await instanceDb()
+
+// Only the public settings leave the server: the keys stay inside readSettingsOverview.
+const { settings, engines, attention } = readSettingsOverview(db, new Date())
+
+const categoryCount = listCategories(db).length
+
+const auth = await instanceAuth()
+
+const deviceCount = auth.devices.list().length
+
+const publicKey = await vapidPublicKey(db)
+---
+
+<!-- DES-5: one grouped list on the phone (390-01); from 768 the nav beside the Digest pane (768/1440-01). -->
+<Shell title={strings.nav.settings} {locale} current="settings" layout="split">
+	<SettingsFrame section="digest" {strings} {attention}>
+		<h1 class="pt-2 font-ui text-title-l md:hidden">{strings.nav.settings}</h1>
+		<h1 class="hidden pt-2 font-ui text-title-l md:block">{s.sections.digest}</h1>
+		<p class="-mt-2 hidden font-ui text-body-compact text-ink-2 md:block">{s.digest.intro}</p>
+		<DigestSection
+			client:load
+			digest={settings.digest}
+			cardLanguage={settings.cardLanguage}
+			{locale}
+			{categoryCount}
+			strings={{ sections: s.sections, digest: s.digest, cards: s.cards, errors: s.errors }}
+		/>
+		<SettingsGroup head={s.sections.enginesAndDevices} class="md:hidden">
+			<SettingRow
+				label={s.sections.engines}
+				hint={engineSummary(engines, s.engines)}
+				href="/settings/engines"
+				attention={attention ? s.sections.attention : null}
+			/>
+			<SettingRow label={s.devices.title} href="/settings/devices" value={String(deviceCount)} />
+			<SettingRow
+				label={s.integrations.title}
+				href="/settings/integrations"
+				value={s.integrations.none}
+			/>
+		</SettingsGroup>
+		<AppGroup {strings} {locale} head={s.sections.app} class="md:hidden">
+			<PushToggle slot="after" client:load {publicKey} strings={strings.push} />
+		</AppGroup>
+		<AccountGroup {strings} head={s.sections.account} class="md:hidden" />
+		<AboutGroup {strings} head={s.sections.about} class="md:hidden" />
+	</SettingsFrame>
+</Shell>

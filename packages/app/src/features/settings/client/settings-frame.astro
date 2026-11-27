@@ -1,0 +1,52 @@
+---
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 The stockpot authors
+
+import { Icon } from '@stockpot/ui/icon'
+
+import type { Messages } from '#/lib/i18n/en'
+
+import SettingsNav from './settings-nav.astro'
+import type { SettingsSection } from './settings-sections'
+
+interface Props {
+	section: SettingsSection
+	strings: Messages
+	attention: boolean
+	/** The crumb back up, drawn on phones, where the nav is hidden. */
+	back?: { href: string; label: string }
+	/** Draws the crumb at every width, as the category editor does (DES-5 1440-02). */
+	backEverywhere?: boolean
+}
+
+const { section, strings, attention, back, backEverywhere = false } = Astro.props
+---
+
+<div class="flex flex-col md:h-full md:min-h-0 md:flex-row">
+	<SettingsNav {section} {strings} {attention} />
+	<!-- DES-5 `.set-pane`: the open section in a 680 px column. -->
+	<div class="md:min-w-0 md:flex-1 md:overflow-y-auto md:px-6 md:pt-10 md:pb-10 xl:px-12">
+		<div class="mx-auto flex w-full max-w-column flex-col gap-5">
+			{(back !== undefined || Astro.slots.has('action')) && (
+				<div
+					class:list={[
+						'flex min-h-11 items-center justify-between gap-3',
+						!backEverywhere && 'md:hidden',
+					]}
+				>
+					{back !== undefined && (
+						<a
+							href={back.href}
+							class="-ms-1 inline-flex min-h-11 items-center gap-1 rounded-sm px-1 font-ui text-label font-medium text-accent-ink outline-focus focus-visible:outline-2 focus-visible:outline-offset-2"
+						>
+							<Icon name="chevron" class="size-4 -scale-x-100" />
+							{back.label}
+						</a>
+					)}
+					<slot name="action" />
+				</div>
+			)}
+			<slot />
+		</div>
+	</div>
+</div>

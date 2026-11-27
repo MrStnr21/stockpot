@@ -1,0 +1,37 @@
+---
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 The stockpot authors
+
+import type { Locale } from '#/lib/i18n'
+import type { Messages } from '#/lib/i18n/en'
+
+import SettingRow from './setting-row.svelte'
+import SettingsGroup from './settings-group.svelte'
+
+interface Props {
+	strings: Messages
+	locale: Locale
+	/** The group's head, on the phone list; the App pane has its title instead. */
+	head?: string
+	class?: string
+}
+
+const { strings, locale, head, class: className } = Astro.props
+
+const { app } = strings.settings
+
+// Neither has a setting yet (WEB-8 decision 1): the language follows Accept-Language, the scheme the device.
+const language = new Intl.DisplayNames([locale], { type: 'language' }).of(locale) ?? locale
+
+const languageName = language.charAt(0).toLocaleUpperCase(locale) + language.slice(1)
+---
+
+<SettingsGroup {head} class={className}>
+	<SettingRow
+		label={app.interfaceLanguage}
+		value={app.interfaceLanguageValue.replaceAll('{language}', languageName)}
+	/>
+	<SettingRow label={app.appearance} value={app.appearanceValue} />
+	<!-- The page composes the notifications toggle here: features do not import each other. -->
+	<slot name="after" slot="after" />
+</SettingsGroup>

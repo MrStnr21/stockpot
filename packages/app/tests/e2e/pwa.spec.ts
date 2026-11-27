@@ -259,7 +259,7 @@ test.describe('installable app', () => {
 		await page.goto(`${origin}/notes`)
 		await page.goto(`${origin}/`)
 		await expect.poll(async () => storedPages(page)).toEqual(['/', '/notes'])
-		await page.goto(`${origin}/settings`)
+		await page.goto(`${origin}/settings/account`)
 
 		await page.getByRole('button', { name: 'Sign out' }).click()
 

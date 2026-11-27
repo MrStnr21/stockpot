@@ -1,0 +1,35 @@
+---
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 The stockpot authors
+
+import AboutGroup from '#/features/settings/client/about-group.astro'
+import SettingsFrame from '#/features/settings/client/settings-frame.astro'
+import { readSettingsOverview } from '#/features/settings/server/overview'
+import Shell from '#/layouts/shell.astro'
+import { pickLocale, t } from '#/lib/i18n'
+import { instanceDb } from '#/server/db/instance'
+
+// Sign-in sends a visitor on to setup while the instance has no owner.
+if (Astro.locals.owner === null) {
+	// oxlint-disable-next-line unicorn/prefer-module -- Astro runs the frontmatter as a function, and a page redirects by returning the response.
+	return Astro.redirect('/signin')
+}
+
+const locale = pickLocale(Astro.request.headers.get('accept-language'))
+
+const strings = t(locale)
+
+const { attention } = readSettingsOverview(await instanceDb(), new Date())
+---
+
+<Shell title={strings.settings.sections.about} {locale} current="settings" layout="split">
+	<SettingsFrame
+		section="about"
+		{strings}
+		{attention}
+		back={{ href: '/settings', label: strings.nav.settings }}
+	>
+		<h1 class="font-ui text-title-l md:pt-2">{strings.settings.sections.about}</h1>
+		<AboutGroup {strings} />
+	</SettingsFrame>
+</Shell>

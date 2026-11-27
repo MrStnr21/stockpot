@@ -1,0 +1,26 @@
+---
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 The stockpot authors
+
+import type { Messages } from '#/lib/i18n/en'
+import { config } from '#/server/config'
+import { appVersion } from '#/server/version'
+
+import SettingRow from './setting-row.svelte'
+import SettingsGroup from './settings-group.svelte'
+
+interface Props {
+	strings: Messages
+	head?: string
+	class?: string
+}
+
+const { strings, head, class: className } = Astro.props
+
+const { about } = strings.settings
+---
+
+<SettingsGroup {head} class={className}>
+	<SettingRow label={about.version} value={appVersion} />
+	<SettingRow label={strings.sourceCode} hint={about.license} href={config.sourceUrl} external />
+</SettingsGroup>
