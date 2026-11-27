@@ -43,6 +43,17 @@ function notFound() {
 	return new HttpError(404, { code: 'not_found', message: 'There is no such category.' })
 }
 
+/** The category with this id; 404 when there is none. */
+export function findCategory(db: Db, id: number): Category {
+	const row = db.select().from(categories).where(eq(categories.id, id)).get()
+
+	if (row === undefined) {
+		throw notFound()
+	}
+
+	return row
+}
+
 function requireAvailableName(tx: Transaction, name: string, ownId?: number) {
 	const rows = tx.select({ id: categories.id, name: categories.name }).from(categories).all()
 
