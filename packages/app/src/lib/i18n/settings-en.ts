@@ -141,6 +141,7 @@ export const settingsEn = {
 		fallbackMain: 'The main engine for every task',
 		fallbackBackup: 'Writes drafts while {name} is at its limit',
 		fallbackSkipped: 'Not set up, so it is skipped',
+		fallbackUnlisted: 'Left out of the order, so it is skipped until you reorder',
 		fallbackFoot:
 			'On a usage limit or a rejected key, the next engine writes a draft and the main one rewrites it after the reset. Idea reports have no backup: they wait.',
 		summaryAttention: '{name} needs attention',
@@ -247,6 +248,8 @@ export const settingsEn = {
 		saveFailed: 'Could not save. Try again',
 		deleteFailed: 'Could not delete. Try again',
 		orderFailed: 'Could not save the order. Try again',
+		testFailed: 'Could not run the test. Try again',
+		copyFailed: 'Could not copy. Select the token and copy it',
 	},
 	when: {
 		justNow: 'just now',
