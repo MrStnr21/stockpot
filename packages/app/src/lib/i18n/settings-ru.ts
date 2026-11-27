@@ -150,6 +150,8 @@ export const settingsRu: SettingsMessages = {
 		summaryWorks: '{name} работает',
 		summaryNotSetUp: 'Не настроены',
 		summaryUntested: 'Ещё не проверены',
+		missingTitle: 'Такого движка нет',
+		missing: 'Все движки перечислены на странице «Движки».',
 	},
 	engineState: {
 		working: 'Работает',

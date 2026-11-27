@@ -73,12 +73,17 @@ const stateOfOutcome = {
 	error: 'failing',
 } as const satisfies Record<EngineTestResult['outcome'], EngineState>
 
+/** The state a test leaves the engine in. */
+export function testState(result: EngineTestResult): EngineState {
+	return stateOfOutcome[result.outcome]
+}
+
 /** The state a card shows: the latest test's on this page, else the server's. */
 export function engineState(
 	overview: EngineOverview,
 	result: EngineTestResult | null,
 ): EngineState {
-	return result === null ? overview.state : stateOfOutcome[result.outcome]
+	return result === null ? overview.state : testState(result)
 }
 
 /** A card's badge: a kit status, or `null` for a plain badge (not tested, not set up). */

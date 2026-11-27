@@ -56,7 +56,7 @@
 		<span class="grid size-9 shrink-0 place-items-center rounded-xs bg-fill text-ink-2">
 			<Icon name={icons[overview.id]} class="size-5" />
 		</span>
-		<h2 id={`${id}-name`} class="min-w-0 flex-1 text-body font-semibold">
+		<h2 id={`${id}-name`} class="min-w-0 flex-1 text-title-s">
 			{engineName(overview.id, strings.engines)}
 		</h2>
 		{#if badge.status === null}
@@ -69,7 +69,7 @@
 		{engineDescription(overview.id, engines, strings.engines)}
 	</p>
 	{#if meta !== null}
-		<p class="text-detail font-medium text-ink-3" aria-live="polite">{meta}</p>
+		<p class="text-caption text-ink-3" aria-live="polite">{meta}</p>
 	{/if}
 	<div class="flex flex-wrap gap-2">
 		{#if state === 'key_rejected' && hasDetails}

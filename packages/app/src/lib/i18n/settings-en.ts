@@ -148,6 +148,8 @@ export const settingsEn = {
 		summaryWorks: '{name} works',
 		summaryNotSetUp: 'Not set up',
 		summaryUntested: 'Not tested yet',
+		missingTitle: 'There is no such engine',
+		missing: 'The engines page lists every engine there is.',
 	},
 	engineState: {
 		working: 'Working',
