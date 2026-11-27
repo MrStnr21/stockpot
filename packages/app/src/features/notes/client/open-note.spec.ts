@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from 'bun:test'
 
-import { keepNote, nextRowId, noteIdOfLink, opensInPane, withNote } from './open-note'
+import { keepNote, nextRowId, noteIdOfLink, noteLink, opensInPane, withNote } from './open-note'
 
 const plain = { button: 0, metaKey: false, ctrlKey: false, shiftKey: false, altKey: false }
 
@@ -65,16 +65,32 @@ describe('open note', () => {
 		})
 	})
 
+	describe('noteLink', () => {
+		it('links a Notes row to its note and a Base row back to Base', () => {
+			expect([noteLink(42), noteLink(42, 'base')]).toEqual(['/notes/42', '/notes/42?from=base'])
+		})
+	})
+
 	describe('noteIdOfLink', () => {
 		it('reads the note of a row link', () => {
 			expect(noteIdOfLink('/notes/42')).toBe(42)
 		})
 
-		it.each([null, '/notes', '/notes/0', '/notes/4x', '/today', 'https://example.com/notes/4'])(
-			'reads %p as no note',
-			(href) => {
-				expect(noteIdOfLink(href)).toBeNull()
-			},
-		)
+		it('reads the note of a Base row link', () => {
+			expect(noteIdOfLink('/notes/42?from=base')).toBe(42)
+		})
+
+		it.each([
+			null,
+			'/notes',
+			'/notes/0',
+			'/notes/4x',
+			'/today',
+			'https://example.com/notes/4',
+			'/notes/4?from=today',
+			'/notes/4?from=base&x=1',
+		])('reads %p as no note', (href) => {
+			expect(noteIdOfLink(href)).toBeNull()
+		})
 	})
 })

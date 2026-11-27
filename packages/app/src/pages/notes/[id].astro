@@ -34,6 +34,11 @@ const db = await instanceDb()
 
 const rawId = Astro.params.id ?? ''
 
+// A card opened from a Base row returns there; only the literal `base` counts, anything else is ignored.
+const fromBase = Astro.url.searchParams.get('from') === 'base'
+
+const backHref = fromBase ? '/base' : '/notes'
+
 const view = /^[1-9]\d{0,14}$/u.test(rawId)
 	? readCardView(db, instanceProgressBoard, { noteId: Number(rawId), now: new Date() })
 	: null
@@ -52,13 +57,13 @@ if (view === null) {
 <Shell
 	title={view?.note.text ?? strings.card.missingTitle}
 	{locale}
-	current="notes"
+	current={fromBase ? 'base' : 'notes'}
 	tabBar={view === null}
 >
 	{view === null ? (
 		<>
-			<Button variant="ghost" size="sm" href="/notes" class="-ms-2.5 self-start">
-				{strings.notes.heading}
+			<Button variant="ghost" size="sm" href={backHref} class="-ms-2.5 self-start">
+				{fromBase ? strings.nav.base : strings.notes.heading}
 			</Button>
 			<h1 class="sr-only">{strings.card.missingTitle}</h1>
 			<EmptyState icon="search" title={strings.card.missingTitle}>
@@ -75,6 +80,8 @@ if (view === null) {
 			{locale}
 			strings={strings.card}
 			statuses={statusLabels(strings.notes)}
+			{backHref}
+			backLabel={fromBase ? strings.nav.base : strings.card.back}
 		/>
 	)}
 </Shell>

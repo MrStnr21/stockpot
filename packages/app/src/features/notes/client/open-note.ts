@@ -34,9 +34,17 @@ export function nextRowId(ids: readonly number[], from: number, key: string): nu
 	return ids[index + step] ?? null
 }
 
-/** The note a row link opens, from its `/notes/<id>` address; `null` for any other link. */
+/** The list a card page was opened from, when it is not Notes: its back link returns there. */
+export type NoteFrom = 'base'
+
+/** A row's link to its note: `/notes/<id>`, with `?from=base` when the row is in Base. */
+export function noteLink(id: number, from?: NoteFrom): string {
+	return from === undefined ? `/notes/${id}` : `/notes/${id}?from=${from}`
+}
+
+/** The note a row link opens, from its `/notes/<id>` address (or `?from=base`); `null` for any other link. */
 export function noteIdOfLink(href: string | null): number | null {
-	const id = /^\/notes\/(?<id>[1-9]\d{0,14})$/u.exec(href ?? '')?.groups?.id
+	const id = /^\/notes\/(?<id>[1-9]\d{0,14})(?:\?from=base)?$/u.exec(href ?? '')?.groups?.id
 
 	return id === undefined ? null : Number(id)
 }

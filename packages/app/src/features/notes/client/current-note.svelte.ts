@@ -8,7 +8,15 @@
  */
 import { noteOpened } from '#/lib/events'
 
-import { nextRowId, noteIdOfLink, opensInPane, withNote, type RowClick } from './open-note'
+import {
+	nextRowId,
+	noteIdOfLink,
+	noteLink,
+	opensInPane,
+	withNote,
+	type NoteFrom,
+	type RowClick,
+} from './open-note'
 
 export interface CurrentNoteOptions {
 	/** The note the page opened from its URL. */
@@ -19,6 +27,8 @@ export interface CurrentNoteOptions {
 	readonly announce?: (id: number) => void
 	/** Puts the note into the URL; by default with `replaceState`, next to the filters. */
 	readonly writeUrl?: (id: number) => void
+	/** The list the rows link from, which decides the row links the arrow keys focus. */
+	readonly from?: NoteFrom
 }
 
 /** The parts of an event a handler may cancel. */
@@ -55,12 +65,14 @@ export class CurrentNote {
 	readonly #isWide: () => boolean
 	readonly #announce: (id: number) => void
 	readonly #writeUrl: (id: number) => void
+	readonly #from: NoteFrom | undefined
 
 	public constructor(options: CurrentNoteOptions) {
 		this.current = options.initial
 		this.#isWide = options.isWide ?? wideScreen
 		this.#announce = options.announce ?? sendOpened
 		this.#writeUrl = options.writeUrl ?? replaceUrl
+		this.#from = options.from
 	}
 
 	/** A click on a row link; on the current row the pane opens nothing new unless its card failed to load. */
@@ -101,6 +113,11 @@ export class CurrentNote {
 		this.#announce(id)
 	}
 
+	/** The row link of a note in this list, which the arrow keys move the focus to. */
+	public linkOf(id: number): string {
+		return noteLink(id, this.#from)
+	}
+
 	/**
 	 * A key down in the list: an arrow key on a focused row link opens the next row and moves the
 	 * focus to it. Nothing happens while a dialog is open.
@@ -121,7 +138,7 @@ export class CurrentNote {
 		const next = this.key(event, { ids, from, selecting })
 
 		if (next !== null && event.currentTarget instanceof Element) {
-			event.currentTarget.querySelector<HTMLElement>(`a[href="/notes/${next}"]`)?.focus()
+			event.currentTarget.querySelector<HTMLElement>(`a[href="${this.linkOf(next)}"]`)?.focus()
 		}
 	}
 }
