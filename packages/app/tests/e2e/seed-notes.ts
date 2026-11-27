@@ -11,10 +11,15 @@ const day = 24 * 60 * 60 * 1000
 /*
  * Writes a full collection straight into a running server's database, in one transaction: every
  * status, the built-in categories, every tenth note private, spread over 60 days, and a first card
- * for every third note. The search index fills itself through its triggers. Answers a word that the
- * first note's context holds, to search for.
+ * for every third note. The search index fills itself through its triggers. With `keptEvery`, every
+ * such note is kept, at its creation time. Answers a word that the first note's context holds, to
+ * search for.
  */
-export function seedNotes(dataDir: string, count: number): string {
+export function seedNotes(
+	dataDir: string,
+	count: number,
+	{ keptEvery }: { readonly keptEvery?: number } = {},
+): string {
 	const db = new Database(`${dataDir}/stockpot.db`)
 
 	try {
@@ -27,10 +32,10 @@ export function seedNotes(dataDir: string, count: number): string {
 
 		const addNote = db.query<
 			{ id: number },
-			[string, string, string, number | null, number, number]
+			[string, string, string, number | null, number, number, number | null]
 		>(
-			`INSERT INTO notes (text, context, status, category_id, is_private, created_at, updated_at)
-			VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?6) RETURNING id`,
+			`INSERT INTO notes (text, context, status, category_id, is_private, created_at, updated_at, kept_at)
+			VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?6, ?7) RETURNING id`,
 		)
 
 		const addCard = db.query<null, [number, string, number]>(
@@ -43,13 +48,17 @@ export function seedNotes(dataDir: string, count: number): string {
 
 		db.transaction(() => {
 			for (let index = 0; index < count; index += 1) {
+				const createdAt = now - Math.floor((index / count) * 60 * day)
+				const isKept = keptEvery !== undefined && index % keptEvery === 0
+
 				const note = addNote.get(
 					`${faker.word.noun()} ${index}`,
 					contexts[index] ?? '',
 					statuses[index % statuses.length] ?? 'new',
 					categoryIds[index % categoryIds.length] ?? null,
 					index % 10 === 0 ? 1 : 0,
-					now - Math.floor((index / count) * 60 * day),
+					createdAt,
+					isKept ? createdAt : null,
 				)
 
 				if (note !== null && index % 3 === 0) {
